@@ -354,27 +354,27 @@ function TransactionRow({
       </span>
 
       {/* Inline action buttons — appear on tap, positioned to the right */}
-      {showActions && (
-        <div
-          className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex gap-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-lg p-1"
-          onClick={(e) => e.stopPropagation()}
+      <div
+        className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 flex gap-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-lg p-1 transition-all duration-150 origin-right ${
+          showActions ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
+        }`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onEdit}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition"
         >
-          <button
-            onClick={onEdit}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition"
-          >
-            <Edit2 className="h-3.5 w-3.5" />
-            {t('tx_edit')}
-          </button>
-          <button
-            onClick={onDelete}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            {t('tx_delete')}
-          </button>
-        </div>
-      )}
+          <Edit2 className="h-3.5 w-3.5" />
+          {t('tx_edit')}
+        </button>
+        <button
+          onClick={onDelete}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          {t('tx_delete')}
+        </button>
+      </div>
     </div>
   )
 }
