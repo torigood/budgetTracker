@@ -41,6 +41,8 @@ export const translations = {
     tx_delete_fail: '삭제 실패',
     tx_edit: '수정',
     tx_delete: '삭제',
+    tx_sort_recent: '최근순',
+    tx_sort_oldest: '오래된순',
 
     // Transaction Form
     form_add_title: '거래 추가',
@@ -298,6 +300,8 @@ export const translations = {
     tx_delete_fail: 'Delete failed',
     tx_edit: 'Edit',
     tx_delete: 'Delete',
+    tx_sort_recent: 'Newest',
+    tx_sort_oldest: 'Oldest',
 
     // Transaction Form
     form_add_title: 'Add Transaction',

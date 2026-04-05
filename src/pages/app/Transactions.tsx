@@ -103,9 +103,9 @@ export default function Transactions() {
     if (!deleteId) return
     try {
       await deleteMutation.mutateAsync(deleteId)
-      toast.success('거래가 삭제됐습니다')
+      toast.success(t('tx_deleted'))
     } catch {
-      toast.error('삭제 실패')
+      toast.error(t('tx_delete_fail'))
     } finally {
       setDeleteId(null)
     }
@@ -183,7 +183,7 @@ export default function Transactions() {
                 onClick={resetFilters}
                 className="text-xs font-medium text-indigo-500 hover:text-indigo-600 transition"
               >
-                필터 초기화
+                {t('tx_filter_reset')}
               </button>
             )}
             <button
@@ -193,10 +193,10 @@ export default function Transactions() {
                   ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
-              title={filters.sortOrder === 'desc' ? '최근순' : '오래된순'}
+              title={filters.sortOrder === 'desc' ? t('tx_sort_recent') : t('tx_sort_oldest')}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
-              {filters.sortOrder === 'desc' ? '최근순' : '오래된순'}
+              {filters.sortOrder === 'desc' ? t('tx_sort_recent') : t('tx_sort_oldest')}
             </button>
           </div>
         </div>
@@ -294,9 +294,9 @@ export default function Transactions() {
 
       <ConfirmDialog
         open={!!deleteId}
-        title="거래를 삭제할까요?"
-        description="삭제된 거래는 복구할 수 없습니다."
-        confirmLabel="삭제"
+        title={t('tx_delete_title')}
+        description={t('tx_delete_desc')}
+        confirmLabel={t('tx_delete')}
         danger
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
@@ -315,6 +315,7 @@ function TransactionRow({
   onDelete: () => void
 }) {
   const [showActions, setShowActions] = useState(false)
+  const t = useT()
 
   return (
     <div
@@ -363,14 +364,14 @@ function TransactionRow({
             className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition"
           >
             <Edit2 className="h-3.5 w-3.5" />
-            수정
+            {t('tx_edit')}
           </button>
           <button
             onClick={onDelete}
             className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition"
           >
             <Trash2 className="h-3.5 w-3.5" />
-            삭제
+            {t('tx_delete')}
           </button>
         </div>
       )}
