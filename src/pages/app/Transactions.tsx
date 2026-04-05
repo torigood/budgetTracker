@@ -114,7 +114,7 @@ export default function Transactions() {
   return (
     <div className="flex flex-col min-h-full" {...swipe}>
       <PageHeader
-        title="거래내역"
+        title={t('tx_title')}
         action={
           <button
             onClick={() => navigate('/transactions/new')}
