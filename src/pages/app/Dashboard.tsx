@@ -253,8 +253,12 @@ function WidgetBanner() {
 
   function goTo(idx: number) { resetTimer(idx) }
 
-  function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
+  function onTouchStart(e: React.TouchEvent) {
+    e.stopPropagation()
+    touchStartX.current = e.touches[0].clientX
+  }
   function onTouchEnd(e: React.TouchEvent) {
+    e.stopPropagation()
     if (touchStartX.current === null) return
     const diff = touchStartX.current - e.changedTouches[0].clientX
     if (Math.abs(diff) > 40) resetTimer((slide + (diff > 0 ? 1 : -1) + TOTAL) % TOTAL)

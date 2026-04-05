@@ -192,6 +192,8 @@ export default function Calendar() {
         <div
           className="fixed inset-0 z-40 flex items-center justify-center px-4"
           onClick={() => setSelectedDate(null)}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
