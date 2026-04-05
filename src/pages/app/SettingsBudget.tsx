@@ -95,7 +95,7 @@ export default function SettingsBudget() {
                       <p className="text-sm font-medium text-slate-900 dark:text-white">{cat.name}</p>
                       {goal && !isEditing && (
                         <p className="text-xs text-indigo-500 font-semibold mt-0.5">
-                          {formatCurrency(goal.amount, goal.currency)} / 월
+                          {formatCurrency(goal.amount, goal.currency)} / {t('budget_period')}
                         </p>
                       )}
                       {!goal && !isEditing && (
@@ -184,7 +184,7 @@ export default function SettingsBudget() {
         <div className="flex items-start gap-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 px-3.5 py-3">
           <Target className="h-4 w-4 text-indigo-400 shrink-0 mt-0.5" />
           <p className="text-xs text-indigo-600 dark:text-indigo-400 leading-relaxed">
-            예산을 설정하면 해당 카테고리 지출이 80%에 달할 때 알림을 받을 수 있어요. 알림은 설정 {'>'} 알림에서 켤 수 있어요.
+            {t('budget_note')}
           </p>
         </div>
       </div>

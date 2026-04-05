@@ -12,6 +12,8 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PAYMENT_METHODS } from '@/types/app'
 import type { PaymentMethod, TransactionType } from '@/types/app'
 import { parseCsvRow, parseRawRow, MAX_CSV_ROWS } from '@/lib/utils/csvParser'
+import { useT } from '@/lib/hooks/useT'
+import { translations } from '@/lib/i18n'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface CsvRow {
@@ -33,8 +35,10 @@ type Step = 'upload' | 'preview' | 'importing' | 'done'
 // ── Component ───────────────────────────────────────────────────────────────
 export default function CsvImport() {
   const navigate = useNavigate()
+  const t = useT()
   const { user } = useAuthStore()
-  const { currency } = useUIStore()
+  const { currency, lang } = useUIStore()
+  const tr = translations[lang]
   const { data: categories = [] } = useCategories()
 
   const [step, setStep] = useState<Step>('upload')
@@ -79,12 +83,12 @@ export default function CsvImport() {
       }
 
       if (parsed.length === 0) {
-        toast.error('가져올 수 있는 행이 없습니다. CSV 형식을 확인해주세요.')
+        toast.error(t('csv_import_no_rows'))
         return
       }
 
       if (parsed.length > MAX_CSV_ROWS) {
-        toast.error(`한 번에 최대 ${MAX_CSV_ROWS.toLocaleString()}행까지만 가져올 수 있습니다.`)
+        toast.error(tr.csv_import_max_rows(MAX_CSV_ROWS))
         return
       }
 
@@ -106,7 +110,7 @@ export default function CsvImport() {
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024, // 5MB
     noClick: false,
-    onDropRejected: () => toast.error('파일 크기는 5MB 이하의 CSV 파일만 지원합니다'),
+    onDropRejected: () => toast.error(t('csv_import_file_too_large')),
   })
 
   // ── Row updaters ────────────────────────────────────────────────────────
@@ -122,7 +126,7 @@ export default function CsvImport() {
   async function handleImport() {
     if (!user) return
     const toImport = rows.filter((r) => r.include)
-    if (toImport.length === 0) { toast.error('가져올 항목을 선택해주세요'); return }
+    if (toImport.length === 0) { toast.error(t('csv_import_no_items')); return }
 
     setStep('importing')
     try {
@@ -151,7 +155,7 @@ export default function CsvImport() {
       setStep('done')
     } catch (err) {
       console.error('CSV import error:', err)
-      toast.error('가져오기에 실패했습니다. 다시 시도해주세요.')
+      toast.error(t('csv_import_failed'))
       setStep('preview')
     }
   }
@@ -162,7 +166,7 @@ export default function CsvImport() {
   if (step === 'upload') {
     return (
       <div>
-        <PageHeader title="CSV 가져오기" back />
+        <PageHeader title={t('csv_import_title')} back />
         <div className="p-4 space-y-4">
           <div
             {...getRootProps()}
@@ -175,19 +179,27 @@ export default function CsvImport() {
             <input {...getInputProps()} />
             <Upload className={`mb-4 h-12 w-12 transition ${isDragActive ? 'text-indigo-500' : 'text-slate-300 dark:text-slate-600'}`} />
             <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-              {isDragActive ? 'CSV 파일을 놓아주세요' : 'CSV 파일을 드래그하거나 클릭해서 선택'}
+              {isDragActive ? t('csv_import_drop_active') : t('csv_import_drop')}
             </p>
-            <p className="mt-1.5 text-xs text-slate-400">가계부 형식 (.csv) 지원</p>
+            <p className="mt-1.5 text-xs text-slate-400">{t('csv_import_hint')}</p>
           </div>
 
           {/* Format hint */}
           <div className="card p-4 space-y-2">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">지원 형식</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('csv_import_format')}</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-slate-500 dark:text-slate-400">
                 <thead>
                   <tr className="border-b border-slate-100 dark:border-slate-800">
-                    {['날짜', '구분', '카테고리', '상세 내용', '금액', '결제 수단', '메모'].map((h) => (
+                    {[
+                      t('csv_import_header_date'),
+                      t('csv_import_header_type'),
+                      t('csv_import_header_category'),
+                      t('csv_import_header_desc'),
+                      t('csv_import_header_amount'),
+                      t('csv_import_header_payment'),
+                      t('csv_import_header_memo'),
+                    ].map((h) => (
                       <th key={h} className="pb-1.5 pr-3 text-left font-semibold text-slate-600 dark:text-slate-300">{h}</th>
                     ))}
                   </tr>
@@ -215,10 +227,10 @@ export default function CsvImport() {
   if (step === 'importing') {
     return (
       <div>
-        <PageHeader title="CSV 가져오기" back />
+        <PageHeader title={t('csv_import_title')} back />
         <div className="flex flex-col items-center justify-center py-32 gap-4">
           <LoadingSpinner size="lg" />
-          <p className="text-sm text-slate-500">{includedCount}개 항목 저장 중...</p>
+          <p className="text-sm text-slate-500">{tr.csv_import_uploading(includedCount)}</p>
         </div>
       </div>
     )
@@ -228,20 +240,20 @@ export default function CsvImport() {
   if (step === 'done') {
     return (
       <div>
-        <PageHeader title="CSV 가져오기" back />
+        <PageHeader title={t('csv_import_title')} back />
         <div className="flex flex-col items-center justify-center py-32 gap-5 p-6 text-center">
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
             <Check className="h-10 w-10 text-emerald-500" />
           </span>
           <div>
-            <p className="text-xl font-bold text-slate-900 dark:text-white">{importedCount}개 항목을 가져왔어요!</p>
-            <p className="mt-1 text-sm text-slate-500">거래 내역에서 확인할 수 있습니다</p>
+            <p className="text-xl font-bold text-slate-900 dark:text-white">{tr.csv_import_done_title(importedCount)}</p>
+            <p className="mt-1 text-sm text-slate-500">{t('csv_import_done_desc')}</p>
           </div>
           <button
             onClick={() => navigate('/transactions')}
             className="btn btn-primary px-8"
           >
-            거래 내역 보기
+            {t('csv_import_view_transactions')}
           </button>
         </div>
       </div>
@@ -254,7 +266,7 @@ export default function CsvImport() {
 
   return (
     <div>
-      <PageHeader title="CSV 가져오기" back />
+      <PageHeader title={t('csv_import_title')} back />
 
       <div className="p-4 space-y-3">
         {/* Summary bar */}
@@ -262,15 +274,15 @@ export default function CsvImport() {
           <FileText className="h-5 w-5 text-indigo-500 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">{fileName}</p>
-            <p className="text-xs text-slate-400">{rows.length}개 행 파싱됨</p>
+            <p className="text-xs text-slate-400">{tr.csv_import_parsed_rows(rows.length)}</p>
           </div>
-          <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{includedCount}개 선택</span>
+          <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{tr.csv_import_selected_rows(includedCount)}</span>
         </div>
 
         {someUncategorized && (
           <div className="flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
             <AlertTriangle className="h-4 w-4 shrink-0" />
-            카테고리가 매핑되지 않은 항목이 있습니다. 가져온 후 거래 편집에서 수정할 수 있습니다.
+            {t('csv_import_unmapped_warning')}
           </div>
         )}
 
@@ -285,7 +297,7 @@ export default function CsvImport() {
               className="h-4 w-4 accent-indigo-500 shrink-0"
             />
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-              전체 선택 / 해제
+              {t('csv_import_total_select')}
             </span>
           </div>
 
@@ -338,7 +350,7 @@ export default function CsvImport() {
                               : 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400'
                           }`}
                         >
-                          <option value="">카테고리 없음</option>
+                          <option value="">{t('csv_import_no_category')}</option>
                           {categories.map((c) => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
@@ -373,7 +385,7 @@ export default function CsvImport() {
           disabled={includedCount === 0}
           className="btn btn-primary w-full py-4 text-base"
         >
-          {includedCount}개 항목 가져오기
+          {tr.csv_import_import_button(includedCount)}
         </button>
 
         <button
@@ -381,7 +393,7 @@ export default function CsvImport() {
           className="w-full py-2 text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition"
         >
           <X className="inline h-3.5 w-3.5 mr-1" />
-          다시 선택
+          {t('csv_import_again')}
         </button>
       </div>
     </div>

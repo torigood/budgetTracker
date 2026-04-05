@@ -6,6 +6,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { CATEGORY_COLORS } from '@/types/app'
+import { useT } from '@/lib/hooks/useT'
 
 interface CategoryFormData {
   name: string
@@ -14,6 +15,7 @@ interface CategoryFormData {
 }
 
 export default function SettingsCategories() {
+  const t = useT()
   const { data: categories, isLoading } = useCategories()
   const createMutation = useCreateCategory()
   const updateMutation = useUpdateCategory()
@@ -44,14 +46,14 @@ export default function SettingsCategories() {
     try {
       if (editing) {
         await updateMutation.mutateAsync({ id: editing, data: form })
-        toast.success('카테고리가 수정됐습니다')
+        toast.success(t('categories_updated'))
       } else {
         await createMutation.mutateAsync({ ...form, sort_order: (categories?.length ?? 0) + 1 })
-        toast.success('카테고리가 추가됐습니다')
+        toast.success(t('categories_added'))
       }
       setShowForm(false)
     } catch {
-      toast.error('저장 실패')
+      toast.error(t('save'))
     }
   }
 
@@ -59,9 +61,9 @@ export default function SettingsCategories() {
     if (!deleteId) return
     try {
       await deleteMutation.mutateAsync(deleteId)
-      toast.success('카테고리가 삭제됐습니다')
+      toast.success(t('categories_deleted'))
     } catch {
-      toast.error('삭제 실패. 이 카테고리로 기록된 거래가 있을 수 있습니다.')
+      toast.error(t('categories_delete_fail'))
     } finally {
       setDeleteId(null)
     }
@@ -70,14 +72,15 @@ export default function SettingsCategories() {
   return (
     <div>
       <PageHeader
-        title="카테고리 관리"
+        title={t('categories_title')}
         back
         action={
           <button
             onClick={openCreate}
-            className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-3.5 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-500/25 hover:bg-indigo-600 transition active:scale-95"
+            className="tap-target flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-sm shadow-indigo-500/25 hover:bg-indigo-600 transition active:scale-95"
+            aria-label={t('categories_add')}
           >
-            <Plus className="h-4 w-4" /> 추가
+            <Plus className="h-5 w-5" />
           </button>
         }
       />
@@ -96,7 +99,7 @@ export default function SettingsCategories() {
               </span>
               <span className="flex-1 text-sm font-medium text-slate-900 dark:text-slate-100">{cat.name}</span>
               {cat.is_default && (
-                <span className="text-xs text-slate-400 mr-1">기본</span>
+                <span className="text-xs text-slate-400 mr-1">{t('categories_default')}</span>
               )}
               <button
                 onClick={() => openEdit(cat.id)}
@@ -129,17 +132,17 @@ export default function SettingsCategories() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="mb-5 text-base font-bold text-slate-900 dark:text-white">
-              {editing ? '카테고리 수정' : '카테고리 추가'}
+              {editing ? t('categories_edit_title') : t('categories_add_title')}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="카테고리 이름"
+                placeholder={t('categories_name_placeholder')}
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition"
               />
               <div>
-                <p className="mb-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">색상</p>
+                <p className="mb-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('categories_color')}</p>
                 <div className="grid grid-cols-9 gap-2">
                   {CATEGORY_COLORS.map((color) => (
                     <button
@@ -158,13 +161,13 @@ export default function SettingsCategories() {
                   onClick={() => setShowForm(false)}
                   className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
                 >
-                  취소
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   className="flex-1 rounded-xl bg-indigo-500 py-3 text-sm font-semibold text-white hover:bg-indigo-600 transition"
                 >
-                  저장
+                  {t('save')}
                 </button>
               </div>
             </form>
@@ -174,9 +177,9 @@ export default function SettingsCategories() {
 
       <ConfirmDialog
         open={!!deleteId}
-        title="카테고리를 삭제할까요?"
-        description="이 카테고리로 기록된 거래가 있으면 삭제할 수 없습니다."
-        confirmLabel="삭제"
+        title={t('categories_delete_confirm')}
+        description={t('categories_delete_desc')}
+        confirmLabel={t('delete')}
         danger
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
