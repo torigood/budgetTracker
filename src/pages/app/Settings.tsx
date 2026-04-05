@@ -314,9 +314,9 @@ export default function Settings() {
               <Download className="h-4 w-4 text-slate-400" />
               <p className="text-sm font-medium text-slate-900 dark:text-white">CSV 내보내기</p>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <p className="mb-1 text-xs text-slate-400">시작 월</p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <p className="w-14 shrink-0 text-xs text-slate-400">시작 월</p>
                 <input
                   type="month"
                   value={exportFrom}
@@ -324,17 +324,17 @@ export default function Settings() {
                     setExportFrom(e.target.value)
                     if (e.target.value > exportTo) setExportTo(e.target.value)
                   }}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-base text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
                 />
               </div>
-              <div>
-                <p className="mb-1 text-xs text-slate-400">종료 월</p>
+              <div className="flex items-center gap-3">
+                <p className="w-14 shrink-0 text-xs text-slate-400">종료 월</p>
                 <input
                   type="month"
                   value={exportTo}
                   min={exportFrom}
                   onChange={(e) => setExportTo(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-base text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
                 />
               </div>
             </div>
