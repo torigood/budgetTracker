@@ -8,6 +8,7 @@ import { useReminderCheck } from '@/lib/hooks/useNotifications'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { useT } from '@/lib/hooks/useT'
+import { translations } from '@/lib/i18n'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton, TransactionSkeleton } from '@/components/ui/Skeleton'
 import { CategoryBadge } from '@/components/ui/Badge'
@@ -231,6 +232,8 @@ function CurrencyList({ rows, emptyLabel }: { rows: CurrencyRow[]; emptyLabel: s
 
 function WidgetBanner() {
   const t = useT()
+  const { lang } = useUIStore()
+  const tr = translations[lang]
   const { data, isLoading } = useWidgetStats()
   const [slide, setSlide] = useState(0)
   const TOTAL = 3
@@ -264,7 +267,7 @@ function WidgetBanner() {
     // Slide 0: 이번 주 지출
     {
       title: t('widget_week'),
-      subtitle: t('widget_week_range')(data?.weekDays ?? 0),
+      subtitle: tr.widget_week_range(data?.weekDays ?? 0),
       content: (
         <CurrencyList rows={data?.weekExpense ?? []} emptyLabel={t('widget_no_expense')} />
       ),
