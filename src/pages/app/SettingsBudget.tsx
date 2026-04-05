@@ -134,7 +134,7 @@ export default function SettingsBudget() {
                           value={editAmount}
                           onChange={(e) => setEditAmount(e.target.value)}
                           autoFocus
-                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-base text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
                         />
                       </div>
 

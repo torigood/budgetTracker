@@ -79,7 +79,11 @@ export default function Calendar() {
   const selectedDaySummary = selectedDate ? byDate?.[selectedDate] : null
 
   return (
-    <div className="flex flex-col min-h-full" {...swipe}>
+    <div
+      className="flex flex-col h-full overflow-hidden"
+      {...swipe}
+      style={{ touchAction: 'none' }}
+    >
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
@@ -239,7 +243,7 @@ export default function Calendar() {
             </div>
 
             {/* Transaction list */}
-            <div className="overflow-y-auto flex-1">
+            <div className="overflow-y-auto flex-1" style={{ touchAction: 'pan-y' }}>
               {!selectedDaySummary?.transactions.length ? (
                 <div className="py-10 text-center">
                   <p className="text-sm text-slate-400">이 날의 거래가 없습니다</p>

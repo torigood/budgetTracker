@@ -11,18 +11,21 @@ export function useSwipeMonth(
   setSelectedMonth: (month: string) => void,
   threshold = 50
 ) {
-  const touchStartX = useRef<number | null>(null)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
 
   const onTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
   }
 
   const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX.current === null) return
-    const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) < threshold) return
-    setSelectedMonth(shiftMonth(selectedMonth, diff > 0 ? 1 : -1))
-    touchStartX.current = null
+    if (!touchStart.current) return
+    const dx = touchStart.current.x - e.changedTouches[0].clientX
+    const dy = touchStart.current.y - e.changedTouches[0].clientY
+    touchStart.current = null
+    // Ignore if vertical movement is dominant (user is scrolling)
+    if (Math.abs(dy) > Math.abs(dx)) return
+    if (Math.abs(dx) < threshold) return
+    setSelectedMonth(shiftMonth(selectedMonth, dx > 0 ? 1 : -1))
   }
 
   return { onTouchStart, onTouchEnd }
