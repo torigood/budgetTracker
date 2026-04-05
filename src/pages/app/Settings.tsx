@@ -441,7 +441,7 @@ export default function Settings() {
         </div>
 
         {/* 로그아웃 */}
-        <div>
+        <div className="pb-8">
           <div className="card overflow-hidden">
             <SettingRow
               icon={<LogOut className="h-4 w-4" />}
