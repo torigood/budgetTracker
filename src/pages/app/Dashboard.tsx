@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, Minus, ArrowRight, Plus } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useUIStore } from '@/lib/stores/ui.store'
+import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { useT } from '@/lib/hooks/useT'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton, TransactionSkeleton } from '@/components/ui/Skeleton'
@@ -13,10 +14,11 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { selectedMonth, setSelectedMonth } = useUIStore()
   const { data, isLoading } = useDashboard(selectedMonth)
+  const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const t = useT()
 
   return (
-    <div className="pb-6">
+    <div className="pb-6" {...swipe}>
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
         <div>

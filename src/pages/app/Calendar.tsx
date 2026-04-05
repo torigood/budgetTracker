@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Plus, X, Edit2 } from 'lucide-react'
 import { useCalendar, type CalendarTransaction } from '@/lib/hooks/useCalendar'
 import { useUIStore } from '@/lib/stores/ui.store'
+import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { CategoryBadge } from '@/components/ui/Badge'
-import { formatCurrency, formatDateShort } from '@/utils/format'
+import { formatCurrency, formatDateShort, getCurrentMonth } from '@/utils/format'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -67,15 +68,18 @@ export default function Calendar() {
   const { selectedMonth, setSelectedMonth, currency } = useUIStore()
   const { data: byDate, isLoading } = useCalendar(selectedMonth)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
 
   const days = getDaysInMonth(selectedMonth)
   const today = todayISO()
+  const currentMonth = getCurrentMonth()
+  const isCurrentMonth = selectedMonth === currentMonth
   const [y, m] = selectedMonth.split('-')
 
   const selectedDaySummary = selectedDate ? byDate?.[selectedDate] : null
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col min-h-full" {...swipe}>
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
@@ -85,9 +89,16 @@ export default function Calendar() {
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <h1 className="text-base font-bold text-slate-900 dark:text-white min-w-[100px] text-center">
+          <button
+            onClick={() => !isCurrentMonth && setSelectedMonth(currentMonth)}
+            className={`text-base font-bold min-w-[100px] text-center rounded-lg px-1 py-0.5 transition ${
+              isCurrentMonth
+                ? 'text-slate-900 dark:text-white cursor-default'
+                : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 active:scale-95'
+            }`}
+          >
             {y}년 {parseInt(m)}월
-          </h1>
+          </button>
           <button
             onClick={() => setSelectedMonth(addMonths(selectedMonth, 1))}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"

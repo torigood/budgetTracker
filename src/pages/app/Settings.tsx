@@ -7,7 +7,7 @@ import { useAuthStore } from '@/lib/stores/auth.store'
 import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useT } from '@/lib/hooks/useT'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { getMonthRange, getCurrentMonth } from '@/utils/format'
+import { getCurrentMonth } from '@/utils/format'
 import type { Lang } from '@/lib/i18n'
 
 const LANGUAGES: { code: Lang; label: string; native: string }[] = [
@@ -59,7 +59,8 @@ export default function Settings() {
   const { user } = useAuthStore()
   const { isDark, toggleDark, currency, setCurrency, lang, setLang } = useUIStore()
   const t = useT()
-  const [exportMonth, setExportMonth] = useState(getCurrentMonth())
+  const [exportFrom, setExportFrom] = useState(getCurrentMonth())
+  const [exportTo, setExportTo] = useState(getCurrentMonth())
 
   async function handleLogout() {
     const { error } = await supabase.auth.signOut()
@@ -67,7 +68,15 @@ export default function Settings() {
   }
 
   async function handleExportCSV() {
-    const { start, end } = getMonthRange(exportMonth)
+    // from 시작일, to 마지막일 계산
+    const start = `${exportFrom}-01`
+    const toDate = new Date(exportTo + '-01')
+    toDate.setMonth(toDate.getMonth() + 1)
+    toDate.setDate(0) // 해당 월 마지막 날
+    const end = toDate.toISOString().slice(0, 10)
+
+    if (start > end) { toast.error('시작 월이 종료 월보다 늦습니다'); return }
+
     const { data, error } = await supabase
       .from('transactions')
       .select('date, type, description, amount, currency, payment_method, memo, categories(name)')
@@ -76,6 +85,7 @@ export default function Settings() {
       .order('date', { ascending: false })
 
     if (error) { toast.error('내보내기 실패'); return }
+    if (!data?.length) { toast.error('해당 기간에 거래 내역이 없습니다'); return }
 
     type ExportRow = {
       date: string; type: string; description: string; amount: number
@@ -97,10 +107,11 @@ export default function Settings() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `budget_${exportMonth}.csv`
+    const suffix = exportFrom === exportTo ? exportFrom : `${exportFrom}_${exportTo}`
+    a.download = `budget_${suffix}.csv`
     a.click()
     URL.revokeObjectURL(url)
-    toast.success('CSV 파일이 다운로드됐습니다')
+    toast.success(`${data.length}개 거래 내역을 내보냈습니다`)
   }
 
   const selectedCurrencyInfo = SUPPORTED_CURRENCIES.find(c => c.code === currency)
@@ -234,23 +245,44 @@ export default function Settings() {
           <div className="card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Download className="h-4 w-4 text-slate-400" />
-              <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_csv')}</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white">CSV 내보내기</p>
             </div>
-            <div className="flex gap-3">
-              <input
-                type="month"
-                value={exportMonth}
-                onChange={(e) => setExportMonth(e.target.value)}
-                className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
-              />
-              <button
-                onClick={handleExportCSV}
-                className="btn btn-primary flex items-center gap-2 px-4 py-2.5 text-sm"
-              >
-                <Download className="h-4 w-4" />
-                {t('settings_export')}
-              </button>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <p className="mb-1 text-xs text-slate-400">시작 월</p>
+                <input
+                  type="month"
+                  value={exportFrom}
+                  onChange={(e) => {
+                    setExportFrom(e.target.value)
+                    if (e.target.value > exportTo) setExportTo(e.target.value)
+                  }}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                />
+              </div>
+              <div>
+                <p className="mb-1 text-xs text-slate-400">종료 월</p>
+                <input
+                  type="month"
+                  value={exportTo}
+                  min={exportFrom}
+                  onChange={(e) => setExportTo(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                />
+              </div>
             </div>
+            {exportFrom === exportTo ? (
+              <p className="text-xs text-slate-400">{exportFrom} 1개월 내보내기</p>
+            ) : (
+              <p className="text-xs text-slate-400">{exportFrom} ~ {exportTo} 내보내기</p>
+            )}
+            <button
+              onClick={handleExportCSV}
+              className="btn btn-primary w-full flex items-center justify-center gap-2 py-2.5 text-sm"
+            >
+              <Download className="h-4 w-4" />
+              CSV 내보내기
+            </button>
           </div>
         </div>
 

@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { getMonthLabel } from '@/utils/format'
+import { getMonthLabel, getCurrentMonth } from '@/utils/format'
 
 interface MonthSelectorProps {
   value: string
@@ -13,6 +13,9 @@ function addMonths(month: string, delta: number): string {
 }
 
 export function MonthSelector({ value, onChange }: MonthSelectorProps) {
+  const current = getCurrentMonth()
+  const isCurrentMonth = value === current
+
   return (
     <div className="flex items-center gap-1">
       <button
@@ -22,9 +25,21 @@ export function MonthSelector({ value, onChange }: MonthSelectorProps) {
       >
         <ChevronLeft className="h-4 w-4" />
       </button>
-      <span className="min-w-[96px] text-center text-sm font-semibold text-slate-800 dark:text-slate-200">
+
+      <button
+        onClick={() => onChange(current)}
+        disabled={isCurrentMonth}
+        className={`min-w-[96px] text-center text-sm font-semibold transition rounded-lg px-1 py-0.5 ${
+          isCurrentMonth
+            ? 'text-slate-800 dark:text-slate-200 cursor-default'
+            : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 active:scale-95'
+        }`}
+        aria-label="현재 달로 이동"
+        title="현재 달로 이동"
+      >
         {getMonthLabel(value)}
-      </span>
+      </button>
+
       <button
         onClick={() => onChange(addMonths(value, 1))}
         className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 active:scale-95 transition"

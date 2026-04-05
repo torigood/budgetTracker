@@ -2,6 +2,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { useAnalytics } from '@/lib/hooks/useDashboard'
 import { useUIStore } from '@/lib/stores/ui.store'
+import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { CardSkeleton } from '@/components/ui/Skeleton'
@@ -9,6 +10,7 @@ import { formatCurrency, getMonthLabel } from '@/utils/format'
 
 export default function Analytics() {
   const { selectedMonth, setSelectedMonth } = useUIStore()
+  const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const { data: months, isLoading } = useAnalytics(selectedMonth)
 
   const current = months?.at(-1)
@@ -32,7 +34,7 @@ export default function Analytics() {
   const totalExpense = categoryBreakdown.reduce((s, c) => s + c.amount, 0)
 
   return (
-    <div>
+    <div {...swipe}>
       <PageHeader
         title="월별 분석"
         action={<MonthSelector value={selectedMonth} onChange={setSelectedMonth} />}
