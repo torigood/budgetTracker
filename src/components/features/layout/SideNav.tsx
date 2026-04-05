@@ -1,18 +1,22 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, List, Camera, BarChart2, Settings, RefreshCw, LogOut } from 'lucide-react'
+import { LayoutDashboard, List, Camera, BarChart2, Settings, RefreshCw, CalendarDays, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
-
-const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: '대시보드' },
-  { to: '/transactions', icon: List, label: '거래내역' },
-  { to: '/receipt', icon: Camera, label: '영수증 촬영' },
-  { to: '/analytics', icon: BarChart2, label: '분석' },
-  { to: '/recurring', icon: RefreshCw, label: '자동지출' },
-  { to: '/settings', icon: Settings, label: '설정' },
-]
+import { useT } from '@/lib/hooks/useT'
 
 export function SideNav() {
+  const t = useT()
+
+  const navItems = [
+    { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
+    { to: '/transactions', icon: List, label: t('nav_transactions') },
+    { to: '/calendar', icon: CalendarDays, label: t('nav_calendar') },
+    { to: '/receipt', icon: Camera, label: t('nav_receipt') },
+    { to: '/analytics', icon: BarChart2, label: t('nav_analytics') },
+    { to: '/recurring', icon: RefreshCw, label: t('nav_recurring') },
+    { to: '/settings', icon: Settings, label: t('nav_settings') },
+  ]
+
   async function handleLogout() {
     const { error } = await supabase.auth.signOut()
     if (error) toast.error(error.message)
@@ -68,7 +72,7 @@ export function SideNav() {
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 group-hover:text-rose-500 transition-colors">
             <LogOut className="h-4 w-4" />
           </span>
-          로그아웃
+          {t('nav_logout')}
         </button>
       </div>
     </aside>

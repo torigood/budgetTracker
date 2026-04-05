@@ -1,9 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, List, Camera, BarChart2, Settings } from 'lucide-react'
+import { LayoutDashboard, CalendarDays, Camera, BarChart2, Settings } from 'lucide-react'
 
 const tabs = [
   { to: '/dashboard', icon: LayoutDashboard, label: '홈' },
-  { to: '/transactions', icon: List, label: '거래' },
+  { to: '/calendar', icon: CalendarDays, label: '캘린더' },
   { to: '/receipt', icon: Camera, label: '영수증', fab: true },
   { to: '/analytics', icon: BarChart2, label: '분석' },
   { to: '/settings', icon: Settings, label: '설정' },

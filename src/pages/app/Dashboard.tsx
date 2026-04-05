@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, Minus, ArrowRight, Plus } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useUIStore } from '@/lib/stores/ui.store'
+import { useT } from '@/lib/hooks/useT'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton, TransactionSkeleton } from '@/components/ui/Skeleton'
 import { CategoryBadge } from '@/components/ui/Badge'
@@ -10,16 +11,17 @@ import { formatCurrency, formatDateShort } from '@/utils/format'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { selectedMonth, setSelectedMonth } = useUIStore()
+  const { selectedMonth, setSelectedMonth, currency } = useUIStore()
   const { data, isLoading } = useDashboard(selectedMonth)
+  const t = useT()
 
   return (
     <div className="pb-6">
       {/* Header */}
       <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
         <div>
-          <p className="text-xs text-slate-400 font-medium">대시보드</p>
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">가계부</h1>
+          <p className="text-xs text-slate-400 font-medium">{t('dashboard_subtitle')}</p>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{t('dashboard_title')}</h1>
         </div>
         <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
       </header>
@@ -33,22 +35,25 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-3 gap-3">
             <SummaryCard
-              label="지출"
+              label={t('dashboard_expense')}
               amount={data?.totalExpense ?? 0}
               type="expense"
               icon={<TrendingDown className="h-3.5 w-3.5" />}
+              currency={currency}
             />
             <SummaryCard
-              label="수입"
+              label={t('dashboard_income')}
               amount={data?.totalIncome ?? 0}
               type="income"
               icon={<TrendingUp className="h-3.5 w-3.5" />}
+              currency={currency}
             />
             <SummaryCard
-              label="순손익"
+              label={t('dashboard_net')}
               amount={data?.netBalance ?? 0}
               type={(data?.netBalance ?? 0) >= 0 ? 'income' : 'expense'}
               icon={<Minus className="h-3.5 w-3.5" />}
+              currency={currency}
             />
           </div>
         )}
@@ -59,8 +64,8 @@ export default function Dashboard() {
           className="flex w-full items-center justify-between rounded-2xl bg-indigo-500 px-5 py-4 text-white shadow-md shadow-indigo-500/25 active:scale-[0.98] transition"
         >
           <div>
-            <p className="text-xs font-medium text-indigo-200">새 거래 추가</p>
-            <p className="text-sm font-semibold">수입 또는 지출을 기록하세요</p>
+            <p className="text-xs font-medium text-indigo-200">{t('dashboard_add_prompt')}</p>
+            <p className="text-sm font-semibold">{t('dashboard_add_desc')}</p>
           </div>
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
             <Plus className="h-5 w-5" />
@@ -70,7 +75,7 @@ export default function Dashboard() {
         {/* 카테고리 도넛 차트 */}
         {!isLoading && data && data.categoryBreakdown.length > 0 && (
           <div className="card p-4">
-            <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">카테고리별 지출</h2>
+            <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard_category_chart')}</h2>
             <div className="flex items-center gap-4">
               <div className="relative shrink-0">
                 <ResponsiveContainer width={110} height={110}>
@@ -90,7 +95,7 @@ export default function Dashboard() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(v) => formatCurrency(v as number)}
+                      formatter={(v) => formatCurrency(v as number, currency)}
                       contentStyle={{
                         borderRadius: '10px',
                         border: '1px solid #e2e8f0',
@@ -106,7 +111,7 @@ export default function Dashboard() {
                   <div key={cat.id} className="flex items-center justify-between gap-2">
                     <CategoryBadge color={cat.color} label={cat.name} size="sm" />
                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums shrink-0">
-                      {formatCurrency(cat.amount)}
+                      {formatCurrency(cat.amount, currency)}
                     </span>
                   </div>
                 ))}
@@ -118,12 +123,12 @@ export default function Dashboard() {
         {/* 최근 거래 */}
         <div className="card overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 dark:border-slate-700/50">
-            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">최근 거래</h2>
+            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard_recent')}</h2>
             <button
               onClick={() => navigate('/transactions')}
               className="flex items-center gap-1 text-xs font-medium text-indigo-500 hover:text-indigo-600 transition-colors"
             >
-              전체보기 <ArrowRight className="h-3 w-3" />
+              {t('dashboard_view_all')} <ArrowRight className="h-3 w-3" />
             </button>
           </div>
 
@@ -131,12 +136,12 @@ export default function Dashboard() {
             Array.from({ length: 5 }).map((_, i) => <TransactionSkeleton key={i} />)
           ) : !data?.recentTransactions.length ? (
             <div className="px-4 py-10 text-center">
-              <p className="text-sm text-slate-400">거래 내역이 없습니다</p>
+              <p className="text-sm text-slate-400">{t('dashboard_empty')}</p>
               <button
                 onClick={() => navigate('/transactions/new')}
                 className="mt-2 text-xs font-medium text-indigo-500 hover:text-indigo-600 transition-colors"
               >
-                첫 거래 추가하기 →
+                {t('dashboard_add_first')}
               </button>
             </div>
           ) : (
@@ -183,11 +188,13 @@ function SummaryCard({
   amount,
   type,
   icon,
+  currency,
 }: {
   label: string
   amount: number
   type: SummaryType
   icon: React.ReactNode
+  currency: string
 }) {
   const styles: Record<SummaryType, { bg: string; icon: string; amount: string }> = {
     expense: {
@@ -216,7 +223,7 @@ function SummaryCard({
       </div>
       <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">{label}</p>
       <p className={`text-sm font-bold tabular-nums leading-tight ${s.amount}`}>
-        {formatCurrency(Math.abs(amount))}
+        {formatCurrency(Math.abs(amount), currency)}
       </p>
     </div>
   )

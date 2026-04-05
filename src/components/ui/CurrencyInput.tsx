@@ -11,25 +11,27 @@ export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
             {label}
           </label>
         )}
         <div className="relative flex items-center">
-          <span className="absolute left-3 text-sm font-medium text-gray-400">{currency}</span>
+          <span className="absolute left-4 text-sm font-semibold text-slate-400 select-none">{currency}</span>
           <input
             ref={ref}
             type="number"
             inputMode="decimal"
             min="0"
             step="0.01"
-            className={`w-full rounded-xl border bg-white dark:bg-gray-800 py-3 pl-14 pr-4 text-right text-xl font-semibold outline-none transition focus:border-blue-500 dark:border-gray-700 dark:text-white ${
-              error ? 'border-red-400' : 'border-gray-200'
+            className={`w-full rounded-xl border bg-white dark:bg-slate-800 py-3.5 pl-16 pr-4 text-right text-2xl font-bold outline-none transition focus:ring-3 dark:text-white ${
+              error
+                ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-500/10'
+                : 'border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/10'
             } ${className}`}
             {...props}
           />
         </div>
-        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+        {error && <p className="mt-1.5 text-xs text-rose-500">{error}</p>}
       </div>
     )
   }

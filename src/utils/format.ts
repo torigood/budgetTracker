@@ -1,8 +1,21 @@
+const CURRENCY_LOCALE_MAP: Record<string, string> = {
+  KRW: 'ko-KR',
+  CAD: 'en-CA',
+  USD: 'en-US',
+  JPY: 'ja-JP',
+  EUR: 'de-DE',
+  GBP: 'en-GB',
+}
+
 export function formatCurrency(amount: number, currency = 'CAD'): string {
-  return new Intl.NumberFormat('en-CA', {
+  const locale = CURRENCY_LOCALE_MAP[currency] ?? 'en-CA'
+  // KRW/JPY are whole-number currencies — no decimals
+  const noDecimals = currency === 'KRW' || currency === 'JPY'
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency,
-    minimumFractionDigits: 2,
+    minimumFractionDigits: noDecimals ? 0 : 2,
+    maximumFractionDigits: noDecimals ? 0 : 2,
   }).format(amount)
 }
 

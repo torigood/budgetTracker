@@ -14,6 +14,7 @@ import TransactionEdit from '@/pages/app/TransactionEdit'
 import Receipt from '@/pages/app/Receipt'
 import Analytics from '@/pages/app/Analytics'
 import Recurring from '@/pages/app/Recurring'
+import Calendar from '@/pages/app/Calendar'
 import Settings from '@/pages/app/Settings'
 import SettingsCategories from '@/pages/app/SettingsCategories'
 import NotFound from '@/pages/NotFound'
@@ -30,6 +31,7 @@ const router = createBrowserRouter([
       { path: '/transactions/:id/edit', element: <TransactionEdit /> },
       { path: '/receipt', element: <Receipt /> },
       { path: '/analytics', element: <Analytics /> },
+      { path: '/calendar', element: <Calendar /> },
       { path: '/recurring', element: <Recurring /> },
       { path: '/settings', element: <Settings /> },
       { path: '/settings/categories', element: <SettingsCategories /> },

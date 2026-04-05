@@ -14,21 +14,23 @@ function addMonths(month: string, delta: number): string {
 
 export function MonthSelector({ value, onChange }: MonthSelectorProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1">
       <button
         onClick={() => onChange(addMonths(value, -1))}
-        className="rounded-full p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95"
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 active:scale-95 transition"
+        aria-label="이전 달"
       >
-        <ChevronLeft className="h-5 w-5" />
+        <ChevronLeft className="h-4 w-4" />
       </button>
-      <span className="min-w-[100px] text-center text-sm font-semibold text-gray-800 dark:text-gray-200">
+      <span className="min-w-[96px] text-center text-sm font-semibold text-slate-800 dark:text-slate-200">
         {getMonthLabel(value)}
       </span>
       <button
         onClick={() => onChange(addMonths(value, 1))}
-        className="rounded-full p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95"
+        className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 active:scale-95 transition"
+        aria-label="다음 달"
       >
-        <ChevronRight className="h-5 w-5" />
+        <ChevronRight className="h-4 w-4" />
       </button>
     </div>
   )

@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRecurringItems, useCreateRecurring, useUpdateRecurring, useDeleteRecurring, type RecurringWithCategory } from '@/lib/hooks/useRecurring'
 import { useCategories } from '@/lib/hooks/useCategories'
+import { useUIStore } from '@/lib/stores/ui.store'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { CategoryBadge } from '@/components/ui/Badge'
@@ -22,9 +23,12 @@ const schema = z.object({
 })
 type FormValues = z.infer<typeof schema>
 
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition'
+
 export default function Recurring() {
   const { data: items, isLoading } = useRecurringItems()
   const { data: categories } = useCategories()
+  const { currency } = useUIStore()
   const createMutation = useCreateRecurring()
   const updateMutation = useUpdateRecurring()
   const deleteMutation = useDeleteRecurring()
@@ -33,15 +37,14 @@ export default function Recurring() {
   const [editItem, setEditItem] = useState<RecurringItem | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: { payment_method: '자동지출', day_of_month: 1 },
   })
 
-  const totalMonthly = (items as RecurringWithCategory[] | undefined)
-    ?.filter((i) => i.is_active)
-    .reduce((sum, i) => sum + i.amount, 0) ?? 0
+  const recurringItems = items as RecurringWithCategory[] | undefined
+  const totalMonthly = recurringItems?.filter((i) => i.is_active).reduce((sum, i) => sum + i.amount, 0) ?? 0
 
   function openCreate() {
     setEditItem(null)
@@ -95,43 +98,65 @@ export default function Recurring() {
       <PageHeader
         title="자동지출"
         action={
-          <button onClick={openCreate} className="flex items-center gap-1 rounded-xl bg-blue-500 px-3 py-1.5 text-sm font-medium text-white">
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-3.5 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-500/25 hover:bg-indigo-600 transition active:scale-95"
+          >
             <Plus className="h-4 w-4" /> 추가
           </button>
         }
       />
 
-      {/* 이번 달 합계 */}
-      <div className="mx-4 mt-4 rounded-2xl bg-white dark:bg-gray-900 px-4 py-3 shadow-sm flex justify-between items-center">
-        <span className="text-sm text-gray-500">이번 달 자동지출 합계</span>
-        <span className="text-base font-bold text-red-500">{formatCurrency(totalMonthly)}</span>
+      {/* 이번 달 합계 배너 */}
+      <div className="mx-4 mt-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20 px-4 py-3.5 flex justify-between items-center">
+        <div>
+          <p className="text-xs text-rose-400 font-medium">이번 달 자동지출 합계</p>
+          <p className="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums mt-0.5">
+            {formatCurrency(totalMonthly, currency)}
+          </p>
+        </div>
+        <span className="text-2xl">🔄</span>
       </div>
 
       {/* 목록 */}
-      <div className="mt-4 divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+      <div className="mt-4 card mx-4 divide-y divide-slate-100 dark:divide-slate-800">
         {isLoading ? (
-          <p className="py-8 text-center text-sm text-gray-400">로딩 중...</p>
-        ) : !(items as RecurringWithCategory[])?.length ? (
-          <p className="py-8 text-center text-sm text-gray-400">자동지출이 없습니다</p>
+          <p className="py-8 text-center text-sm text-slate-400">불러오는 중...</p>
+        ) : !recurringItems?.length ? (
+          <p className="py-8 text-center text-sm text-slate-400">자동지출이 없습니다</p>
         ) : (
-          (items as RecurringWithCategory[]).map((item) => (
-            <div key={item.id} className={`flex items-center gap-3 px-4 py-3 ${!item.is_active ? 'opacity-50' : ''}`}>
+          recurringItems.map((item) => (
+            <div key={item.id} className={`flex items-center gap-3 px-4 py-3.5 transition ${!item.is_active ? 'opacity-40' : ''}`}>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">{item.description}</span>
-                  {item.categories && <CategoryBadge color={item.categories.color} label={item.categories.name} size="sm" />}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-medium text-slate-900 dark:text-white">{item.description}</span>
+                  {item.categories && (
+                    <CategoryBadge color={item.categories.color} label={item.categories.name} size="sm" />
+                  )}
                 </div>
-                <p className="mt-0.5 text-xs text-gray-400">매달 {item.day_of_month}일 · {item.payment_method}</p>
+                <p className="mt-0.5 text-xs text-slate-400">매달 {item.day_of_month}일 · {item.payment_method}</p>
               </div>
-              <span className="text-sm font-semibold text-red-500 tabular-nums shrink-0">{formatCurrency(item.amount)}</span>
-              <div className="flex items-center gap-1">
-                <button onClick={() => toggleActive(item)} className={`p-1.5 rounded-lg ${item.is_active ? 'text-blue-500' : 'text-gray-300'}`}>
+              <span className="text-sm font-bold text-rose-500 tabular-nums shrink-0">
+                {formatCurrency(item.amount, currency)}
+              </span>
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  onClick={() => toggleActive(item)}
+                  title={item.is_active ? '비활성화' : '활성화'}
+                  className={`p-2 rounded-lg transition ${item.is_active ? 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                >
                   <Power className="h-4 w-4" />
                 </button>
-                <button onClick={() => openEdit(item)} className="p-1.5 text-gray-400 rounded-lg">
+                <button
+                  onClick={() => openEdit(item)}
+                  className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition"
+                >
                   <Edit2 className="h-4 w-4" />
                 </button>
-                <button onClick={() => setDeleteId(item.id)} className="p-1.5 text-gray-400 rounded-lg">
+                <button
+                  onClick={() => setDeleteId(item.id)}
+                  className="p-2 rounded-lg text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -140,37 +165,89 @@ export default function Recurring() {
         )}
       </div>
 
-      {/* 폼 시트 */}
+      {/* Bottom sheet 폼 */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center" onClick={() => setShowForm(false)}>
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="relative z-10 w-full max-w-sm rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="mb-4 text-base font-bold">{editItem ? '수정' : '자동지출 추가'}</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+          onClick={() => setShowForm(false)}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full max-w-sm rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 max-h-[90vh] overflow-y-auto shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-5 text-base font-bold text-slate-900 dark:text-white">
+              {editItem ? '자동지출 수정' : '자동지출 추가'}
+            </h3>
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-3">
-              <select {...register('category_id')} className="w-full rounded-xl border dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm">
-                <option value="">카테고리 선택</option>
-                {categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              {errors.category_id && <p className="text-xs text-red-500">{errors.category_id.message}</p>}
-              <input {...register('description')} placeholder="내용" className="w-full rounded-xl border dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm" />
-              <input {...register('amount')} type="number" step="0.01" placeholder="금액" className="w-full rounded-xl border dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm" />
-              <div className="flex gap-2">
-                <input {...register('day_of_month')} type="number" min={1} max={31} placeholder="날짜(일)" className="w-24 rounded-xl border dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm" />
-                <select {...register('payment_method')} className="flex-1 rounded-xl border dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 text-sm">
-                  {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+            <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-3.5">
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">카테고리</label>
+                <select
+                  {...register('category_id')}
+                  className={inputClass}
+                >
+                  <option value="">카테고리 선택</option>
+                  {categories?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
+                {errors.category_id && <p className="mt-1 text-xs text-rose-500">{errors.category_id.message}</p>}
               </div>
-              <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setShowForm(false)} className="flex-1 rounded-xl border dark:border-gray-700 py-2.5 text-sm font-medium">취소</button>
-                <button type="submit" className="flex-1 rounded-xl bg-blue-500 py-2.5 text-sm font-medium text-white">저장</button>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">내용</label>
+                <input {...register('description')} placeholder="예: 넷플릭스 구독" className={inputClass} />
+                {errors.description && <p className="mt-1 text-xs text-rose-500">{errors.description.message}</p>}
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">금액</label>
+                <input {...register('amount')} type="number" step="0.01" placeholder="0" className={inputClass} />
+                {errors.amount && <p className="mt-1 text-xs text-rose-500">{errors.amount.message}</p>}
+              </div>
+
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">매달 N일</label>
+                  <input {...register('day_of_month')} type="number" min={1} max={31} placeholder="1" className={inputClass} />
+                </div>
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">결제수단</label>
+                  <select {...register('payment_method')} className={inputClass}>
+                    {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 rounded-xl bg-indigo-500 py-3 text-sm font-semibold text-white hover:bg-indigo-600 disabled:opacity-60 transition"
+                >
+                  저장
+                </button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      <ConfirmDialog open={!!deleteId} title="삭제할까요?" danger confirmLabel="삭제" onConfirm={handleDelete} onCancel={() => setDeleteId(null)} />
+      <ConfirmDialog
+        open={!!deleteId}
+        title="삭제할까요?"
+        description="이 자동지출 항목이 영구 삭제됩니다."
+        danger
+        confirmLabel="삭제"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   )
 }
