@@ -24,6 +24,7 @@ export const translations = {
     dashboard_category_chart: '카테고리별 지출',
     dashboard_recent: '최근 거래',
     dashboard_view_all: '전체보기',
+    dashboard_view_calendar: '캘린더로 보기',
     dashboard_empty: '거래 내역이 없습니다',
     dashboard_add_first: '첫 거래 추가하기 →',
 
@@ -287,6 +288,7 @@ export const translations = {
     dashboard_category_chart: 'Spending by category',
     dashboard_recent: 'Recent transactions',
     dashboard_view_all: 'View all',
+    dashboard_view_calendar: 'Calendar view',
     dashboard_empty: 'No transactions yet',
     dashboard_add_first: 'Add your first →',
 

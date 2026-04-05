@@ -103,6 +103,7 @@ export interface Database {
           category_id: string
           description: string
           amount: number
+          currency: string
           payment_method: string
           day_of_month: number
           is_active: boolean
@@ -114,6 +115,7 @@ export interface Database {
           category_id: string
           description: string
           amount: number
+          currency?: string
           payment_method: string
           day_of_month: number
           is_active?: boolean
@@ -125,6 +127,7 @@ export interface Database {
           category_id?: string
           description?: string
           amount?: number
+          currency?: string
           payment_method?: string
           day_of_month?: number
           is_active?: boolean

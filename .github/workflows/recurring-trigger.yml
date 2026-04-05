@@ -1,0 +1,19 @@
+name: Recurring Trigger
+
+on:
+  schedule:
+    # 매일 오전 9시 (UTC 00:00) 실행
+    - cron: '0 0 * * *'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call recurring-trigger Edge Function
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.SUPABASE_URL }}/functions/v1/recurring-trigger" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+          | grep -E "^2" || (echo "Edge Function call failed" && exit 1)

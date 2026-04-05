@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, CalendarDays, Camera, BarChart2, Settings } from 'lucide-react'
+import { LayoutDashboard, List, Camera, BarChart2, RefreshCw, Settings } from 'lucide-react'
 import { useT } from '@/lib/hooks/useT'
 
 export function BottomNav() {
@@ -8,8 +8,9 @@ export function BottomNav() {
 
   const tabs = [
     { to: '/dashboard', icon: LayoutDashboard, label: t('nav_home') },
-    { to: '/calendar', icon: CalendarDays, label: t('nav_calendar') },
+    { to: '/transactions', icon: List, label: t('nav_transactions') },
     { to: '/receipt', icon: Camera, label: t('nav_receipt'), fab: true },
+    { to: '/recurring', icon: RefreshCw, label: t('nav_recurring') },
     { to: '/analytics', icon: BarChart2, label: t('nav_analytics') },
     { to: '/settings', icon: Settings, label: t('nav_settings') },
   ]

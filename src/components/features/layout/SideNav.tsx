@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, List, Camera, BarChart2, Settings, RefreshCw, CalendarDays, LogOut } from 'lucide-react'
+import { LayoutDashboard, List, Camera, BarChart2, Settings, RefreshCw, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useT } from '@/lib/hooks/useT'
@@ -10,7 +10,6 @@ export function SideNav() {
   const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
     { to: '/transactions', icon: List, label: t('nav_transactions') },
-    { to: '/calendar', icon: CalendarDays, label: t('nav_calendar') },
     { to: '/receipt', icon: Camera, label: t('nav_receipt') },
     { to: '/analytics', icon: BarChart2, label: t('nav_analytics') },
     { to: '/recurring', icon: RefreshCw, label: t('nav_recurring') },

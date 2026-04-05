@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRecurringItems, useCreateRecurring, useUpdateRecurring, useDeleteRecurring, type RecurringWithCategory } from '@/lib/hooks/useRecurring'
 import { useCategories } from '@/lib/hooks/useCategories'
-import { useUIStore } from '@/lib/stores/ui.store'
+import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { CategoryBadge } from '@/components/ui/Badge'
@@ -18,6 +18,7 @@ const schema = z.object({
   category_id: z.string().min(1, '카테고리 선택 필요'),
   description: z.string().min(1, '내용 입력 필요'),
   amount: z.coerce.number().positive('금액을 입력해주세요'),
+  currency: z.string().min(1),
   payment_method: z.string().min(1),
   day_of_month: z.coerce.number().int().min(1).max(31),
 })
@@ -28,7 +29,7 @@ const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-
 export default function Recurring() {
   const { data: items, isLoading } = useRecurringItems()
   const { data: categories } = useCategories()
-  const { currency } = useUIStore()
+  const { currency: defaultCurrency } = useUIStore()
   const createMutation = useCreateRecurring()
   const updateMutation = useUpdateRecurring()
   const deleteMutation = useDeleteRecurring()
@@ -48,7 +49,7 @@ export default function Recurring() {
 
   function openCreate() {
     setEditItem(null)
-    reset({ payment_method: '자동지출', day_of_month: 1 })
+    reset({ payment_method: '자동지출', day_of_month: 1, currency: defaultCurrency })
     setShowForm(true)
   }
 
@@ -58,6 +59,7 @@ export default function Recurring() {
       category_id: item.category_id,
       description: item.description,
       amount: item.amount,
+      currency: item.currency ?? defaultCurrency,
       payment_method: item.payment_method,
       day_of_month: item.day_of_month,
     })
@@ -112,7 +114,7 @@ export default function Recurring() {
         <div>
           <p className="text-xs text-rose-400 font-medium">이번 달 자동지출 합계</p>
           <p className="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums mt-0.5">
-            {formatCurrency(totalMonthly, currency)}
+            {formatCurrency(totalMonthly, defaultCurrency)}
           </p>
         </div>
         <span className="text-2xl">🔄</span>
@@ -137,7 +139,7 @@ export default function Recurring() {
                 <p className="mt-0.5 text-xs text-slate-400">매달 {item.day_of_month}일 · {item.payment_method}</p>
               </div>
               <span className="text-sm font-bold text-rose-500 tabular-nums shrink-0">
-                {formatCurrency(item.amount, currency)}
+                {formatCurrency(item.amount, item.currency ?? defaultCurrency)}
               </span>
               <div className="flex items-center gap-0.5 shrink-0">
                 <button
@@ -199,10 +201,20 @@ export default function Recurring() {
                 {errors.description && <p className="mt-1 text-xs text-rose-500">{errors.description.message}</p>}
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">금액</label>
-                <input {...register('amount')} type="number" step="0.01" placeholder="0" className={inputClass} />
-                {errors.amount && <p className="mt-1 text-xs text-rose-500">{errors.amount.message}</p>}
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">금액</label>
+                  <input {...register('amount')} type="number" step="0.01" placeholder="0" className={inputClass} />
+                  {errors.amount && <p className="mt-1 text-xs text-rose-500">{errors.amount.message}</p>}
+                </div>
+                <div className="w-28">
+                  <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">통화</label>
+                  <select {...register('currency')} className={inputClass}>
+                    {SUPPORTED_CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.code}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="flex gap-3">

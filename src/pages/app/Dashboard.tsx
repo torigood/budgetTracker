@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp, TrendingDown, Minus, ArrowRight, Plus } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus, ArrowRight, Plus, CalendarDays } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useWidgetStats } from '@/lib/hooks/useWidgetStats'
@@ -196,10 +196,10 @@ export default function Dashboard() {
           <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 dark:border-slate-700/50">
             <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard_recent')}</h2>
             <button
-              onClick={() => { setFilterMonth(selectedMonth); navigate('/transactions') }}
+              onClick={() => navigate('/calendar')}
               className="flex items-center gap-1 text-xs font-medium text-indigo-500 hover:text-indigo-600 transition-colors"
             >
-              {t('dashboard_view_all')} <ArrowRight className="h-3 w-3" />
+              <CalendarDays className="h-3 w-3" /> {t('dashboard_view_calendar')}
             </button>
           </div>
 

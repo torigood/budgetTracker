@@ -56,7 +56,7 @@ serve(async (req) => {
       category_id: item.category_id,
       description: item.description,
       amount: item.amount,
-      currency: 'CAD',
+      currency: item.currency ?? 'CAD',
       payment_method: '자동지출',
       memo: '자동지출 자동 생성',
     })
