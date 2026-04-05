@@ -1,17 +1,22 @@
 import { useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { ArrowLeft, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Eye, EyeOff, Languages } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
+import { useUIStore } from '@/lib/stores/ui.store'
+import { useT } from '@/lib/hooks/useT'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 export default function Login() {
   const { user, loading } = useAuthStore()
+  const { lang, setLang } = useUIStore()
+  const t = useT()
+  const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [isSignUp, setIsSignUp] = useState(false)
+  const [isSignUp, setIsSignUp] = useState(() => searchParams.get('signup') === 'true')
   const [submitting, setSubmitting] = useState(false)
 
   if (loading) return <LoadingSpinner fullScreen />
@@ -36,23 +41,26 @@ export default function Login() {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password })
         if (error) throw error
-        toast.success('가입 완료! 이메일을 확인해주세요.')
+        toast.success(t('login_success_signup'))
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '오류가 발생했습니다')
+      toast.error(err instanceof Error ? err.message : t('login_error'))
     } finally {
       setSubmitting(false)
     }
   }
 
+  const heroItems = lang === 'ko'
+    ? ['카테고리별 지출 분석', 'AI 영수증 자동 인식', '반복 지출 자동 기록', '실시간 멀티 기기 동기화']
+    : ['Category expense analytics', 'AI receipt auto-scan', 'Auto-log recurring expenses', 'Real-time multi-device sync']
+
   return (
     <div className="flex min-h-svh bg-white dark:bg-slate-950">
       {/* Left panel — branding (desktop only) */}
       <div className="hidden lg:flex lg:w-[52%] flex-col justify-between bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 p-12 relative overflow-hidden">
-        {/* Decorative blobs */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute bottom-0 -left-10 h-64 w-64 rounded-full bg-purple-400/20 blur-3xl" />
@@ -64,22 +72,15 @@ export default function Login() {
         </div>
 
         <div className="relative">
-          <h2 className="text-4xl font-extrabold text-white leading-tight">
-            돈의 흐름을<br />
-            <span className="text-indigo-200">한눈에</span> 파악하세요
+          <h2 className="text-4xl font-extrabold text-white leading-tight whitespace-pre-line">
+            {t('login_hero_title')}
           </h2>
           <p className="mt-4 text-indigo-200 text-sm leading-relaxed max-w-sm">
-            수입·지출 기록부터 AI 영수증 인식, 카테고리 분석까지.
-            스마트한 가계부로 재정 목표를 달성하세요.
+            {t('login_hero_desc')}
           </p>
 
           <div className="mt-8 space-y-3">
-            {[
-              '카테고리별 지출 분석',
-              'AI 영수증 자동 인식',
-              '반복 지출 자동 기록',
-              '실시간 멀티 기기 동기화',
-            ].map((item) => (
+            {heroItems.map((item) => (
               <div key={item} className="flex items-center gap-2.5 text-sm text-white/90">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs">✓</span>
                 {item}
@@ -95,15 +96,23 @@ export default function Login() {
 
       {/* Right panel — form */}
       <div className="flex flex-1 flex-col items-center justify-center px-6 py-12">
-        {/* Back to home link */}
-        <div className="mb-8 w-full max-w-sm">
+        {/* Top bar */}
+        <div className="mb-8 w-full max-w-sm flex items-center justify-between">
           <Link
             to="/"
             className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            홈으로
+            {t('login_back')}
           </Link>
+          {/* Language toggle */}
+          <button
+            onClick={() => setLang(lang === 'ko' ? 'en' : 'ko')}
+            className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition"
+          >
+            <Languages className="h-3.5 w-3.5" />
+            {lang === 'ko' ? 'English' : '한국어'}
+          </button>
         </div>
 
         <div className="w-full max-w-sm">
@@ -114,12 +123,10 @@ export default function Login() {
           </div>
 
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-            {isSignUp ? '계정 만들기' : '다시 오셨군요!'}
+            {isSignUp ? t('login_title_signup') : t('login_title_signin')}
           </h2>
           <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
-            {isSignUp
-              ? '무료로 시작하세요 — 신용카드 불필요'
-              : '계정에 로그인하세요'}
+            {isSignUp ? t('login_subtitle_signup') : t('login_subtitle_signin')}
           </p>
 
           {/* Google OAuth */}
@@ -134,7 +141,7 @@ export default function Login() {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Google로 {isSignUp ? '가입' : '로그인'}
+            {isSignUp ? t('login_google_signup') : t('login_google_signin')}
           </button>
 
           {/* Divider */}
@@ -143,7 +150,7 @@ export default function Login() {
               <div className="w-full border-t border-slate-200 dark:border-slate-700" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white dark:bg-slate-950 px-3 text-xs text-slate-400">또는 이메일로 계속</span>
+              <span className="bg-white dark:bg-slate-950 px-3 text-xs text-slate-400">{t('login_or')}</span>
             </div>
           </div>
 
@@ -151,7 +158,7 @@ export default function Login() {
           <form onSubmit={handleEmailAuth} className="space-y-3">
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300">
-                이메일
+                {t('login_email')}
               </label>
               <input
                 type="email"
@@ -159,23 +166,23 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition"
               />
             </div>
 
             <div>
               <label className="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300">
-                비밀번호
+                {t('login_password')}
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="6자리 이상"
+                  placeholder={t('login_password_hint')}
                   required
                   minLength={6}
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 pr-11 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 pr-11 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition"
                 />
                 <button
                   type="button"
@@ -194,17 +201,17 @@ export default function Login() {
               className="btn btn-primary flex w-full items-center justify-center gap-2 py-3"
             >
               {submitting ? <LoadingSpinner size="sm" /> : null}
-              {isSignUp ? '회원가입' : '로그인'}
+              {isSignUp ? t('login_submit_signup') : t('login_submit_signin')}
             </button>
           </form>
 
           <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
-            {isSignUp ? '이미 계정이 있으신가요?' : '계정이 없으신가요?'}{' '}
+            {isSignUp ? t('login_has_account') : t('login_no_account')}{' '}
             <button
               onClick={() => setIsSignUp(!isSignUp)}
               className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-colors"
             >
-              {isSignUp ? '로그인' : '회원가입'}
+              {isSignUp ? t('login_go_signin') : t('login_go_signup')}
             </button>
           </p>
         </div>

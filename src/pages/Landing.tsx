@@ -1,56 +1,39 @@
 import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { TrendingUp, PieChart, RefreshCw, Camera, ShieldCheck, Zap, ArrowRight, Check } from 'lucide-react'
+import { TrendingUp, PieChart, RefreshCw, Camera, ShieldCheck, Zap, ArrowRight, Check, Languages } from 'lucide-react'
 import { useAuthStore } from '@/lib/stores/auth.store'
-
-const features = [
-  {
-    icon: TrendingUp,
-    title: '실시간 자산 현황',
-    desc: '수입·지출을 한눈에 파악하고 월별 순손익을 즉시 확인하세요.',
-    color: 'bg-indigo-50 text-indigo-600',
-  },
-  {
-    icon: PieChart,
-    title: '카테고리 분석',
-    desc: '카테고리별 지출 비중을 시각화하여 소비 패턴을 파악합니다.',
-    color: 'bg-emerald-50 text-emerald-600',
-  },
-  {
-    icon: Camera,
-    title: 'AI 영수증 인식',
-    desc: '영수증 사진만 찍으면 자동으로 거래 내역이 입력됩니다.',
-    color: 'bg-rose-50 text-rose-600',
-  },
-  {
-    icon: RefreshCw,
-    title: '자동 지출 관리',
-    desc: '정기 구독·공과금 등 반복 지출을 자동으로 기록합니다.',
-    color: 'bg-amber-50 text-amber-600',
-  },
-  {
-    icon: ShieldCheck,
-    title: '보안 & 동기화',
-    desc: 'Supabase 기반 실시간 동기화로 모든 기기에서 안전하게.',
-    color: 'bg-sky-50 text-sky-600',
-  },
-  {
-    icon: Zap,
-    title: '빠른 거래 입력',
-    desc: '단축키 N 하나로 어디서든 즉시 거래를 기록하세요.',
-    color: 'bg-purple-50 text-purple-600',
-  },
-]
-
-const highlights = ['무료로 시작', '카드 불필요', '광고 없음']
+import { useUIStore } from '@/lib/stores/ui.store'
 
 export default function Landing() {
   const { user, loading } = useAuthStore()
+  const { lang, setLang } = useUIStore()
   const navigate = useNavigate()
 
   useEffect(() => {
     if (!loading && user) navigate('/dashboard', { replace: true })
   }, [user, loading, navigate])
+
+  const ko = lang === 'ko'
+
+  const features = ko ? [
+    { icon: TrendingUp, title: '실시간 자산 현황', desc: '수입·지출을 한눈에 파악하고 월별 순손익을 즉시 확인하세요.', color: 'bg-indigo-50 text-indigo-600' },
+    { icon: PieChart, title: '카테고리 분석', desc: '카테고리별 지출 비중을 시각화하여 소비 패턴을 파악합니다.', color: 'bg-emerald-50 text-emerald-600' },
+    { icon: Camera, title: 'AI 영수증 인식', desc: '영수증 사진만 찍으면 자동으로 거래 내역이 입력됩니다.', color: 'bg-rose-50 text-rose-600' },
+    { icon: RefreshCw, title: '자동 지출 관리', desc: '정기 구독·공과금 등 반복 지출을 자동으로 기록합니다.', color: 'bg-amber-50 text-amber-600' },
+    { icon: ShieldCheck, title: '보안 & 동기화', desc: 'Supabase 기반 실시간 동기화로 모든 기기에서 안전하게.', color: 'bg-sky-50 text-sky-600' },
+    { icon: Zap, title: '빠른 거래 입력', desc: '단축키 N 하나로 어디서든 즉시 거래를 기록하세요.', color: 'bg-purple-50 text-purple-600' },
+  ] : [
+    { icon: TrendingUp, title: 'Real-time overview', desc: 'See income and expenses at a glance and check monthly net instantly.', color: 'bg-indigo-50 text-indigo-600' },
+    { icon: PieChart, title: 'Category analytics', desc: 'Visualize spending by category and understand your habits.', color: 'bg-emerald-50 text-emerald-600' },
+    { icon: Camera, title: 'AI receipt scanning', desc: 'Just take a photo of your receipt — transactions are auto-filled.', color: 'bg-rose-50 text-rose-600' },
+    { icon: RefreshCw, title: 'Recurring expenses', desc: 'Auto-log subscriptions and bills without any manual entry.', color: 'bg-amber-50 text-amber-600' },
+    { icon: ShieldCheck, title: 'Secure & synced', desc: 'Real-time Supabase sync keeps your data safe across all devices.', color: 'bg-sky-50 text-sky-600' },
+    { icon: Zap, title: 'Quick entry', desc: 'Press N anywhere to instantly log a transaction.', color: 'bg-purple-50 text-purple-600' },
+  ]
+
+  const highlights = ko
+    ? ['무료로 시작', '카드 불필요', '광고 없음']
+    : ['Free to start', 'No credit card', 'No ads']
 
   return (
     <div className="min-h-svh flex flex-col bg-white dark:bg-slate-950">
@@ -61,18 +44,25 @@ export default function Landing() {
             <img src="/icons/logo512.png" alt="Budget Tracker" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
             <span className="text-base font-bold text-slate-900 dark:text-white">Budget Tracker</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setLang(ko ? 'en' : 'ko')}
+              className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition"
+            >
+              <Languages className="h-3.5 w-3.5" />
+              {ko ? 'EN' : '한국어'}
+            </button>
             <Link
               to="/login"
-              className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors px-2"
             >
-              로그인
+              {ko ? '로그인' : 'Sign in'}
             </Link>
             <Link
-              to="/login"
+              to="/login?signup=true"
               className="btn btn-primary text-sm px-4 py-2"
             >
-              무료 시작
+              {ko ? '무료 시작' : 'Get started'}
             </Link>
           </div>
         </div>
@@ -81,7 +71,6 @@ export default function Landing() {
       <main className="flex-1">
         {/* Hero */}
         <section className="relative overflow-hidden">
-          {/* Background gradient blobs */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-indigo-100 dark:bg-indigo-900/20 blur-3xl opacity-60" />
             <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-purple-100 dark:bg-purple-900/20 blur-3xl opacity-40" />
@@ -90,29 +79,30 @@ export default function Landing() {
           <div className="relative mx-auto max-w-6xl px-6 pt-20 pb-16 text-center md:pt-28 md:pb-24">
             <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
               <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse" />
-              지금 바로 시작해보세요
+              {ko ? '지금 바로 시작해보세요' : 'Start tracking today'}
             </div>
 
             <h1 className="mx-auto max-w-3xl text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl md:text-6xl">
-              돈의 흐름을{' '}
-              <span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-                한눈에
-              </span>{' '}
-              파악하세요
+              {ko ? (
+                <>돈의 흐름을{' '}<span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">한눈에</span>{' '}파악하세요</>
+              ) : (
+                <>Track your finances{' '}<span className="bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">at a glance</span></>
+              )}
             </h1>
 
             <p className="mx-auto mt-6 max-w-xl text-base text-slate-500 dark:text-slate-400 sm:text-lg leading-relaxed">
-              수입·지출 기록부터 AI 영수증 인식, 카테고리 분석까지.
-              <br className="hidden sm:block" />
-              스마트한 가계부로 재정 목표를 달성하세요.
+              {ko
+                ? <>수입·지출 기록부터 AI 영수증 인식, 카테고리 분석까지.<br className="hidden sm:block" />스마트한 가계부로 재정 목표를 달성하세요.</>
+                : <>From income tracking to AI receipt scanning and category analytics.<br className="hidden sm:block" />Manage your money smarter.</>
+              }
             </p>
 
             <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
               <Link
-                to="/login"
+                to="/login?signup=true"
                 className="btn btn-primary inline-flex gap-2 px-7 py-3.5 text-base"
               >
-                무료로 시작하기
+                {ko ? '무료로 시작하기' : 'Get started free'}
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <div className="flex items-center gap-3">
@@ -128,14 +118,12 @@ export default function Landing() {
             {/* Mock screenshot card */}
             <div className="mx-auto mt-14 max-w-2xl">
               <div className="relative rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 shadow-xl overflow-hidden">
-                {/* Fake browser bar */}
                 <div className="flex items-center gap-1.5 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3">
                   <span className="h-3 w-3 rounded-full bg-red-400" />
                   <span className="h-3 w-3 rounded-full bg-yellow-400" />
                   <span className="h-3 w-3 rounded-full bg-green-400" />
                   <div className="mx-auto h-5 w-48 rounded-full bg-slate-100 dark:bg-slate-700" />
                 </div>
-                {/* Dashboard preview (simplified) */}
                 <div className="p-5 space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="h-5 w-28 rounded bg-slate-200 dark:bg-slate-700" />
@@ -178,13 +166,12 @@ export default function Landing() {
           <div className="mx-auto max-w-6xl px-6">
             <div className="mb-12 text-center">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
-                필요한 기능, 전부 담았습니다
+                {ko ? '필요한 기능, 전부 담았습니다' : 'Everything you need'}
               </h2>
               <p className="mt-3 text-slate-500 dark:text-slate-400 text-sm sm:text-base">
-                복잡하지 않고, 꼭 필요한 것만 모았습니다.
+                {ko ? '복잡하지 않고, 꼭 필요한 것만 모았습니다.' : 'Simple, focused, and just right.'}
               </p>
             </div>
-
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {features.map(({ icon: Icon, title, desc, color }) => (
                 <div
@@ -209,16 +196,16 @@ export default function Landing() {
               <img src="/icons/logo512.png" alt="Budget Tracker" className="h-full w-full object-cover" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
-              지금 바로 시작하세요
+              {ko ? '지금 바로 시작하세요' : 'Start today'}
             </h2>
             <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">
-              가입 후 즉시 사용 가능. 신용카드 불필요.
+              {ko ? '가입 후 즉시 사용 가능. 신용카드 불필요.' : 'Ready to use after signup. No credit card.'}
             </p>
             <Link
-              to="/login"
+              to="/login?signup=true"
               className="btn btn-primary mt-7 inline-flex gap-2 px-7 py-3.5 text-base"
             >
-              무료로 시작하기 <ArrowRight className="h-4 w-4" />
+              {ko ? '무료로 시작하기' : 'Get started free'} <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </section>
