@@ -1,7 +1,10 @@
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, Minus, ArrowRight, Plus } from 'lucide-react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { useDashboard } from '@/lib/hooks/useDashboard'
+import { useWidgetStats } from '@/lib/hooks/useWidgetStats'
+import { useReminderCheck } from '@/lib/hooks/useNotifications'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { useT } from '@/lib/hooks/useT'
@@ -9,10 +12,12 @@ import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton, TransactionSkeleton } from '@/components/ui/Skeleton'
 import { CategoryBadge } from '@/components/ui/Badge'
 import { formatCurrency, formatDateShort } from '@/utils/format'
+import type { CurrencyRow } from '@/lib/hooks/useWidgetStats'
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { selectedMonth, setSelectedMonth } = useUIStore()
+  useReminderCheck()
   const { data, isLoading } = useDashboard(selectedMonth)
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const t = useT()
@@ -82,6 +87,9 @@ export default function Dashboard() {
             />
           </div>
         )}
+
+        {/* 위젯 배너 */}
+        <WidgetBanner />
 
         {/* 빠른 추가 버튼 */}
         <button
@@ -202,6 +210,137 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ─── Widget Banner ────────────────────────────────────────────────────────────
+
+function CurrencyList({ rows, emptyLabel }: { rows: CurrencyRow[]; emptyLabel: string }) {
+  if (!rows.length) return <p className="text-sm text-slate-400">{emptyLabel}</p>
+  return (
+    <div className="space-y-0.5">
+      {rows.map((r) => (
+        <p key={r.currency} className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+          {formatCurrency(r.amount, r.currency)}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+function WidgetBanner() {
+  const t = useT()
+  const { data, isLoading } = useWidgetStats()
+  const [slide, setSlide] = useState(0)
+  const TOTAL = 3
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const touchStartX = useRef<number | null>(null)
+
+  function resetTimer(nextSlide?: number) {
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => setSlide((s) => (s + 1) % TOTAL), 4000)
+    if (nextSlide !== undefined) setSlide(nextSlide)
+  }
+
+  useEffect(() => {
+    timerRef.current = setInterval(() => setSlide((s) => (s + 1) % TOTAL), 4000)
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  }, [])
+
+  function goTo(idx: number) { resetTimer(idx) }
+
+  function onTouchStart(e: React.TouchEvent) { touchStartX.current = e.touches[0].clientX }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 40) resetTimer((slide + (diff > 0 ? 1 : -1) + TOTAL) % TOTAL)
+    touchStartX.current = null
+  }
+
+  if (isLoading) return <div className="h-24 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+
+  const slides = [
+    // Slide 0: 이번 주 지출
+    {
+      title: t('widget_week'),
+      subtitle: t('widget_week_range')(data?.weekDays ?? 0),
+      content: (
+        <CurrencyList rows={data?.weekExpense ?? []} emptyLabel={t('widget_no_expense')} />
+      ),
+      accent: 'from-indigo-500/10 to-violet-500/10',
+      dot: 'bg-indigo-500',
+    },
+    // Slide 1: 오늘 vs 어제
+    {
+      title: t('widget_today_vs_yesterday'),
+      subtitle: '',
+      content: (
+        <div className="flex items-start gap-5">
+          <div>
+            <p className="text-[10px] text-slate-400 mb-1">{t('widget_today')}</p>
+            <CurrencyList rows={data?.todayExpense ?? []} emptyLabel={t('widget_no_expense')} />
+          </div>
+          <div className="w-px self-stretch bg-slate-200 dark:bg-slate-700" />
+          <div>
+            <p className="text-[10px] text-slate-400 mb-1">{t('widget_yesterday')}</p>
+            <CurrencyList rows={data?.yesterdayExpense ?? []} emptyLabel={t('widget_no_expense')} />
+          </div>
+        </div>
+      ),
+      accent: 'from-rose-500/10 to-orange-500/10',
+      dot: 'bg-rose-500',
+    },
+    // Slide 2: 일평균 비교
+    {
+      title: t('widget_daily_avg'),
+      subtitle: '',
+      content: (
+        <div className="flex items-start gap-5">
+          <div>
+            <p className="text-[10px] text-slate-400 mb-1">{t('widget_this_month')}</p>
+            <CurrencyList rows={(data?.monthDailyAvg ?? []).map(r => ({ ...r, amount: Math.round(r.amount) }))} emptyLabel={t('widget_no_expense')} />
+          </div>
+          <div className="w-px self-stretch bg-slate-200 dark:bg-slate-700" />
+          <div>
+            <p className="text-[10px] text-slate-400 mb-1">{t('widget_last_month')}</p>
+            <CurrencyList rows={(data?.prevMonthDailyAvg ?? []).map(r => ({ ...r, amount: Math.round(r.amount) }))} emptyLabel={t('widget_no_expense')} />
+          </div>
+        </div>
+      ),
+      accent: 'from-emerald-500/10 to-teal-500/10',
+      dot: 'bg-emerald-500',
+    },
+  ]
+
+  const current = slides[slide]
+
+  return (
+    <div
+      className={`relative rounded-2xl bg-gradient-to-br ${current.accent} border border-slate-100 dark:border-slate-800 p-4 overflow-hidden select-none`}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
+    >
+      {/* Title row */}
+      <div className="flex items-center justify-between mb-2.5">
+        <div>
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{current.title}</p>
+          {current.subtitle && <p className="text-[10px] text-slate-400 mt-0.5">{current.subtitle}</p>}
+        </div>
+        {/* Dot indicators */}
+        <div className="flex items-center gap-1.5">
+          {slides.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => goTo(i)}
+              className={`rounded-full transition-all ${i === slide ? `w-4 h-2 ${s.dot}` : 'w-2 h-2 bg-slate-300 dark:bg-slate-600'}`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="min-h-[32px]">{current.content}</div>
     </div>
   )
 }

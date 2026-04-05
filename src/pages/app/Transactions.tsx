@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, SlidersHorizontal, List, Edit2, Trash2, ArrowUpDown } from 'lucide-react'
 import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
 import { useTransactions, useDeleteTransaction } from '@/lib/hooks/useTransactions'
 import { useCategories } from '@/lib/hooks/useCategories'
 import { useFilterStore } from '@/lib/stores/filter.store'
@@ -13,7 +14,11 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { CategoryBadge } from '@/components/ui/Badge'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
-import { formatCurrency, getRelativeDate } from '@/utils/format'
+import { formatCurrency, getRelativeDate, getMonthRange } from '@/utils/format'
+import { supabase } from '@/lib/supabase'
+import { useT } from '@/lib/hooks/useT'
+import { useUIStore } from '@/lib/stores/ui.store'
+import { translations } from '@/lib/i18n'
 import type { TransactionType } from '@/types/app'
 
 type TxWithCategory = {
@@ -27,8 +32,37 @@ type TxWithCategory = {
   categories: { id: string; name: string; color: string; icon: string } | null
 }
 
+function usePrevMonthSummary(currentMonth: string, enabled: boolean) {
+  return useQuery({
+    queryKey: ['prev-month-summary', currentMonth],
+    enabled,
+    queryFn: async () => {
+      const [y, m] = currentMonth.split('-').map(Number)
+      const prevDate = new Date(y, m - 2, 1)
+      const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`
+      const { start, end } = getMonthRange(prevMonth)
+      const { data } = await supabase
+        .from('transactions')
+        .select('amount, currency')
+        .eq('type', '지출')
+        .gte('date', start)
+        .lte('date', end)
+      const byCurrency: Record<string, number> = {}
+      ;(data ?? []).forEach((r: { amount: number; currency: string }) => {
+        byCurrency[r.currency] = (byCurrency[r.currency] ?? 0) + r.amount
+      })
+      return Object.entries(byCurrency)
+        .sort((a, b) => b[1] - a[1])
+        .map(([currency, amount]) => ({ currency, amount }))
+    },
+  })
+}
+
 export default function Transactions() {
   const navigate = useNavigate()
+  const t = useT()
+  const { lang } = useUIStore()
+  const tr = translations[lang]
   const { filters, setMonth, setCategoryId, setType, setSearch, toggleSortOrder, resetFilters } = useFilterStore()
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTransactions(filters)
   const { data: categories } = useCategories()
@@ -40,6 +74,9 @@ export default function Transactions() {
   const loaderRef = useRef<HTMLDivElement>(null)
 
   const hasActiveFilter = !!(filters.categoryId || filters.type)
+  const allTransactions = data?.pages.flat() as TxWithCategory[] | undefined
+  const isEmpty = !isLoading && !allTransactions?.length && !filters.categoryId && !filters.type && !filters.search
+  const { data: prevMonthRows } = usePrevMonthSummary(filters.month, isEmpty)
 
   // Infinite scroll
   useEffect(() => {
@@ -52,8 +89,6 @@ export default function Transactions() {
     observer.observe(el)
     return () => observer.disconnect()
   }, [fetchNextPage, hasNextPage, isFetchingNextPage])
-
-  const allTransactions = data?.pages.flat() as TxWithCategory[] | undefined
 
   // Group by date
   const grouped: Record<string, TxWithCategory[]> = {}
@@ -190,8 +225,12 @@ export default function Transactions() {
         ) : !allTransactions?.length ? (
           <EmptyState
             icon={<List className="h-14 w-14" />}
-            title="거래내역이 없습니다"
-            description="오른쪽 상단 + 버튼을 눌러 첫 거래를 입력해보세요"
+            title={t('tx_empty_title')}
+            description={
+              prevMonthRows?.length
+                ? `${tr.tx_empty_last_month(prevMonthRows.map(r => formatCurrency(r.amount, r.currency)).join(' + '))}. ${t('tx_empty_no_history')}`
+                : t('tx_empty_no_history')
+            }
           />
         ) : (
           Object.entries(grouped).map(([dateLabel, txs]) => {

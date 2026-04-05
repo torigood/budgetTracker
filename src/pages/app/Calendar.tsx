@@ -166,12 +166,12 @@ export default function Calendar() {
                   <div className="flex flex-col items-center gap-0.5 w-full px-0.5">
                     {summary.expense > 0 && (
                       <span className="w-full text-center text-[9px] font-bold text-rose-400 tabular-nums leading-none">
-                        -{formatCurrency(summary.expense, currency).replace(/[^\d,₩$€¥£]/g, '').slice(0, 8)}
+                        -{formatCurrency(summary.expense, currency).replace(/[^\d.,₩$€¥£]/g, '').slice(0, 9)}
                       </span>
                     )}
                     {summary.income > 0 && (
                       <span className="w-full text-center text-[9px] font-bold text-emerald-500 tabular-nums leading-none">
-                        +{formatCurrency(summary.income, currency).replace(/[^\d,₩$€¥£]/g, '').slice(0, 8)}
+                        +{formatCurrency(summary.income, currency).replace(/[^\d.,₩$€¥£]/g, '').slice(0, 9)}
                       </span>
                     )}
                   </div>
@@ -187,15 +187,15 @@ export default function Calendar() {
         </div>
       </div>
 
-      {/* Day detail sheet */}
+      {/* Day detail modal */}
       {selectedDate && (
         <div
-          className="fixed inset-0 z-40 flex items-end justify-center"
+          className="fixed inset-0 z-40 flex items-center justify-center px-4"
           onClick={() => setSelectedDate(null)}
         >
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="relative z-10 w-full max-w-lg rounded-t-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl max-h-[70vh] flex flex-col"
+            className="relative z-10 w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl max-h-[75vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Sheet header */}

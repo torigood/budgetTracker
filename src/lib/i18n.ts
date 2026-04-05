@@ -125,6 +125,50 @@ export const translations = {
     settings_language: '언어',
     settings_language_label: '앱 언어',
 
+    // Widget banner
+    widget_week: '이번 주 지출',
+    widget_week_range: (days: number) => `월~오늘 (${days}일)`,
+    widget_today_vs_yesterday: '오늘 vs 어제',
+    widget_today: '오늘',
+    widget_yesterday: '어제',
+    widget_daily_avg: '일평균 비교',
+    widget_this_month: '이번 달',
+    widget_last_month: '지난달',
+    widget_no_expense: '지출 없음',
+
+    // Budget goals
+    budget_title: '예산 목표',
+    budget_desc: '카테고리별 월 지출 한도를 설정하세요',
+    budget_no_limit: '한도 없음',
+    budget_set: '예산 설정',
+    budget_save: '저장',
+    budget_cancel: '취소',
+    budget_delete: '한도 삭제',
+    budget_progress: (pct: number) => `${pct}% 사용`,
+    budget_over: '예산 초과!',
+    budget_warn: '한도 근접',
+    budget_saved: '예산이 저장됐습니다',
+    budget_deleted: '예산이 삭제됐습니다',
+
+    // Notifications
+    notify_title: '알림',
+    notify_desc: '지출 패턴에 맞는 맞춤 알림',
+    notify_allow: '알림 허용',
+    notify_denied: '브라우저 설정에서 알림을 허용해주세요',
+    notify_budget_label: '예산 초과 알림',
+    notify_budget_desc: '카테고리 예산의 80% 달성 시 알림',
+    notify_reminder_label: '일일 기록 리마인더',
+    notify_reminder_desc: '지정 시간에 오늘 기록이 없으면 알림',
+    notify_reminder_time: '알림 시간',
+    notify_anomaly_label: '이상 지출 감지',
+    notify_anomaly_desc: '평소 일평균보다 3배 이상 지출 시 알림',
+    notify_enabled: '활성화됨',
+    notify_disabled: '비활성화됨',
+
+    // Empty state with context
+    tx_empty_last_month: (amount: string) => `지난달엔 ${amount} 썼어요`,
+    tx_empty_no_history: '이번 달은 아직 기록이 없어요',
+
     // Shared
     confirm: '확인',
     cancel: '취소',
@@ -260,6 +304,50 @@ export const translations = {
     settings_logout: 'Log out',
     settings_language: 'Language',
     settings_language_label: 'App language',
+
+    // Widget banner
+    widget_week: 'This week',
+    widget_week_range: (days: number) => `Mon–today (${days}d)`,
+    widget_today_vs_yesterday: 'Today vs Yesterday',
+    widget_today: 'Today',
+    widget_yesterday: 'Yesterday',
+    widget_daily_avg: 'Daily average',
+    widget_this_month: 'This month',
+    widget_last_month: 'Last month',
+    widget_no_expense: 'No expenses',
+
+    // Budget goals
+    budget_title: 'Budget goals',
+    budget_desc: 'Set monthly spending limits per category',
+    budget_no_limit: 'No limit',
+    budget_set: 'Set budget',
+    budget_save: 'Save',
+    budget_cancel: 'Cancel',
+    budget_delete: 'Remove limit',
+    budget_progress: (pct: number) => `${pct}% used`,
+    budget_over: 'Over budget!',
+    budget_warn: 'Near limit',
+    budget_saved: 'Budget saved',
+    budget_deleted: 'Budget removed',
+
+    // Notifications
+    notify_title: 'Notifications',
+    notify_desc: 'Smart alerts based on your spending patterns',
+    notify_allow: 'Allow notifications',
+    notify_denied: 'Enable notifications in your browser settings',
+    notify_budget_label: 'Budget alerts',
+    notify_budget_desc: 'Alert when a category reaches 80% of budget',
+    notify_reminder_label: 'Daily reminder',
+    notify_reminder_desc: "Remind you to log today's expenses",
+    notify_reminder_time: 'Reminder time',
+    notify_anomaly_label: 'Unusual spending',
+    notify_anomaly_desc: 'Alert when daily spending is 3× your average',
+    notify_enabled: 'Enabled',
+    notify_disabled: 'Disabled',
+
+    // Empty state with context
+    tx_empty_last_month: (amount: string) => `Last month you spent ${amount}`,
+    tx_empty_no_history: 'No transactions yet this month',
 
     // Shared
     confirm: 'Confirm',

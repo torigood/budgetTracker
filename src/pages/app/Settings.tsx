@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Moon, Sun, Download, Upload, LogOut, Tag, User, Coins, Languages } from 'lucide-react'
+import { ChevronRight, Moon, Sun, Download, Upload, LogOut, Tag, User, Coins, Languages, Target, Bell, BellOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
@@ -8,7 +8,9 @@ import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useT } from '@/lib/hooks/useT'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { getCurrentMonth } from '@/utils/format'
+import { getNotifySettings, saveNotifySetting, requestPermission, getPermission } from '@/lib/hooks/useNotifications'
 import type { Lang } from '@/lib/i18n'
+import type { NotifySettings } from '@/lib/hooks/useNotifications'
 
 const LANGUAGES: { code: Lang; label: string; native: string }[] = [
   { code: 'ko', label: '한국어', native: 'Korean' },
@@ -54,6 +56,47 @@ function SettingRow({
   )
 }
 
+function NotifyToggleRow({
+  icon,
+  label,
+  description,
+  enabled,
+  disabled,
+  onToggle,
+}: {
+  icon: React.ReactNode
+  label: string
+  description?: string
+  enabled: boolean
+  disabled?: boolean
+  onToggle: (v: boolean) => void
+}) {
+  return (
+    <div className={`flex items-center gap-3 px-4 py-3.5 ${disabled ? 'opacity-50' : ''}`}>
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+        {icon}
+      </span>
+      <div className="flex-1 min-w-0 text-left">
+        <p className="text-sm font-medium text-slate-900 dark:text-white">{label}</p>
+        {description && <p className="text-xs text-slate-400 mt-0.5">{description}</p>}
+      </div>
+      <button
+        onClick={() => !disabled && onToggle(!enabled)}
+        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
+          disabled ? 'cursor-not-allowed' : 'cursor-pointer'
+        } ${enabled && !disabled ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+        role="switch"
+        aria-checked={enabled}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ${enabled ? 'translate-x-5' : 'translate-x-0.5'}`}
+          style={{ marginTop: '2px' }}
+        />
+      </button>
+    </div>
+  )
+}
+
 export default function Settings() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
@@ -61,6 +104,26 @@ export default function Settings() {
   const t = useT()
   const [exportFrom, setExportFrom] = useState(getCurrentMonth())
   const [exportTo, setExportTo] = useState(getCurrentMonth())
+  const [notifySettings, setNotifySettings] = useState<NotifySettings>(getNotifySettings)
+  const [permission, setPermission] = useState<ReturnType<typeof getPermission>>(getPermission)
+
+  const updateNotify = useCallback(<K extends keyof NotifySettings>(key: K, value: NotifySettings[K]) => {
+    const keyMap: Record<keyof NotifySettings, 'budgetEnabled' | 'reminderEnabled' | 'reminderTime' | 'anomalyEnabled'> = {
+      budgetEnabled: 'budgetEnabled',
+      reminderEnabled: 'reminderEnabled',
+      reminderTime: 'reminderTime',
+      anomalyEnabled: 'anomalyEnabled',
+    }
+    saveNotifySetting(keyMap[key], String(value))
+    setNotifySettings(prev => ({ ...prev, [key]: value }))
+  }, [])
+
+  async function handleAllowNotifications() {
+    const perm = await requestPermission()
+    setPermission(perm === 'unsupported' ? 'unsupported' : perm)
+    if (perm === 'granted') toast.success('알림이 허용됐습니다')
+    else if (perm === 'denied') toast.error(t('notify_denied'))
+  }
 
   async function handleLogout() {
     const { error } = await supabase.auth.signOut()
@@ -283,6 +346,93 @@ export default function Settings() {
               <Download className="h-4 w-4" />
               CSV 내보내기
             </button>
+          </div>
+        </div>
+
+        {/* 예산 목표 */}
+        <div>
+          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('budget_title')}</p>
+          <div className="card overflow-hidden">
+            <SettingRow
+              icon={<Target className="h-4 w-4" />}
+              label={t('budget_title')}
+              description={t('budget_desc')}
+              onClick={() => navigate('/settings/budget')}
+              right={<ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 shrink-0" />}
+            />
+          </div>
+        </div>
+
+        {/* 알림 */}
+        <div>
+          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('notify_title')}</p>
+          <div className="card divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+            {/* Permission status */}
+            {permission !== 'granted' && (
+              <div className="px-4 py-3.5 flex items-center gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-500">
+                  <BellOff className="h-4 w-4" />
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">{t('notify_title')}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {permission === 'denied' ? t('notify_denied') : t('notify_desc')}
+                  </p>
+                </div>
+                {permission !== 'denied' && (
+                  <button
+                    onClick={handleAllowNotifications}
+                    className="shrink-0 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-600 transition"
+                  >
+                    {t('notify_allow')}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* A: Budget alert */}
+            <NotifyToggleRow
+              icon={<Target className="h-4 w-4" />}
+              label={t('notify_budget_label')}
+              description={t('notify_budget_desc')}
+              enabled={notifySettings.budgetEnabled}
+              disabled={permission !== 'granted'}
+              onToggle={(v) => updateNotify('budgetEnabled', v)}
+            />
+
+            {/* B: Daily reminder */}
+            <div>
+              <NotifyToggleRow
+                icon={<Bell className="h-4 w-4" />}
+                label={t('notify_reminder_label')}
+                description={t('notify_reminder_desc')}
+                enabled={notifySettings.reminderEnabled}
+                disabled={permission !== 'granted'}
+                onToggle={(v) => updateNotify('reminderEnabled', v)}
+              />
+              {notifySettings.reminderEnabled && permission === 'granted' && (
+                <div className="px-4 pb-3.5 flex items-center gap-3">
+                  <div className="w-8 shrink-0" />
+                  <p className="text-xs text-slate-500 shrink-0">{t('notify_reminder_time')}</p>
+                  <input
+                    type="time"
+                    value={notifySettings.reminderTime}
+                    onChange={(e) => updateNotify('reminderTime', e.target.value)}
+                    className="ml-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* C: Anomaly detection */}
+            <NotifyToggleRow
+              icon={<Bell className="h-4 w-4" />}
+              label={t('notify_anomaly_label')}
+              description={t('notify_anomaly_desc')}
+              enabled={notifySettings.anomalyEnabled}
+              disabled={permission !== 'granted'}
+              onToggle={(v) => updateNotify('anomalyEnabled', v)}
+            />
           </div>
         </div>
 

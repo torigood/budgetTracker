@@ -12,6 +12,7 @@ import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PAYMENT_METHODS } from '@/types/app'
 import { todayISO } from '@/utils/format'
+import { checkBudgetAlert, checkAnomalyAlert, getPermission } from '@/lib/hooks/useNotifications'
 import type { Transaction } from '@/types/app'
 import type { CurrencyCode } from '@/lib/stores/ui.store'
 
@@ -86,6 +87,13 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
           receipt_id: receiptId ?? null,
         })
         toast.success('거래가 저장됐습니다')
+
+        // Run notification checks for expense transactions
+        if (values.type === '지출' && getPermission() === 'granted') {
+          const catName = categories?.find(c => c.id === values.category_id)?.name ?? ''
+          void checkBudgetAlert(values.category_id, catName)
+          void checkAnomalyAlert(selectedCurrency)
+        }
       }
       navigate('/transactions')
     } catch {
