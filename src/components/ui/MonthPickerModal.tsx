@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getCurrentMonth } from '@/utils/format'
 import type { Lang } from '@/lib/i18n'
@@ -23,9 +24,9 @@ export function MonthPickerModal({ value, onChange, onClose, lang }: MonthPicker
     return { month, label }
   })
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      className="fixed inset-0 z-[200] flex items-center justify-center px-4"
       onClick={onClose}
     >
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
@@ -87,6 +88,7 @@ export function MonthPickerModal({ value, onChange, onClose, lang }: MonthPicker
           })}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
