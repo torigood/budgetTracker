@@ -44,23 +44,23 @@ export default function Landing() {
             <img src="/icons/logo512.png" alt="Budget Tracker" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
             <span className="text-base font-bold text-slate-900 dark:text-white">Budget Tracker</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setLang(ko ? 'en' : 'ko')}
-              className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition"
+              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition"
             >
               <Languages className="h-3.5 w-3.5" />
               {ko ? 'EN' : '한국어'}
             </button>
             <Link
               to="/login"
-              className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors px-2"
+              className="shrink-0 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors px-2 whitespace-nowrap"
             >
               {ko ? '로그인' : 'Sign in'}
             </Link>
             <Link
               to="/login?signup=true"
-              className="btn btn-primary text-sm px-4 py-2"
+              className="btn btn-primary shrink-0 text-sm px-4 py-2 whitespace-nowrap"
             >
               {ko ? '무료 시작' : 'Get started'}
             </Link>
