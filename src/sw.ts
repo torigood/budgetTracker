@@ -20,8 +20,9 @@ self.addEventListener('push', (event) => {
       body: data.body,
       icon: data.icon ?? '/icons/logo512.png',
       badge: '/icons/logo512.png',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vibrate: [100, 50, 100],
-    })
+    } as NotificationOptions & Record<string, any>)
   )
 })
 

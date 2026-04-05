@@ -24,7 +24,7 @@ export async function subscribeToPush(userId: string): Promise<boolean> {
 
     const sub = existing ?? await registration.pushManager.subscribe({
       userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(vapidKey),
+      applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
     })
 
     const json = sub.toJSON()
