@@ -1,12 +1,55 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = [
+  'https://budget-tracker-f3nf.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:3000',
+]
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('origin') ?? ''
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
+}
+
+function validateParsedReceipt(data: unknown): {
+  date: string | null
+  total_amount: number | null
+  store_name: string | null
+  items: Array<{ name: string; amount: number }>
+  payment_method: string | null
+  confidence: number
+} {
+  if (typeof data !== 'object' || data === null) throw new Error('AI 응답이 올바른 JSON 형식이 아닙니다')
+  const d = data as Record<string, unknown>
+
+  const date = typeof d.date === 'string' ? d.date : null
+  const total_amount = typeof d.total_amount === 'number' && isFinite(d.total_amount) ? d.total_amount : null
+  const store_name = typeof d.store_name === 'string' ? d.store_name.slice(0, 200) : null
+  const payment_method = typeof d.payment_method === 'string' ? d.payment_method.slice(0, 100) : null
+  const confidence = typeof d.confidence === 'number' && isFinite(d.confidence)
+    ? Math.min(1, Math.max(0, d.confidence))
+    : 0
+
+  const rawItems = Array.isArray(d.items) ? d.items : []
+  const items = rawItems
+    .filter((item): item is { name: string; amount: number } =>
+      typeof item === 'object' && item !== null &&
+      typeof (item as Record<string, unknown>).name === 'string' &&
+      typeof (item as Record<string, unknown>).amount === 'number' &&
+      isFinite((item as Record<string, unknown>).amount as number)
+    )
+    .slice(0, 100)
+
+  return { date, total_amount, store_name, items, payment_method, confidence }
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
@@ -102,14 +145,7 @@ serve(async (req) => {
       choices: Array<{ message: { content: string } }>
     }
     const rawResponse = claudeData.choices[0].message.content
-    const parsed = JSON.parse(rawResponse) as {
-      date: string | null
-      total_amount: number | null
-      store_name: string | null
-      items: Array<{ name: string; amount: number }>
-      payment_method: string | null
-      confidence: number
-    }
+    const parsed = validateParsedReceipt(JSON.parse(rawResponse))
 
     // receipts 테이블에 저장
     const { data: receipt, error: insertError } = await supabase
@@ -136,7 +172,7 @@ serve(async (req) => {
   } catch (err) {
     console.error(err)
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error' }),
+      JSON.stringify({ error: '처리 중 오류가 발생했습니다' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

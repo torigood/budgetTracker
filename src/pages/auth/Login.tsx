@@ -24,6 +24,16 @@ export default function Login() {
   if (loading) return <LoadingSpinner fullScreen />
   if (user) return <Navigate to="/dashboard" replace />
 
+  function getAuthErrorMessage(err: unknown): string {
+    if (!(err instanceof Error)) return t('login_error')
+    const msg = err.message.toLowerCase()
+    if (msg.includes('invalid login credentials') || msg.includes('invalid credentials')) return t('login_error_credentials')
+    if (msg.includes('email not confirmed')) return t('login_error_email_not_confirmed')
+    if (msg.includes('user already registered')) return t('login_error_already_registered')
+    if (msg.includes('password should be at least')) return t('login_error_weak_password')
+    return t('login_error')
+  }
+
   async function handleGoogle() {
     setSubmitting(true)
     const { error } = await supabase.auth.signInWithOAuth({
@@ -31,7 +41,8 @@ export default function Login() {
       options: { redirectTo: `${window.location.origin}/dashboard` },
     })
     if (error) {
-      toast.error(error.message)
+      console.error('Google OAuth error:', error)
+      toast.error(t('login_error'))
       setSubmitting(false)
     }
   }
@@ -49,7 +60,8 @@ export default function Login() {
         if (error) throw error
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('login_error'))
+      console.error('Email auth error:', err)
+      toast.error(getAuthErrorMessage(err))
     } finally {
       setSubmitting(false)
     }
@@ -66,7 +78,8 @@ export default function Login() {
       toast.success(t('login_forgot_success'))
       setMode('signin')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('login_error'))
+      console.error('Password reset error:', err)
+      toast.error(t('login_error'))
     } finally {
       setSubmitting(false)
     }

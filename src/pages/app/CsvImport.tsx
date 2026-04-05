@@ -113,8 +113,11 @@ export default function CsvImport() {
         const memo = cols[6] ?? ''
 
         if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) continue
+        const parsedDate = new Date(date)
+        if (isNaN(parsedDate.getTime())) continue
         const type: TransactionType = typeRaw === '수입' ? '수입' : '지출'
-        const amount = parseFloat(amountRaw.replace(/,/g, '')) || 0
+        const amount = parseFloat(amountRaw.replace(/,/g, ''))
+        if (!isFinite(amount) || amount <= 0) continue
 
         parsed.push({
           id: id++,
@@ -135,6 +138,11 @@ export default function CsvImport() {
         return
       }
 
+      if (parsed.length > 5000) {
+        toast.error('한 번에 최대 5,000행까지만 가져올 수 있습니다.')
+        return
+      }
+
       setRows(parsed)
       setStep('preview')
     }
@@ -151,7 +159,9 @@ export default function CsvImport() {
     onDrop,
     accept: { 'text/csv': ['.csv'], 'text/plain': ['.csv'] },
     maxFiles: 1,
+    maxSize: 5 * 1024 * 1024, // 5MB
     noClick: false,
+    onDropRejected: () => toast.error('파일 크기는 5MB 이하의 CSV 파일만 지원합니다'),
   })
 
   // ── Row updaters ────────────────────────────────────────────────────────
@@ -195,7 +205,8 @@ export default function CsvImport() {
       setImportedCount(count)
       setStep('done')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '가져오기 실패')
+      console.error('CSV import error:', err)
+      toast.error('가져오기에 실패했습니다. 다시 시도해주세요.')
       setStep('preview')
     }
   }

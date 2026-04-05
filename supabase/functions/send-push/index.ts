@@ -1,6 +1,5 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-// @ts-ignore – npm specifier works in Supabase Edge Functions (Deno)
 import webpush from 'npm:web-push@3'
 
 const VAPID_PUBLIC_KEY = 'BCTinJPiMhfhYfyqn5eG2SvwENBDw1AtWB7qbidaeP3ursqoa78_er1CLOv6t4mcVft_JOoyyc08xTQhwrASYvM'
