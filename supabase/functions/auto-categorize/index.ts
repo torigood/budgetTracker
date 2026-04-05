@@ -45,7 +45,28 @@ serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return new Response('Unauthorized', { status: 401 })
 
+    // Rate limiting: 하루 100회
+    const today = new Date().toISOString().split('T')[0]
+    const { count } = await supabase
+      .from('transactions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('created_at', `${today}T00:00:00`)
+
+    if ((count ?? 0) >= 100) {
+      return new Response(
+        JSON.stringify({ error: '오늘 자동 분류 한도(100회)에 도달했습니다' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const { description } = await req.json() as { description: string }
+    if (!description || description.length > 200) {
+      return new Response(
+        JSON.stringify({ error: '유효하지 않은 거래 내용입니다' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
     const lower = description.toLowerCase()
 
     // 1차: 규칙 기반
