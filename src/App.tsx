@@ -5,6 +5,7 @@ import { useAuthStore } from '@/lib/stores/auth.store'
 import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute'
 import { AppLayout } from '@/components/features/layout/AppLayout'
 
+import Landing from '@/pages/Landing'
 import Login from '@/pages/auth/Login'
 import Dashboard from '@/pages/app/Dashboard'
 import Transactions from '@/pages/app/Transactions'
@@ -18,11 +19,12 @@ import SettingsCategories from '@/pages/app/SettingsCategories'
 import NotFound from '@/pages/NotFound'
 
 const router = createBrowserRouter([
+  { path: '/', element: <Landing /> },
   { path: '/login', element: <Login /> },
   {
     element: <ProtectedRoute><AppLayout /></ProtectedRoute>,
     children: [
-      { path: '/', element: <Dashboard /> },
+      { path: '/dashboard', element: <Dashboard /> },
       { path: '/transactions', element: <Transactions /> },
       { path: '/transactions/new', element: <TransactionNew /> },
       { path: '/transactions/:id/edit', element: <TransactionEdit /> },

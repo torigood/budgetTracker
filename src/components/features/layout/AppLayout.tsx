@@ -34,7 +34,7 @@ export function AppLayout() {
   }, [navigate])
 
   return (
-    <div className="flex min-h-svh bg-gray-50 dark:bg-gray-950">
+    <div className="flex min-h-svh bg-slate-50 dark:bg-slate-950">
       {/* Desktop sidebar */}
       <SideNav />
 
