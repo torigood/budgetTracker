@@ -8,7 +8,6 @@ export function BottomNav() {
   const location = useLocation()
   const t = useT()
   const [popupOpen, setPopupOpen] = useState(false)
-  const [popupStyle, setPopupStyle] = useState<React.CSSProperties | null>(null)
   const popupRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [, startTransition] = useTransition()
@@ -37,20 +36,8 @@ export function BottomNav() {
   }
 
   function togglePopup() {
-    const trigger = triggerRef.current
-    if (!trigger) {
-      setPopupOpen((v) => !v)
-      return
-    }
-
     if (!popupOpen) {
-      const rect = trigger.getBoundingClientRect()
-      setPopupStyle({
-        position: 'fixed',
-        left: rect.left + rect.width / 2,
-        top: rect.top - 12,
-        transform: 'translate(-50%, -100%)',
-      })
+      triggerRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
     }
 
     setPopupOpen((v) => !v)
@@ -83,8 +70,7 @@ export function BottomNav() {
         {popupOpen && (
           <div
             ref={popupRef}
-            style={popupStyle ?? undefined}
-            className="animate-nav-pop z-50 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-black/12 dark:border-slate-700 dark:bg-slate-900"
+            className="animate-nav-pop absolute bottom-full left-1/2 z-50 mb-2.5 w-44 -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-black/12 dark:border-slate-700 dark:bg-slate-900"
           >
             <button
               onClick={() => go('/transactions')}
@@ -115,7 +101,7 @@ export function BottomNav() {
         <button
           ref={triggerRef}
           onClick={togglePopup}
-          className={`flex min-h-11 min-w-20 flex-col items-center justify-center rounded-xl px-3 py-2.5 transition-colors ${
+          className={`relative z-10 flex min-h-11 min-w-20 flex-col items-center justify-center rounded-xl px-3 py-2.5 transition-colors ${
             isTransactionActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'
           }`}
           aria-haspopup="menu"
