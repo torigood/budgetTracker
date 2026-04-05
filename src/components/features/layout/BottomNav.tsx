@@ -36,12 +36,12 @@ export function BottomNav() {
   }
 
   function togglePopup() {
-    if (!popupOpen) {
-      triggerRef.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' })
-    }
-
     setPopupOpen((v) => !v)
   }
+
+  const navIcon = location.pathname.startsWith('/recurring')
+    ? <RefreshCw className="h-6 w-6 animate-spin" />
+    : <List className="h-6 w-6" />
 
   return (
     <nav
@@ -70,7 +70,7 @@ export function BottomNav() {
         {popupOpen && (
           <div
             ref={popupRef}
-            className="animate-nav-pop absolute bottom-full left-1/2 z-50 mb-2.5 w-44 -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-black/12 dark:border-slate-700 dark:bg-slate-900"
+            className="absolute bottom-full left-1/2 z-50 mb-2.5 w-44 -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-black/12 dark:border-slate-700 dark:bg-slate-900"
           >
             <button
               onClick={() => go('/transactions')}
@@ -111,7 +111,7 @@ export function BottomNav() {
           <span className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors ${
             isTransactionActive ? 'bg-indigo-50 dark:bg-indigo-900/40' : ''
           }`}>
-            <List className="h-6 w-6" />
+            {navIcon}
           </span>
           <span className="mt-0.5 text-[11px] font-semibold">{t('nav_transactions')}</span>
         </button>
