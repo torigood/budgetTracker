@@ -5,6 +5,7 @@ import { useAuthStore } from '@/lib/stores/auth.store'
 import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute'
 import { AppLayout } from '@/components/features/layout/AppLayout'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 
 import Landing from '@/pages/Landing'
 import Login from '@/pages/auth/Login'
@@ -66,6 +67,7 @@ export default function App() {
     <>
       <RouterProvider router={router} />
       <PWAUpdatePrompt />
+      <VercelAnalytics />
     </>
   )
 }
