@@ -59,18 +59,11 @@ export default function Landing() {
             >
               <Languages className="h-4 w-4" />
             </button>
-            {/* 로그인 — 모바일에서 숨김 */}
             <Link
               to="/login"
-              className="hidden sm:inline-flex shrink-0 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors px-2 whitespace-nowrap"
-            >
-              {ko ? '로그인' : 'Sign in'}
-            </Link>
-            <Link
-              to="/login?signup=true"
               className="btn btn-primary shrink-0 text-sm px-3.5 py-2 whitespace-nowrap"
             >
-              {ko ? '무료 시작' : 'Get started'}
+              {ko ? '로그인' : 'Sign in'}
             </Link>
           </div>
         </div>
