@@ -1,0 +1,52 @@
+import { useEffect } from 'react'
+import { Outlet, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
+import { BottomNav } from './BottomNav'
+import { SideNav } from './SideNav'
+
+export function AppLayout() {
+  const queryClient = useQueryClient()
+  const navigate = useNavigate()
+
+  // Supabase Realtime: 거래 변경 감지 → React Query invalidate
+  useEffect(() => {
+    const channel = supabase
+      .channel('transactions-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
+        void queryClient.invalidateQueries({ queryKey: ['transactions'] })
+        void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      })
+      .subscribe()
+
+    return () => { void supabase.removeChannel(channel) }
+  }, [queryClient])
+
+  // 키보드 단축키 (데스크탑)
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'n' || e.key === 'N') navigate('/transactions/new')
+      if (e.key === 'r' || e.key === 'R') navigate('/receipt')
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [navigate])
+
+  return (
+    <div className="flex min-h-svh bg-gray-50 dark:bg-gray-950">
+      {/* Desktop sidebar */}
+      <SideNav />
+
+      {/* Main content */}
+      <div className="flex-1 md:ml-64">
+        <main className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* Mobile bottom nav */}
+      <BottomNav />
+    </div>
+  )
+}
