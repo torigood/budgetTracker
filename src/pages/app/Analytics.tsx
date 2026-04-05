@@ -148,8 +148,8 @@ export default function Analytics() {
                         boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.08)',
                       }}
                     />
-                    <Bar dataKey={expenseKey} fill="#f43f5e" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                    <Bar dataKey={incomeKey} fill="#10b981" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                    <Bar dataKey={expenseKey} fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey={incomeKey} fill="#10b981" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -183,7 +183,6 @@ export default function Analytics() {
                         outerRadius={52}
                         strokeWidth={2}
                         stroke="transparent"
-                        isAnimationActive={false}
                       >
                         {categoryBreakdown.map((entry, i) => (
                           <Cell key={i} fill={entry.color} />
@@ -349,8 +348,8 @@ function AnnualReport({
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.08)',
                   }}
                 />
-                <Bar dataKey={expenseKey} fill="#f43f5e" radius={[3, 3, 0, 0]} isAnimationActive={false} />
-                <Bar dataKey={incomeKey} fill="#10b981" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+                <Bar dataKey={expenseKey} fill="#f43f5e" radius={[3, 3, 0, 0]} />
+                <Bar dataKey={incomeKey} fill="#10b981" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

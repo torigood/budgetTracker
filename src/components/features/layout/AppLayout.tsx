@@ -9,6 +9,14 @@ export function AppLayout() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
+  function refreshVisibleQueries() {
+    void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    void queryClient.invalidateQueries({ queryKey: ['analytics'] })
+    void queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    void queryClient.invalidateQueries({ queryKey: ['widget-stats'] })
+    void queryClient.invalidateQueries({ queryKey: ['annual'] })
+  }
+
   // Supabase Realtime: 거래 변경 감지 → React Query invalidate
   useEffect(() => {
     const channel = supabase
@@ -20,6 +28,27 @@ export function AppLayout() {
       .subscribe()
 
     return () => { void supabase.removeChannel(channel) }
+  }, [queryClient])
+
+  // Quietly refresh active data when user returns to the app/tab
+  useEffect(() => {
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        refreshVisibleQueries()
+      }
+    }
+
+    function onFocus() {
+      refreshVisibleQueries()
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('focus', onFocus)
+    }
   }, [queryClient])
 
   // 키보드 단축키 (데스크탑)
