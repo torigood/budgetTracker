@@ -72,20 +72,21 @@ serve(async (req) => {
       )
     }
 
-    // 3차: Claude API
+    // 3차: OpenRouter API (저렴한 haiku 모델 사용)
     const { data: allCats } = await supabase.from('categories').select('id, name').eq('user_id', user.id)
     const catList = allCats?.map((c) => c.name).join(', ') ?? ''
 
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')!
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const openrouterKey = Deno.env.get('OPENROUTER_API_KEY')!
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${openrouterKey}`,
+        'HTTP-Referer': 'https://budgettracker.app',
+        'X-Title': 'Budget Tracker',
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'anthropic/claude-haiku-4-5',
         max_tokens: 50,
         messages: [{
           role: 'user',
@@ -94,8 +95,8 @@ serve(async (req) => {
       }),
     })
 
-    const data = await response.json() as { content: Array<{ text: string }> }
-    const suggestedName = data.content[0].text.trim()
+    const data = await response.json() as { choices: Array<{ message: { content: string } }> }
+    const suggestedName = data.choices[0].message.content.trim()
     const matched = allCats?.find((c) => c.name === suggestedName)
 
     return new Response(

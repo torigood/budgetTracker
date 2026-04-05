@@ -49,19 +49,23 @@ serve(async (req) => {
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
     const mimeType = storage_path.endsWith('.png') ? 'image/png' : 'image/jpeg'
 
-    // Claude API 호출
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')!
-    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+    // OpenRouter API 호출 (OpenAI 호환 포맷)
+    const openrouterKey = Deno.env.get('OPENROUTER_API_KEY')!
+    const claudeResponse = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
+        'Authorization': `Bearer ${openrouterKey}`,
+        'HTTP-Referer': 'https://budgettracker.app',
+        'X-Title': 'Budget Tracker',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'anthropic/claude-sonnet-4-5',
         max_tokens: 1024,
-        system: `당신은 영수증 이미지를 분석하는 전문가입니다.
+        messages: [
+          {
+            role: 'system',
+            content: `당신은 영수증 이미지를 분석하는 전문가입니다.
 영수증에서 다음 정보를 추출하여 정확히 JSON 형식으로 반환하세요.
 날짜가 없으면 null, 금액이 없으면 null로 반환하세요.
 응답은 반드시 JSON만 반환하고 다른 텍스트는 포함하지 마세요.
@@ -75,13 +79,13 @@ serve(async (req) => {
   "payment_method": "결제수단 또는 null",
   "confidence": 0~1 사이의 신뢰도 숫자
 }`,
-        messages: [
+          },
           {
             role: 'user',
             content: [
               {
-                type: 'image',
-                source: { type: 'base64', media_type: mimeType, data: base64 },
+                type: 'image_url',
+                image_url: { url: `data:${mimeType};base64,${base64}` },
               },
               { type: 'text', text: '이 영수증을 분석해주세요.' },
             ],
@@ -91,13 +95,13 @@ serve(async (req) => {
     })
 
     if (!claudeResponse.ok) {
-      throw new Error(`Claude API error: ${claudeResponse.status}`)
+      throw new Error(`OpenRouter API error: ${claudeResponse.status}`)
     }
 
     const claudeData = await claudeResponse.json() as {
-      content: Array<{ type: string; text: string }>
+      choices: Array<{ message: { content: string } }>
     }
-    const rawResponse = claudeData.content[0].text
+    const rawResponse = claudeData.choices[0].message.content
     const parsed = JSON.parse(rawResponse) as {
       date: string | null
       total_amount: number | null
