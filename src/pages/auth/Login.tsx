@@ -59,9 +59,7 @@ export default function Login() {
         </div>
 
         <div className="relative flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 text-2xl backdrop-blur-sm">
-            💰
-          </span>
+          <img src="/icons/logo512.png" alt="Budget Tracker" className="h-10 w-10 rounded-xl object-cover" />
           <span className="text-lg font-bold text-white">Budget Tracker</span>
         </div>
 
@@ -111,9 +109,7 @@ export default function Login() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="mb-8 lg:hidden text-center">
-            <span className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-500 text-3xl shadow-lg">
-              💰
-            </span>
+            <img src="/icons/logo512.png" alt="Budget Tracker" className="mx-auto mb-3 h-14 w-14 rounded-2xl object-cover shadow-lg" />
             <h1 className="text-xl font-bold text-slate-900 dark:text-white">Budget Tracker</h1>
           </div>
 
