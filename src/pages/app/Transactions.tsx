@@ -94,7 +94,7 @@ export default function Transactions() {
   // Group by date
   const grouped: Record<string, TxWithCategory[]> = {}
   allTransactions?.forEach((tx) => {
-    const key = getRelativeDate(tx.date)
+    const key = getRelativeDate(tx.date, lang)
     if (!grouped[key]) grouped[key] = []
     grouped[key].push(tx)
   })
@@ -118,8 +118,8 @@ export default function Transactions() {
         action={
           <button
             onClick={() => navigate('/transactions/new')}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-sm shadow-indigo-500/25 hover:bg-indigo-600 transition active:scale-95"
-            aria-label="거래 추가"
+            className="tap-target flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-sm shadow-indigo-500/25 hover:bg-indigo-600 transition active:scale-95"
+            aria-label={t('dashboard_add_prompt')}
           >
             <Plus className="h-5 w-5" />
           </button>
@@ -140,12 +140,12 @@ export default function Transactions() {
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-          className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
+          className={`tap-target flex h-11 w-11 items-center justify-center rounded-xl transition ${
             showFilters || hasActiveFilter
               ? 'bg-indigo-500 text-white shadow-sm'
               : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
           }`}
-          aria-label="필터"
+          aria-label={t('tx_filter_reset')}
         >
           <SlidersHorizontal className="h-4 w-4" />
         </button>
@@ -205,19 +205,19 @@ export default function Transactions() {
           <div className="px-4 pb-3 space-y-2.5">
             {/* Type filter */}
             <div className="flex gap-2">
-              {(['지출', '수입'] as TransactionType[]).map((t) => (
+              {(['지출', '수입'] as TransactionType[]).map((type) => (
                 <button
-                  key={t}
-                  onClick={() => setType(filters.type === t ? null : t)}
+                  key={type}
+                  onClick={() => setType(filters.type === type ? null : type)}
                   className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-                    filters.type === t
-                      ? t === '지출'
+                    filters.type === type
+                      ? type === '지출'
                         ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
                         : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                   }`}
                 >
-                  {t}
+                  {type === '지출' ? t('form_expense') : t('form_income')}
                 </button>
               ))}
             </div>

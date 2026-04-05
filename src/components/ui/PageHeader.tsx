@@ -18,7 +18,7 @@ export function PageHeader({ title, subtitle, action, back }: PageHeaderProps) {
         {back && (
           <button
             onClick={() => navigate(-1)}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="tap-target flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             aria-label="뒤로가기"
           >
             <ChevronLeft className="h-5 w-5" />

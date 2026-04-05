@@ -56,13 +56,13 @@ export default function Analytics() {
       <div className="flex gap-1 mx-4 mt-3 mb-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
         <button
           onClick={() => setTab('monthly')}
-          className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${tab === 'monthly' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
+          className={`tap-target flex-1 rounded-lg py-2 text-sm font-semibold transition ${tab === 'monthly' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
         >
           {t('analytics_tab_monthly')}
         </button>
         <button
           onClick={() => setTab('annual')}
-          className={`flex-1 rounded-lg py-1.5 text-xs font-semibold transition ${tab === 'annual' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
+          className={`tap-target flex-1 rounded-lg py-2 text-sm font-semibold transition ${tab === 'annual' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
         >
           {t('analytics_tab_annual')}
         </button>
@@ -260,7 +260,7 @@ function AnnualReport({
       <div className="flex items-center justify-center gap-4">
         <button
           onClick={() => onYearChange(year - 1)}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+          className="tap-target flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -268,7 +268,7 @@ function AnnualReport({
         <button
           onClick={() => onYearChange(year + 1)}
           disabled={year >= new Date().getFullYear()}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition disabled:opacity-30"
+          className="tap-target flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition disabled:opacity-30"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

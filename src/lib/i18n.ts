@@ -111,7 +111,8 @@ export const translations = {
     // Recurring
     recurring_title: '자동지출',
     recurring_add: '추가',
-    recurring_total: '이번 달 자동지출 합계',
+    recurring_total: '이번 달 자동지출 합계 (오늘 기준)',
+    recurring_refresh: '새로고침',
     recurring_empty: '자동지출이 없습니다',
     recurring_loading: '불러오는 중...',
     recurring_form_title_add: '자동지출 추가',
@@ -375,7 +376,8 @@ export const translations = {
     // Recurring
     recurring_title: 'Recurring',
     recurring_add: 'Add',
-    recurring_total: 'Monthly recurring total',
+    recurring_total: 'Recurring total this month (to date)',
+    recurring_refresh: 'Refresh',
     recurring_empty: 'No recurring items',
     recurring_loading: 'Loading...',
     recurring_form_title_add: 'Add recurring',

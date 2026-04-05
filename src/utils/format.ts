@@ -28,19 +28,20 @@ export function formatDate(date: string): string {
   }).format(d)
 }
 
-export function formatDateShort(date: string): string {
+export function formatDateShort(date: string, lang: 'ko' | 'en' = 'ko'): string {
   const d = new Date(date + 'T00:00:00')
-  return new Intl.DateTimeFormat('ko-KR', { month: 'numeric', day: 'numeric' }).format(d)
+  const locale = lang === 'ko' ? 'ko-KR' : 'en-US'
+  return new Intl.DateTimeFormat(locale, { month: 'numeric', day: 'numeric' }).format(d)
 }
 
-export function getRelativeDate(date: string): string {
+export function getRelativeDate(date: string, lang: 'ko' | 'en' = 'ko'): string {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const d = new Date(date + 'T00:00:00')
   const diff = Math.floor((today.getTime() - d.getTime()) / (1000 * 60 * 60 * 24))
-  if (diff === 0) return '오늘'
-  if (diff === 1) return '어제'
-  return formatDateShort(date)
+  if (diff === 0) return lang === 'ko' ? '오늘' : 'Today'
+  if (diff === 1) return lang === 'ko' ? '어제' : 'Yesterday'
+  return formatDateShort(date, lang)
 }
 
 export function getCurrentMonth(): string {
