@@ -276,7 +276,9 @@ export default function Settings() {
                 <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_currency_label')}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{t('settings_currency_desc')}</p>
               </div>
-              <span className="text-xs font-semibold text-indigo-500">{selectedCurrencyInfo?.label}</span>
+              <span className="text-xs font-semibold text-indigo-500">
+                {lang === 'ko' ? selectedCurrencyInfo?.label : selectedCurrencyInfo?.labelEn}
+              </span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {SUPPORTED_CURRENCIES.map((c) => (
@@ -292,7 +294,14 @@ export default function Settings() {
                   <p className={`text-sm font-semibold ${currency === c.code ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
                     {c.code}
                   </p>
-                  <p className="text-xs text-slate-400 mt-0.5">{c.label.split(' ')[0]}{' '}{c.label.match(/\((.+)\)/)?.[1]}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    {(() => {
+                      const lbl = lang === 'ko' ? c.label : c.labelEn
+                      const name = lbl.split(' (')[0]
+                      const sym = lbl.match(/\((.+)\)/)?.[1]
+                      return `${name} ${sym ?? ''}`
+                    })()}
+                  </p>
                 </button>
               ))}
             </div>

@@ -3,12 +3,12 @@ import { getCurrentMonth } from '@/utils/format'
 import type { Lang } from '@/lib/i18n'
 
 export const SUPPORTED_CURRENCIES = [
-  { code: 'KRW', label: '원화 (₩)', locale: 'ko-KR' },
-  { code: 'CAD', label: '캐나다 달러 (CA$)', locale: 'en-CA' },
-  { code: 'USD', label: '미국 달러 ($)', locale: 'en-US' },
-  { code: 'JPY', label: '일본 엔 (¥)', locale: 'ja-JP' },
-  { code: 'EUR', label: '유로 (€)', locale: 'de-DE' },
-  { code: 'GBP', label: '파운드 (£)', locale: 'en-GB' },
+  { code: 'KRW', label: '원화 (₩)',        labelEn: 'Korean Won (₩)',    locale: 'ko-KR' },
+  { code: 'CAD', label: '캐나다 달러 (CA$)', labelEn: 'Canadian Dollar (CA$)', locale: 'en-CA' },
+  { code: 'USD', label: '미국 달러 ($)',     labelEn: 'US Dollar ($)',     locale: 'en-US' },
+  { code: 'JPY', label: '일본 엔 (¥)',       labelEn: 'Japanese Yen (¥)', locale: 'ja-JP' },
+  { code: 'EUR', label: '유로 (€)',          labelEn: 'Euro (€)',          locale: 'de-DE' },
+  { code: 'GBP', label: '파운드 (£)',        labelEn: 'Pound Sterling (£)', locale: 'en-GB' },
 ] as const
 
 export type CurrencyCode = typeof SUPPORTED_CURRENCIES[number]['code']
