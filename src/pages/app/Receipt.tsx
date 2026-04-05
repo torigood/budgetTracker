@@ -1,12 +1,13 @@
 import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Camera, ImagePlus, AlertTriangle, ChevronLeft } from 'lucide-react'
+import { Camera, ImagePlus, AlertTriangle } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import { TransactionForm } from '@/components/features/transactions/TransactionForm'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
+import { PageHeader } from '@/components/ui/PageHeader'
 import type { ParsedReceipt } from '@/types/app'
 import type { Transaction } from '@/types/app'
 
@@ -41,7 +42,6 @@ export default function Receipt() {
     setStep('parsing')
 
     try {
-      // Storage 업로드
       setParseStep('업로드 중...')
       const fileInput = cameraRef.current?.files?.[0] ?? galleryRef.current?.files?.[0]
       if (!fileInput) throw new Error('파일을 찾을 수 없습니다')
@@ -54,7 +54,6 @@ export default function Receipt() {
 
       if (uploadError) throw uploadError
 
-      // Edge Function 호출
       setParseStep('AI 분석 중...')
       const { data: { session } } = await supabase.auth.getSession()
       const response = await fetch(
@@ -108,40 +107,40 @@ export default function Receipt() {
 
   return (
     <div>
-      <header className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 sticky top-0 z-10">
-        <button onClick={() => navigate(-1)} className="text-gray-500">
-          <ChevronLeft className="h-6 w-6" />
-        </button>
-        <h1 className="text-lg font-bold text-gray-900 dark:text-white">영수증 촬영</h1>
-      </header>
+      <PageHeader title="영수증 촬영" back />
 
       {step === 'upload' && (
         <div className="p-4 space-y-4">
-          {/* 이미지 미리보기 or 드롭존 */}
+          {/* 드롭존 */}
           <div
             {...getRootProps()}
             className={`relative rounded-2xl overflow-hidden border-2 border-dashed transition ${
-              isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 dark:border-gray-700'
+              isDragActive
+                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                : 'border-slate-200 dark:border-slate-700'
             }`}
           >
             <input {...getInputProps()} />
             {previewUrl ? (
-              <img src={previewUrl} alt="영수증 미리보기" className="w-full max-h-80 object-contain bg-gray-100" />
+              <img
+                src={previewUrl}
+                alt="영수증 미리보기"
+                className="w-full max-h-80 object-contain bg-slate-100 dark:bg-slate-800"
+              />
             ) : (
-              <div className="flex flex-col items-center justify-center py-16 text-gray-400">
+              <div className="flex flex-col items-center justify-center py-16 text-slate-400">
                 <ImagePlus className="mb-3 h-12 w-12" />
                 <p className="text-sm font-medium">이미지를 드래그하거나 버튼을 누르세요</p>
-                <p className="mt-1 text-xs">JPG, PNG 지원 · 최대 10MB</p>
+                <p className="mt-1 text-xs text-slate-400">JPG, PNG 지원 · 최대 10MB</p>
               </div>
             )}
           </div>
 
           {/* 버튼 */}
           <div className="grid grid-cols-2 gap-3">
-            {/* 모바일: 카메라 */}
             <button
               onClick={() => cameraRef.current?.click()}
-              className="flex items-center justify-center gap-2 rounded-xl bg-blue-500 py-3 text-sm font-medium text-white active:bg-blue-600"
+              className="flex items-center justify-center gap-2 rounded-xl bg-indigo-500 py-3 text-sm font-semibold text-white hover:bg-indigo-600 active:scale-[0.98] transition shadow-sm shadow-indigo-500/25"
             >
               <Camera className="h-5 w-5" />
               카메라 촬영
@@ -155,10 +154,9 @@ export default function Receipt() {
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
             />
 
-            {/* 갤러리 */}
             <button
               onClick={() => galleryRef.current?.click()}
-              className="flex items-center justify-center gap-2 rounded-xl bg-gray-100 dark:bg-gray-800 py-3 text-sm font-medium text-gray-700 dark:text-gray-300"
+              className="flex items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
             >
               <ImagePlus className="h-5 w-5" />
               갤러리 선택
@@ -175,7 +173,7 @@ export default function Receipt() {
           {previewUrl && (
             <button
               onClick={handleParse}
-              className="w-full rounded-xl bg-blue-500 py-4 text-base font-semibold text-white active:bg-blue-600"
+              className="btn btn-primary w-full py-4 text-base"
             >
               AI 파싱 시작
             </button>
@@ -186,14 +184,14 @@ export default function Receipt() {
       {step === 'parsing' && (
         <div className="flex flex-col items-center justify-center py-32 gap-4">
           <LoadingSpinner size="lg" />
-          <p className="text-sm text-gray-500">{parseStep}</p>
+          <p className="text-sm text-slate-500">{parseStep}</p>
         </div>
       )}
 
       {step === 'result' && parsedReceipt && (
         <div>
           {parsedReceipt.confidence < 0.7 && (
-            <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 px-4 py-3 text-sm text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800">
+            <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
               <AlertTriangle className="h-5 w-5 shrink-0" />
               인식 신뢰도가 낮습니다. 내용을 꼭 확인해주세요. (신뢰도 {Math.round(parsedReceipt.confidence * 100)}%)
             </div>
