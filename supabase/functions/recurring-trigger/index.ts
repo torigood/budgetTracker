@@ -1,7 +1,12 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-serve(async () => {
+serve(async (req) => {
+  const authHeader = req.headers.get('Authorization')
+  if (authHeader !== `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`) {
+    return new Response('Unauthorized', { status: 401 })
+  }
+
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -20,7 +25,7 @@ serve(async () => {
 
   if (error) {
     console.error('recurring_items 조회 실패:', error)
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 })
+    return new Response(JSON.stringify({ error: '처리 중 오류가 발생했습니다' }), { status: 500 })
   }
 
   let inserted = 0
