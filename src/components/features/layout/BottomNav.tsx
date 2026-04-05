@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useTransition } from 'react'
-import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, List, Camera, BarChart2, Settings, RefreshCw } from 'lucide-react'
 import { useT } from '@/lib/hooks/useT'
 
@@ -43,24 +43,18 @@ export function BottomNav() {
       onTouchEnd={(e) => e.stopPropagation()}
     >
       {/* 홈 */}
-      <NavLink
-        to="/dashboard"
-        end
-        className={({ isActive }) =>
-          `flex min-h-11 min-w-18 flex-col items-center justify-center px-3 py-2.5 transition-colors ${
-            isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'
-          }`
-        }
+      <button
+        onClick={() => go('/dashboard')}
+        className={`flex min-h-11 min-w-18 flex-col items-center justify-center px-3 py-2.5 transition-colors ${
+          location.pathname.startsWith('/dashboard') ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'
+        }`}
+        aria-label={t('nav_home')}
       >
-        {({ isActive }) => (
-          <>
-            <span className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/40' : ''}`}>
-              <LayoutDashboard className="h-5.5 w-5.5" />
-            </span>
-            <span className="mt-0.5 text-[11px] font-semibold">{t('nav_home')}</span>
-          </>
-        )}
-      </NavLink>
+        <span className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${location.pathname.startsWith('/dashboard') ? 'bg-indigo-50 dark:bg-indigo-900/40' : ''}`}>
+          <LayoutDashboard className="h-5.5 w-5.5" />
+        </span>
+        <span className="mt-0.5 text-[11px] font-semibold">{t('nav_home')}</span>
+      </button>
 
       {/* 거래내역 (팝업 트리거) */}
       <div className="relative flex flex-col items-center">
@@ -68,7 +62,7 @@ export function BottomNav() {
         {popupOpen && (
           <div
             ref={popupRef}
-            className="animate-nav-pop absolute bottom-full left-1/2 mb-2.5 w-44 -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-black/12 dark:border-slate-700 dark:bg-slate-900"
+            className="animate-nav-pop absolute bottom-full left-1/2 mb-2.5 w-44 overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-black/12 dark:border-slate-700 dark:bg-slate-900"
           >
             <button
               onClick={() => go('/transactions')}
@@ -128,42 +122,32 @@ export function BottomNav() {
       </button>
 
       {/* 분석 */}
-      <NavLink
-        to="/analytics"
-        className={({ isActive }) =>
-          `flex min-h-11 min-w-18 flex-col items-center justify-center px-3 py-2.5 transition-colors ${
-            isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'
-          }`
-        }
+      <button
+        onClick={() => go('/analytics')}
+        className={`flex min-h-11 min-w-18 flex-col items-center justify-center px-3 py-2.5 transition-colors ${
+          location.pathname.startsWith('/analytics') ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'
+        }`}
+        aria-label={t('nav_analytics')}
       >
-        {({ isActive }) => (
-          <>
-            <span className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/40' : ''}`}>
-              <BarChart2 className="h-5.5 w-5.5" />
-            </span>
-            <span className="mt-0.5 text-[11px] font-semibold">{t('nav_analytics')}</span>
-          </>
-        )}
-      </NavLink>
+        <span className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${location.pathname.startsWith('/analytics') ? 'bg-indigo-50 dark:bg-indigo-900/40' : ''}`}>
+          <BarChart2 className="h-5.5 w-5.5" />
+        </span>
+        <span className="mt-0.5 text-[11px] font-semibold">{t('nav_analytics')}</span>
+      </button>
 
       {/* 설정 */}
-      <NavLink
-        to="/settings"
-        className={({ isActive }) =>
-          `flex min-h-11 min-w-18 flex-col items-center justify-center px-3 py-2.5 transition-colors ${
-            isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'
-          }`
-        }
+      <button
+        onClick={() => go('/settings')}
+        className={`flex min-h-11 min-w-18 flex-col items-center justify-center px-3 py-2.5 transition-colors ${
+          location.pathname.startsWith('/settings') ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'
+        }`}
+        aria-label={t('nav_settings')}
       >
-        {({ isActive }) => (
-          <>
-            <span className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${isActive ? 'bg-indigo-50 dark:bg-indigo-900/40' : ''}`}>
-              <Settings className="h-5.5 w-5.5" />
-            </span>
-            <span className="mt-0.5 text-[11px] font-semibold">{t('nav_settings')}</span>
-          </>
-        )}
-      </NavLink>
+        <span className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${location.pathname.startsWith('/settings') ? 'bg-indigo-50 dark:bg-indigo-900/40' : ''}`}>
+          <Settings className="h-5.5 w-5.5" />
+        </span>
+        <span className="mt-0.5 text-[11px] font-semibold">{t('nav_settings')}</span>
+      </button>
     </nav>
   )
 }

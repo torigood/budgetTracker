@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { todayISO, formatCurrency } from '@/utils/format'
 import { loadBudgetGoals } from './useBudgetGoals'
+import { loadMonthlyBudget } from './useMonthlyBudget'
 
 // ─── Push subscription ────────────────────────────────────────────────────────
 
@@ -59,14 +60,17 @@ export async function unsubscribeFromPush(userId: string): Promise<void> {
 
 const KEYS = {
   budgetEnabled: 'notify_budget_enabled',
+  monthlyBudgetEnabled: 'notify_monthly_budget_enabled',
   reminderEnabled: 'notify_reminder_enabled',
   reminderTime: 'notify_reminder_time',
   anomalyEnabled: 'notify_anomaly_enabled',
   lastReminderDate: 'notify_last_reminder_date',
+  monthlyBudgetAlertMonth: 'notify_monthly_budget_alert_month',
 } as const
 
 export type NotifySettings = {
   budgetEnabled: boolean
+  monthlyBudgetEnabled: boolean
   reminderEnabled: boolean
   reminderTime: string
   anomalyEnabled: boolean
@@ -75,6 +79,7 @@ export type NotifySettings = {
 export function getNotifySettings(): NotifySettings {
   return {
     budgetEnabled: localStorage.getItem(KEYS.budgetEnabled) !== 'false',
+    monthlyBudgetEnabled: localStorage.getItem(KEYS.monthlyBudgetEnabled) !== 'false',
     reminderEnabled: localStorage.getItem(KEYS.reminderEnabled) === 'true',
     reminderTime: localStorage.getItem(KEYS.reminderTime) ?? '21:00',
     anomalyEnabled: localStorage.getItem(KEYS.anomalyEnabled) !== 'false',
@@ -83,6 +88,11 @@ export function getNotifySettings(): NotifySettings {
 
 export function saveNotifySetting(key: keyof typeof KEYS, value: string) {
   localStorage.setItem(KEYS[key], value)
+}
+
+function monthKeyNow(): string {
+  const now = new Date()
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 }
 
 // ─── Permission ───────────────────────────────────────────────────────────────
@@ -140,6 +150,49 @@ export async function checkBudgetAlert(categoryId: string, categoryName: string)
       `${formatCurrency(total, goal.currency)} / ${formatCurrency(goal.amount, goal.currency)}`
     )
   }
+}
+
+export async function checkMonthlyBudgetAlert() {
+  const { monthlyBudgetEnabled } = getNotifySettings()
+  if (!monthlyBudgetEnabled) return
+
+  const budget = loadMonthlyBudget()
+  if (!budget || budget.amount <= 0) return
+
+  const monthKey = monthKeyNow()
+  if (localStorage.getItem(KEYS.monthlyBudgetAlertMonth) === monthKey) return
+
+  const [year, month] = monthKey.split('-')
+  const monthStart = `${year}-${month}-01`
+  const today = todayISO()
+
+  const { data } = await supabase
+    .from('transactions')
+    .select('amount')
+    .eq('type', '지출')
+    .eq('currency', budget.currency)
+    .gte('date', monthStart)
+    .lte('date', today)
+
+  const spent = (data ?? []).reduce((sum: number, row: { amount: number }) => sum + row.amount, 0)
+  const pct = Math.round((spent / budget.amount) * 100)
+
+  if (pct < 80) return
+
+  const lang = localStorage.getItem('lang') === 'en' ? 'en' : 'ko'
+  if (lang === 'en') {
+    fire(
+      'Monthly budget reached 80%',
+      `You spent ${formatCurrency(spent, budget.currency)} of ${formatCurrency(budget.amount, budget.currency)}`
+    )
+  } else {
+    fire(
+      '월 예산 80% 도달',
+      `${formatCurrency(spent, budget.currency)} / ${formatCurrency(budget.amount, budget.currency)} 사용했어요`
+    )
+  }
+
+  localStorage.setItem(KEYS.monthlyBudgetAlertMonth, monthKey)
 }
 
 // ─── B: Daily reminder ────────────────────────────────────────────────────────

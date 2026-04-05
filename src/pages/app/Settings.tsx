@@ -117,8 +117,9 @@ export default function Settings() {
   const [permission, setPermission] = useState<ReturnType<typeof getPermission>>(getPermission)
 
   const updateNotify = useCallback(<K extends keyof NotifySettings>(key: K, value: NotifySettings[K]) => {
-    const keyMap: Record<keyof NotifySettings, 'budgetEnabled' | 'reminderEnabled' | 'reminderTime' | 'anomalyEnabled'> = {
+    const keyMap: Record<keyof NotifySettings, 'budgetEnabled' | 'monthlyBudgetEnabled' | 'reminderEnabled' | 'reminderTime' | 'anomalyEnabled'> = {
       budgetEnabled: 'budgetEnabled',
+      monthlyBudgetEnabled: 'monthlyBudgetEnabled',
       reminderEnabled: 'reminderEnabled',
       reminderTime: 'reminderTime',
       anomalyEnabled: 'anomalyEnabled',
@@ -500,6 +501,15 @@ export default function Settings() {
               enabled={notifySettings.budgetEnabled}
               disabled={permission !== 'granted'}
               onToggle={(v) => updateNotify('budgetEnabled', v)}
+            />
+
+            <NotifyToggleRow
+              icon={<Target className="h-4 w-4" />}
+              label={t('notify_monthly_budget_label')}
+              description={t('notify_monthly_budget_desc')}
+              enabled={notifySettings.monthlyBudgetEnabled}
+              disabled={permission !== 'granted'}
+              onToggle={(v) => updateNotify('monthlyBudgetEnabled', v)}
             />
 
             {/* B: Daily reminder */}
