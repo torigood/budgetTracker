@@ -82,6 +82,14 @@ serve(async (req) => {
 
     const { storage_path } = await req.json() as { storage_path: string }
 
+    // storage_path 형식 검증: {uuid}/{timestamp}.{ext}
+    if (!storage_path || !/^[0-9a-f-]{36}\/\d+\.(jpg|jpeg|png|webp|heic|gif)$/i.test(storage_path)) {
+      return new Response(
+        JSON.stringify({ error: '유효하지 않은 파일 경로입니다' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     // Storage에서 이미지 다운로드
     const { data: imageData, error: storageError } = await supabase.storage
       .from('receipts')

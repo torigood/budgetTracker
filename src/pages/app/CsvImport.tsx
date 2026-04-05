@@ -11,43 +11,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PAYMENT_METHODS } from '@/types/app'
 import type { PaymentMethod, TransactionType } from '@/types/app'
-
-// ── CSV Parser ──────────────────────────────────────────────────────────────
-function parseCsvRow(line: string): string[] {
-  const cols: string[] = []
-  let cur = ''
-  let inQuote = false
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i]
-    if (ch === '"') {
-      if (inQuote && line[i + 1] === '"') { cur += '"'; i++ }
-      else inQuote = !inQuote
-    } else if (ch === ',' && !inQuote) {
-      cols.push(cur.trim())
-      cur = ''
-    } else {
-      cur += ch
-    }
-  }
-  cols.push(cur.trim())
-  return cols
-}
-
-// ── Payment method normalizer ───────────────────────────────────────────────
-const PM_MAP: Record<string, PaymentMethod> = {
-  '크레딧': '크레딧',
-  '데빗': '데빗',
-  '이트': '데빗',
-  '자동지출': '자동지출',
-  '자동 지출': '자동지출',
-  'td debit card': '데빗',
-  '아마존': '크레딧',
-  '현금': '현금',
-}
-
-function normalizePayment(raw: string): PaymentMethod {
-  return PM_MAP[raw] ?? PM_MAP[raw.toLowerCase()] ?? '크레딧'
-}
+import { parseCsvRow, parseRawRow, MAX_CSV_ROWS } from '@/lib/utils/csvParser'
 
 // ── Types ───────────────────────────────────────────────────────────────────
 interface CsvRow {
@@ -103,32 +67,13 @@ export default function CsvImport() {
       let id = 0
       for (const line of dataLines) {
         const cols = parseCsvRow(line)
-        if (cols.length < 5) continue
-        const date = cols[0]
-        const typeRaw = cols[1]
-        const csvCategory = cols[2] ?? ''
-        const description = cols[3] ?? ''
-        const amountRaw = cols[4] ?? '0'
-        const paymentRaw = cols[5] ?? ''
-        const memo = cols[6] ?? ''
-
-        if (!date.match(/^\d{4}-\d{2}-\d{2}$/)) continue
-        const parsedDate = new Date(date)
-        if (isNaN(parsedDate.getTime())) continue
-        const type: TransactionType = typeRaw === '수입' ? '수입' : '지출'
-        const amount = parseFloat(amountRaw.replace(/,/g, ''))
-        if (!isFinite(amount) || amount <= 0) continue
+        const row = parseRawRow(cols)
+        if (!row) continue
 
         parsed.push({
           id: id++,
-          date,
-          type,
-          csvCategory,
-          description,
-          amount,
-          payment: normalizePayment(paymentRaw),
-          memo,
-          categoryId: matchCategory(csvCategory),
+          ...row,
+          categoryId: matchCategory(row.csvCategory),
           include: true,
         })
       }
@@ -138,8 +83,8 @@ export default function CsvImport() {
         return
       }
 
-      if (parsed.length > 5000) {
-        toast.error('한 번에 최대 5,000행까지만 가져올 수 있습니다.')
+      if (parsed.length > MAX_CSV_ROWS) {
+        toast.error(`한 번에 최대 ${MAX_CSV_ROWS.toLocaleString()}행까지만 가져올 수 있습니다.`)
         return
       }
 
