@@ -40,33 +40,35 @@ export default function Landing() {
       {/* Nav */}
       <header className="sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2.5">
-            <img src="/icons/logo512.png" alt="Budget Tracker" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
-            <span className="text-base font-bold text-slate-900 dark:text-white">Budget Tracker</span>
+          <div className="flex items-center gap-2.5 shrink-0">
+            <img src="/icons/logo512.png" alt="Budget Tracker" className="h-9 w-9 rounded-xl object-cover shadow-sm shrink-0" />
+            <span className="text-base font-bold text-slate-900 dark:text-white whitespace-nowrap">Budget Tracker</span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* 아이콘 버튼들 — 모바일에서도 표시 */}
             <button
               onClick={toggleDark}
-              className="flex shrink-0 h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition"
+              className="flex shrink-0 h-8 w-8 items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
             >
-              {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
             <button
               onClick={() => setLang(ko ? 'en' : 'ko')}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition"
+              className="flex shrink-0 h-8 w-8 items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              title={ko ? 'English' : '한국어'}
             >
-              <Languages className="h-3.5 w-3.5" />
-              {ko ? 'EN' : '한국어'}
+              <Languages className="h-4 w-4" />
             </button>
+            {/* 로그인 — 모바일에서 숨김 */}
             <Link
               to="/login"
-              className="shrink-0 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors px-2 whitespace-nowrap"
+              className="hidden sm:inline-flex shrink-0 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors px-2 whitespace-nowrap"
             >
               {ko ? '로그인' : 'Sign in'}
             </Link>
             <Link
               to="/login?signup=true"
-              className="btn btn-primary shrink-0 text-sm px-4 py-2 whitespace-nowrap"
+              className="btn btn-primary shrink-0 text-sm px-3.5 py-2 whitespace-nowrap"
             >
               {ko ? '무료 시작' : 'Get started'}
             </Link>
