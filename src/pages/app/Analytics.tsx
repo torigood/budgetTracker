@@ -3,15 +3,17 @@ import { TrendingUp, TrendingDown } from 'lucide-react'
 import { useAnalytics } from '@/lib/hooks/useDashboard'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
+import { useT } from '@/lib/hooks/useT'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { CardSkeleton } from '@/components/ui/Skeleton'
-import { formatCurrency, getMonthLabel } from '@/utils/format'
+import { formatCurrency, getMonthShortLabel } from '@/utils/format'
 
 export default function Analytics() {
-  const { selectedMonth, setSelectedMonth } = useUIStore()
+  const { selectedMonth, setSelectedMonth, lang } = useUIStore()
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const { data: months, isLoading } = useAnalytics(selectedMonth)
+  const t = useT()
 
   const current = months?.at(-1)
   const previous = months?.at(-2)
@@ -33,10 +35,13 @@ export default function Analytics() {
 
   const totalExpense = categoryBreakdown.reduce((s, c) => s + c.amount, 0)
 
+  const expenseKey = t('analytics_expense')
+  const incomeKey = t('analytics_income')
+
   return (
     <div {...swipe}>
       <PageHeader
-        title="월별 분석"
+        title={t('analytics_title')}
         action={<MonthSelector value={selectedMonth} onChange={setSelectedMonth} />}
       />
 
@@ -56,11 +61,11 @@ export default function Analytics() {
               {expenseDiff >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
             </span>
             <div className="flex-1">
-              <p className="text-xs text-slate-500 dark:text-slate-400">전월 대비 지출</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('analytics_vs_last')}</p>
               <p className={`text-sm font-bold ${expenseDiff >= 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                 {expenseDiff >= 0 ? '+' : ''}{expenseDiff.toFixed(1)}%{' '}
                 <span className="font-normal text-xs text-slate-400">
-                  {expenseDiff >= 0 ? '더 지출했어요' : '절약했어요'}
+                  {expenseDiff >= 0 ? t('analytics_more') : t('analytics_less')}
                 </span>
               </p>
             </div>
@@ -69,7 +74,7 @@ export default function Analytics() {
 
         {/* 월별 지출 추이 바 차트 */}
         <div className="card p-4">
-          <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">최근 6개월 추이</h2>
+          <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('analytics_trend')}</h2>
           {isLoading ? (
             <CardSkeleton />
           ) : (
@@ -77,9 +82,9 @@ export default function Analytics() {
               <ResponsiveContainer width="100%" height={200} minWidth={300}>
                 <BarChart
                   data={months?.map((m) => ({
-                    name: getMonthLabel(m.month).replace('년 ', '/').replace('월', ''),
-                    지출: m.expense,
-                    수입: m.income,
+                    name: getMonthShortLabel(m.month, lang),
+                    [expenseKey]: m.expense,
+                    [incomeKey]: m.income,
                   }))}
                   barCategoryGap="30%"
                   barGap={3}
@@ -107,20 +112,19 @@ export default function Analytics() {
                       boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.08)',
                     }}
                   />
-                  <Bar dataKey="지출" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="수입" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={expenseKey} fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey={incomeKey} fill="#10b981" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
-          {/* Legend */}
           {!isLoading && (
             <div className="mt-3 flex items-center gap-4 justify-center">
               <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />지출
+                <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />{expenseKey}
               </span>
               <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />수입
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />{incomeKey}
               </span>
             </div>
           )}
@@ -129,7 +133,7 @@ export default function Analytics() {
         {/* 카테고리 파이 차트 */}
         {!isLoading && categoryBreakdown.length > 0 && (
           <div className="card p-4">
-            <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">카테고리별 지출</h2>
+            <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('analytics_category')}</h2>
             <div className="flex gap-4 items-center">
               <div className="shrink-0">
                 <ResponsiveContainer width={110} height={110}>

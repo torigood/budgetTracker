@@ -8,7 +8,7 @@ import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useT } from '@/lib/hooks/useT'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { getCurrentMonth } from '@/utils/format'
-import { getNotifySettings, saveNotifySetting, requestPermission, getPermission } from '@/lib/hooks/useNotifications'
+import { getNotifySettings, saveNotifySetting, requestPermission, getPermission, subscribeToPush } from '@/lib/hooks/useNotifications'
 import type { Lang } from '@/lib/i18n'
 import type { NotifySettings } from '@/lib/hooks/useNotifications'
 
@@ -121,8 +121,12 @@ export default function Settings() {
   async function handleAllowNotifications() {
     const perm = await requestPermission()
     setPermission(perm === 'unsupported' ? 'unsupported' : perm)
-    if (perm === 'granted') toast.success('알림이 허용됐습니다')
-    else if (perm === 'denied') toast.error(t('notify_denied'))
+    if (perm === 'granted') {
+      toast.success('알림이 허용됐습니다')
+      if (user?.id) await subscribeToPush(user.id)
+    } else if (perm === 'denied') {
+      toast.error(t('notify_denied'))
+    }
   }
 
   async function handleLogout() {

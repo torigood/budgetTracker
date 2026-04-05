@@ -53,6 +53,22 @@ export function getMonthLabel(month: string): string {
   return `${year}년 ${parseInt(m)}월`
 }
 
+/** Locale-aware "2025년 3월" / "March 2025" */
+export function getMonthLabelLocale(month: string, lang: string): string {
+  const [y, m] = month.split('-').map(Number)
+  const date = new Date(y, m - 1, 1)
+  const locale = lang === 'ko' ? 'ko-KR' : 'en-US'
+  return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long' }).format(date)
+}
+
+/** Short axis label: "3월" / "Mar" */
+export function getMonthShortLabel(month: string, lang: string): string {
+  const [y, m] = month.split('-').map(Number)
+  const date = new Date(y, m - 1, 1)
+  const locale = lang === 'ko' ? 'ko-KR' : 'en-US'
+  return new Intl.DateTimeFormat(locale, { month: 'short' }).format(date)
+}
+
 export function getMonthRange(month: string): { start: string; end: string } {
   const [year, m] = month.split('-').map(Number)
   const start = `${year}-${String(m).padStart(2, '0')}-01`

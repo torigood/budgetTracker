@@ -69,6 +69,24 @@ export const translations = {
     analytics_less: '절약했어요',
     analytics_trend: '최근 6개월 추이',
     analytics_category: '카테고리별 지출',
+    analytics_expense: '지출',
+    analytics_income: '수입',
+
+    // Receipt
+    receipt_title: '영수증 촬영',
+    receipt_drop_hint: '이미지를 드래그하거나 버튼을 누르세요',
+    receipt_drop_formats: 'JPG, PNG 지원 · 최대 10MB',
+    receipt_camera: '카메라 촬영',
+    receipt_gallery: '갤러리 선택',
+    receipt_parse_btn: 'AI 파싱 시작',
+    receipt_uploading: '업로드 중...',
+    receipt_analyzing: 'AI 분석 중...',
+    receipt_low_confidence: (pct: number) => `인식 신뢰도가 낮습니다. 내용을 꼭 확인해주세요. (신뢰도 ${pct}%)`,
+    receipt_image_only: '이미지 파일만 업로드 가능합니다',
+    receipt_size_limit: '10MB 이하 파일만 업로드 가능합니다',
+    receipt_file_not_found: '파일을 찾을 수 없습니다',
+    receipt_parse_fail: '파싱 실패',
+    receipt_preview_alt: '영수증 미리보기',
 
     // Calendar
     calendar_empty: '이 날의 거래가 없습니다',
@@ -245,10 +263,28 @@ export const translations = {
     // Analytics
     analytics_title: 'Analytics',
     analytics_vs_last: 'vs. last month',
-    analytics_more: 'more spent',
-    analytics_less: 'saved',
+    analytics_more: 'more than last month',
+    analytics_less: 'less than last month',
     analytics_trend: 'Last 6 months',
     analytics_category: 'Spending by category',
+    analytics_expense: 'Expenses',
+    analytics_income: 'Income',
+
+    // Receipt
+    receipt_title: 'Scan Receipt',
+    receipt_drop_hint: 'Drag an image here or use a button below',
+    receipt_drop_formats: 'JPG, PNG supported · Max 10MB',
+    receipt_camera: 'Take Photo',
+    receipt_gallery: 'Choose from Gallery',
+    receipt_parse_btn: 'Parse with AI',
+    receipt_uploading: 'Uploading...',
+    receipt_analyzing: 'Analyzing with AI...',
+    receipt_low_confidence: (pct: number) => `Low confidence result. Please review carefully. (${pct}% confidence)`,
+    receipt_image_only: 'Please upload an image file',
+    receipt_size_limit: 'File must be under 10MB',
+    receipt_file_not_found: 'File not found',
+    receipt_parse_fail: 'Parsing failed',
+    receipt_preview_alt: 'Receipt preview',
 
     // Calendar
     calendar_empty: 'No transactions on this day',

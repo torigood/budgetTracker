@@ -5,7 +5,7 @@ import { useCalendar, type CalendarTransaction } from '@/lib/hooks/useCalendar'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { CategoryBadge } from '@/components/ui/Badge'
-import { formatCurrency, formatDateShort, getCurrentMonth } from '@/utils/format'
+import { formatCurrency, formatDateShort, getCurrentMonth, getMonthLabelLocale } from '@/utils/format'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
 
@@ -65,7 +65,7 @@ function todayISO(): string {
 
 export default function Calendar() {
   const navigate = useNavigate()
-  const { selectedMonth, setSelectedMonth, currency } = useUIStore()
+  const { selectedMonth, setSelectedMonth, lang } = useUIStore()
   const { data: byDate, isLoading } = useCalendar(selectedMonth)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
@@ -97,7 +97,7 @@ export default function Calendar() {
                 : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 active:scale-95'
             }`}
           >
-            {y}년 {parseInt(m)}월
+            {getMonthLabelLocale(selectedMonth, lang)}
           </button>
           <button
             onClick={() => setSelectedMonth(addMonths(selectedMonth, 1))}
@@ -128,8 +128,8 @@ export default function Calendar() {
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="flex-1 bg-white dark:bg-slate-900">
+      {/* Calendar grid — overflow-hidden to prevent page scroll */}
+      <div className="flex-1 bg-white dark:bg-slate-900 overflow-hidden">
         <div className="grid grid-cols-7 divide-x divide-y divide-slate-100 dark:divide-slate-800 border-b border-slate-100 dark:border-slate-800">
           {days.map(({ date, day, isCurrentMonth }, idx) => {
             const summary = byDate?.[date]
@@ -161,17 +161,17 @@ export default function Calendar() {
                   {day}
                 </span>
 
-                {/* Amount dots */}
+                {/* Amount — show primary currency (largest amount) per type */}
                 {summary && (
                   <div className="flex flex-col items-center gap-0.5 w-full px-0.5">
-                    {summary.expense > 0 && (
+                    {summary.expenseByCurrency[0] && (
                       <span className="w-full text-center text-[9px] font-bold text-rose-400 tabular-nums leading-none">
-                        -{formatCurrency(summary.expense, currency).replace(/[^\d.,₩$€¥£]/g, '').slice(0, 9)}
+                        -{formatCurrency(summary.expenseByCurrency[0].amount, summary.expenseByCurrency[0].currency).replace(/[^\d.,₩$€¥£]/g, '').slice(0, 9)}
                       </span>
                     )}
-                    {summary.income > 0 && (
+                    {summary.incomeByCurrency[0] && (
                       <span className="w-full text-center text-[9px] font-bold text-emerald-500 tabular-nums leading-none">
-                        +{formatCurrency(summary.income, currency).replace(/[^\d.,₩$€¥£]/g, '').slice(0, 9)}
+                        +{formatCurrency(summary.incomeByCurrency[0].amount, summary.incomeByCurrency[0].currency).replace(/[^\d.,₩$€¥£]/g, '').slice(0, 9)}
                       </span>
                     )}
                   </div>
@@ -208,17 +208,17 @@ export default function Calendar() {
                   {formatDateShort(selectedDate)}
                 </h2>
                 {selectedDaySummary && (
-                  <div className="flex items-center gap-3 mt-1">
-                    {selectedDaySummary.expense > 0 && (
-                      <span className="text-xs font-semibold text-rose-500">
-                        지출 {formatCurrency(selectedDaySummary.expense, currency)}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+                    {selectedDaySummary.expenseByCurrency.map(({ currency: c, amount }) => (
+                      <span key={c} className="text-xs font-semibold text-rose-500">
+                        지출 {formatCurrency(amount, c)}
                       </span>
-                    )}
-                    {selectedDaySummary.income > 0 && (
-                      <span className="text-xs font-semibold text-emerald-500">
-                        수입 {formatCurrency(selectedDaySummary.income, currency)}
+                    ))}
+                    {selectedDaySummary.incomeByCurrency.map(({ currency: c, amount }) => (
+                      <span key={c} className="text-xs font-semibold text-emerald-500">
+                        수입 {formatCurrency(amount, c)}
                       </span>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>

@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { getMonthLabel, getCurrentMonth } from '@/utils/format'
+import { getMonthLabelLocale, getCurrentMonth } from '@/utils/format'
+import { useUIStore } from '@/lib/stores/ui.store'
 
 interface MonthSelectorProps {
   value: string
@@ -13,6 +14,7 @@ function addMonths(month: string, delta: number): string {
 }
 
 export function MonthSelector({ value, onChange }: MonthSelectorProps) {
+  const { lang } = useUIStore()
   const current = getCurrentMonth()
   const isCurrentMonth = value === current
 
@@ -37,7 +39,7 @@ export function MonthSelector({ value, onChange }: MonthSelectorProps) {
         aria-label="현재 달로 이동"
         title="현재 달로 이동"
       >
-        {getMonthLabel(value)}
+        {getMonthLabelLocale(value, lang)}
       </button>
 
       <button

@@ -16,6 +16,8 @@ export type CalendarTransaction = {
 export type DaySummary = {
   expense: number
   income: number
+  expenseByCurrency: { currency: string; amount: number }[]
+  incomeByCurrency: { currency: string; amount: number }[]
   transactions: CalendarTransaction[]
 }
 
@@ -35,16 +37,34 @@ export function useCalendar(month: string) {
       if (error) throw error
 
       // Group by date
-      const byDate: Record<string, DaySummary> = {}
+      const byDate: Record<string, DaySummary & { _expMap: Record<string, number>; _incMap: Record<string, number> }> = {}
       for (const tx of (data ?? []) as unknown as CalendarTransaction[]) {
         if (!byDate[tx.date]) {
-          byDate[tx.date] = { expense: 0, income: 0, transactions: [] }
+          byDate[tx.date] = { expense: 0, income: 0, expenseByCurrency: [], incomeByCurrency: [], transactions: [], _expMap: {}, _incMap: {} }
         }
-        if (tx.type === '지출') byDate[tx.date].expense += tx.amount
-        else byDate[tx.date].income += tx.amount
-        byDate[tx.date].transactions.push(tx)
+        const day = byDate[tx.date]
+        if (tx.type === '지출') {
+          day.expense += tx.amount
+          day._expMap[tx.currency] = (day._expMap[tx.currency] ?? 0) + tx.amount
+        } else {
+          day.income += tx.amount
+          day._incMap[tx.currency] = (day._incMap[tx.currency] ?? 0) + tx.amount
+        }
+        day.transactions.push(tx)
       }
-      return byDate
+
+      // Convert maps to sorted arrays, strip internal maps
+      const result: Record<string, DaySummary> = {}
+      for (const [date, day] of Object.entries(byDate)) {
+        result[date] = {
+          expense: day.expense,
+          income: day.income,
+          expenseByCurrency: Object.entries(day._expMap).map(([currency, amount]) => ({ currency, amount })).sort((a, b) => b.amount - a.amount),
+          incomeByCurrency: Object.entries(day._incMap).map(([currency, amount]) => ({ currency, amount })).sort((a, b) => b.amount - a.amount),
+          transactions: day.transactions,
+        }
+      }
+      return result
     },
     staleTime: 1000 * 60 * 2,
   })

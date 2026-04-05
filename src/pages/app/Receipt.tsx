@@ -5,6 +5,9 @@ import { useDropzone } from 'react-dropzone'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
+import { useUIStore } from '@/lib/stores/ui.store'
+import { useT } from '@/lib/hooks/useT'
+import { translations } from '@/lib/i18n'
 import { TransactionForm } from '@/components/features/transactions/TransactionForm'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -16,6 +19,9 @@ type Step = 'upload' | 'parsing' | 'result'
 export default function Receipt() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const { lang } = useUIStore()
+  const t = useT()
+  const tr = translations[lang]
   const cameraRef = useRef<HTMLInputElement>(null)
   const galleryRef = useRef<HTMLInputElement>(null)
 
@@ -27,11 +33,11 @@ export default function Receipt() {
 
   async function handleFile(file: File) {
     if (!file.type.startsWith('image/')) {
-      toast.error('이미지 파일만 업로드 가능합니다')
+      toast.error(t('receipt_image_only'))
       return
     }
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('10MB 이하 파일만 업로드 가능합니다')
+      toast.error(t('receipt_size_limit'))
       return
     }
     setPreviewUrl(URL.createObjectURL(file))
@@ -42,9 +48,9 @@ export default function Receipt() {
     setStep('parsing')
 
     try {
-      setParseStep('업로드 중...')
+      setParseStep(t('receipt_uploading'))
       const fileInput = cameraRef.current?.files?.[0] ?? galleryRef.current?.files?.[0]
-      if (!fileInput) throw new Error('파일을 찾을 수 없습니다')
+      if (!fileInput) throw new Error(t('receipt_file_not_found'))
 
       const ext = fileInput.name.split('.').pop() ?? 'jpg'
       const storagePath = `${user.id}/${Date.now()}.${ext}`
@@ -54,7 +60,7 @@ export default function Receipt() {
 
       if (uploadError) throw uploadError
 
-      setParseStep('AI 분석 중...')
+      setParseStep(t('receipt_analyzing'))
       const { data: { session } } = await supabase.auth.getSession()
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-receipt`,
@@ -70,7 +76,7 @@ export default function Receipt() {
 
       if (!response.ok) {
         const err = await response.json() as { error?: string }
-        throw new Error(err.error ?? '파싱 실패')
+        throw new Error(err.error ?? t('receipt_parse_fail'))
       }
 
       const result = await response.json() as { receipt: { id: string }; parsed: ParsedReceipt }
@@ -78,7 +84,7 @@ export default function Receipt() {
       setReceiptId(result.receipt.id)
       setStep('result')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : '파싱 실패')
+      toast.error(err instanceof Error ? err.message : t('receipt_parse_fail'))
       setStep('upload')
     }
   }
@@ -107,7 +113,7 @@ export default function Receipt() {
 
   return (
     <div>
-      <PageHeader title="영수증 촬영" back />
+      <PageHeader title={t('receipt_title')} back />
 
       {step === 'upload' && (
         <div className="p-4 space-y-4">
@@ -124,14 +130,14 @@ export default function Receipt() {
             {previewUrl ? (
               <img
                 src={previewUrl}
-                alt="영수증 미리보기"
+                alt={t('receipt_preview_alt')}
                 className="w-full max-h-80 object-contain bg-slate-100 dark:bg-slate-800"
               />
             ) : (
               <div className="flex flex-col items-center justify-center py-16 text-slate-400">
                 <ImagePlus className="mb-3 h-12 w-12" />
-                <p className="text-sm font-medium">이미지를 드래그하거나 버튼을 누르세요</p>
-                <p className="mt-1 text-xs text-slate-400">JPG, PNG 지원 · 최대 10MB</p>
+                <p className="text-sm font-medium">{t('receipt_drop_hint')}</p>
+                <p className="mt-1 text-xs text-slate-400">{t('receipt_drop_formats')}</p>
               </div>
             )}
           </div>
@@ -143,7 +149,7 @@ export default function Receipt() {
               className="flex items-center justify-center gap-2 rounded-xl bg-indigo-500 py-3 text-sm font-semibold text-white hover:bg-indigo-600 active:scale-[0.98] transition shadow-sm shadow-indigo-500/25"
             >
               <Camera className="h-5 w-5" />
-              카메라 촬영
+              {t('receipt_camera')}
             </button>
             <input
               ref={cameraRef}
@@ -159,7 +165,7 @@ export default function Receipt() {
               className="flex items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
             >
               <ImagePlus className="h-5 w-5" />
-              갤러리 선택
+              {t('receipt_gallery')}
             </button>
             <input
               ref={galleryRef}
@@ -175,7 +181,7 @@ export default function Receipt() {
               onClick={handleParse}
               className="btn btn-primary w-full py-4 text-base"
             >
-              AI 파싱 시작
+              {t('receipt_parse_btn')}
             </button>
           )}
         </div>
@@ -193,7 +199,7 @@ export default function Receipt() {
           {parsedReceipt.confidence < 0.7 && (
             <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
               <AlertTriangle className="h-5 w-5 shrink-0" />
-              인식 신뢰도가 낮습니다. 내용을 꼭 확인해주세요. (신뢰도 {Math.round(parsedReceipt.confidence * 100)}%)
+              {tr.receipt_low_confidence(Math.round(parsedReceipt.confidence * 100))}
             </div>
           )}
           <TransactionForm initialValues={parsedInitialValues} receiptId={receiptId ?? undefined} />
