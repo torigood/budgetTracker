@@ -144,6 +144,12 @@ export const translations = {
     login_error: '오류가 발생했습니다',
     login_hero_title: '돈의 흐름을\n한눈에 파악하세요',
     login_hero_desc: '수입·지출 기록부터 AI 영수증 인식, 카테고리 분석까지. 스마트한 가계부로 재정 목표를 달성하세요.',
+    login_forgot: '비밀번호를 잊으셨나요?',
+    login_forgot_title: '비밀번호 재설정',
+    login_forgot_subtitle: '가입한 이메일을 입력하면 재설정 링크를 보내드려요',
+    login_forgot_submit: '재설정 링크 보내기',
+    login_forgot_success: '이메일을 확인해주세요! 재설정 링크를 보냈습니다.',
+    login_forgot_back: '로그인으로 돌아가기',
 
     // Settings
     settings_title: '설정',
@@ -375,6 +381,12 @@ export const translations = {
     login_error: 'An error occurred',
     login_hero_title: 'Track your finances\nat a glance',
     login_hero_desc: 'From income & expense tracking to AI receipt scanning and category analytics — manage your money smarter.',
+    login_forgot: 'Forgot your password?',
+    login_forgot_title: 'Reset password',
+    login_forgot_subtitle: 'Enter your email and we\'ll send you a reset link',
+    login_forgot_submit: 'Send reset link',
+    login_forgot_success: 'Check your email! A reset link has been sent.',
+    login_forgot_back: 'Back to sign in',
 
     // Settings
     settings_title: 'Settings',

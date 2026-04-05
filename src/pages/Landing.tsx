@@ -1,12 +1,12 @@
 import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { TrendingUp, PieChart, RefreshCw, Camera, ShieldCheck, Zap, ArrowRight, Check, Languages } from 'lucide-react'
+import { TrendingUp, PieChart, RefreshCw, Camera, ShieldCheck, Zap, ArrowRight, Check, Languages, Sun, Moon } from 'lucide-react'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import { useUIStore } from '@/lib/stores/ui.store'
 
 export default function Landing() {
   const { user, loading } = useAuthStore()
-  const { lang, setLang } = useUIStore()
+  const { lang, setLang, isDark, toggleDark } = useUIStore()
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -45,6 +45,12 @@ export default function Landing() {
             <span className="text-base font-bold text-slate-900 dark:text-white">Budget Tracker</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={toggleDark}
+              className="flex shrink-0 h-8 w-8 items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition"
+            >
+              {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+            </button>
             <button
               onClick={() => setLang(ko ? 'en' : 'ko')}
               className="flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition"

@@ -16,11 +16,9 @@ const queryClient = new QueryClient({
 
 // 다크모드 초기화 — 깜빡임 방지를 위해 렌더 전 즉시 적용
 const savedTheme = localStorage.getItem('theme')
-if (savedTheme === 'dark') {
-  document.documentElement.classList.add('dark')
-} else {
-  document.documentElement.classList.remove('dark')
-}
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+const isDark = savedTheme ? savedTheme === 'dark' : prefersDark
+document.documentElement.classList.toggle('dark', isDark)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

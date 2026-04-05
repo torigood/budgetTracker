@@ -28,7 +28,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   selectedMonth: getCurrentMonth(),
   setSelectedMonth: (month) => set({ selectedMonth: month }),
 
-  isDark: localStorage.getItem('theme') === 'dark',
+  isDark: localStorage.getItem('theme')
+    ? localStorage.getItem('theme') === 'dark'
+    : window.matchMedia('(prefers-color-scheme: dark)').matches,
   toggleDark: () => {
     const next = !get().isDark
     set({ isDark: next })
