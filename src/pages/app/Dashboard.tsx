@@ -29,17 +29,17 @@ export default function Dashboard() {
   const tr = translations[lang]
 
   return (
-    <div className="pb-6" {...swipe}>
+    <div className="pb-10 pt-4" {...swipe}>
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+      <header className="sticky top-3 z-10 mx-4 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
         <div>
-          <p className="text-xs text-slate-400 font-medium">{t('dashboard_subtitle')}</p>
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{t('dashboard_title')}</h1>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t('dashboard_subtitle')}</p>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('dashboard_title')}</h1>
         </div>
         <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
       </header>
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 px-4 py-4">
         {/* 요약 카드 */}
         {isLoading ? (
           <div className="grid grid-cols-3 gap-3">
@@ -47,21 +47,21 @@ export default function Dashboard() {
           </div>
         ) : (data?.byCurrency ?? []).length > 1 ? (
           // Multi-currency: show one row per currency
-          <div className="space-y-2">
+          <div className="space-y-3">
             {(data?.byCurrency ?? []).map((row) => (
-              <div key={row.currency} className="card px-4 py-3 grid grid-cols-4 gap-2 items-center">
-                <span className="text-xs font-bold text-indigo-500">{row.currency}</span>
+              <div key={row.currency} className="card grid grid-cols-4 items-center gap-2 rounded-3xl bg-white/90 px-4 py-4 shadow-sm">
+                <span className="text-xs font-bold tracking-[0.18em] text-indigo-500">{row.currency}</span>
                 <div className="text-center">
-                  <p className="text-[10px] text-slate-400">{t('dashboard_expense')}</p>
-                  <p className="text-xs font-bold text-rose-500 tabular-nums">{formatCurrency(row.expense, row.currency)}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('dashboard_expense')}</p>
+                  <p className="mt-1 text-sm font-bold tabular-nums text-rose-500">{formatCurrency(row.expense, row.currency)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] text-slate-400">{t('dashboard_income')}</p>
-                  <p className="text-xs font-bold text-emerald-500 tabular-nums">{formatCurrency(row.income, row.currency)}</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('dashboard_income')}</p>
+                  <p className="mt-1 text-sm font-bold tabular-nums text-emerald-500">{formatCurrency(row.income, row.currency)}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-[10px] text-slate-400">{t('dashboard_net')}</p>
-                  <p className={`text-xs font-bold tabular-nums ${row.net >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('dashboard_net')}</p>
+                  <p className={`mt-1 text-sm font-bold tabular-nums ${row.net >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                     {formatCurrency(Math.abs(row.net), row.currency)}
                   </p>
                 </div>
@@ -74,21 +74,21 @@ export default function Dashboard() {
               label={t('dashboard_expense')}
               amount={data?.totalExpense ?? 0}
               type="expense"
-              icon={<TrendingDown className="h-3.5 w-3.5" />}
+              icon={<TrendingDown className="h-4 w-4" />}
               currency={data?.primaryCurrency ?? 'CAD'}
             />
             <SummaryCard
               label={t('dashboard_income')}
               amount={data?.totalIncome ?? 0}
               type="income"
-              icon={<TrendingUp className="h-3.5 w-3.5" />}
+              icon={<TrendingUp className="h-4 w-4" />}
               currency={data?.primaryCurrency ?? 'CAD'}
             />
             <SummaryCard
               label={t('dashboard_net')}
               amount={data?.netBalance ?? 0}
               type={(data?.netBalance ?? 0) >= 0 ? 'income' : 'expense'}
-              icon={<Minus className="h-3.5 w-3.5" />}
+              icon={<Minus className="h-4 w-4" />}
               currency={data?.primaryCurrency ?? 'CAD'}
             />
           </div>
@@ -102,14 +102,14 @@ export default function Dashboard() {
           const pct = Math.min(Math.round((spent / budget.amount) * 100), 100)
           const isOver = spent > budget.amount
           return (
-            <div className="card p-4">
-              <div className="flex items-center justify-between mb-2">
+            <div className="card rounded-3xl bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm dark:from-slate-900 dark:to-slate-900/60">
+              <div className="mb-3 flex items-center justify-between">
                 <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('monthly_budget_title')}</p>
                 <p className={`text-xs font-semibold tabular-nums ${isOver ? 'text-rose-500' : 'text-slate-400'}`}>
                   {isOver ? t('monthly_budget_over') : tr.monthly_budget_used(pct)}
                 </p>
               </div>
-              <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden mb-2">
+              <div className="mb-3 h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                 <div
                   className={`h-full rounded-full transition-all duration-500 ${isOver ? 'bg-rose-500' : pct > 80 ? 'bg-amber-400' : 'bg-indigo-500'}`}
                   style={{ width: `${pct}%` }}
@@ -132,22 +132,22 @@ export default function Dashboard() {
         {/* 빠른 추가 버튼 */}
         <button
           onClick={() => navigate('/transactions/new')}
-          className="flex w-full items-center justify-between rounded-2xl bg-indigo-500 px-5 py-4 text-white shadow-md shadow-indigo-500/25 active:scale-[0.98] transition"
+          className="flex min-h-[64px] w-full items-center justify-between rounded-3xl bg-gradient-to-r from-indigo-500 via-indigo-500 to-violet-500 px-5 py-4 text-white shadow-lg shadow-indigo-500/25 transition-all active:scale-95"
         >
           <div>
-            <p className="text-xs font-medium text-indigo-200">{t('dashboard_add_prompt')}</p>
-            <p className="text-sm font-semibold">{t('dashboard_add_desc')}</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-100">{t('dashboard_add_prompt')}</p>
+            <p className="text-base font-semibold tracking-tight">{t('dashboard_add_desc')}</p>
           </div>
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20">
             <Plus className="h-5 w-5" />
           </span>
         </button>
 
         {/* 카테고리 도넛 차트 */}
         {!isLoading && data && data.categoryBreakdown.length > 0 && (
-          <div className="card p-4">
-            <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard_category_chart')}</h2>
-            <div className="flex items-center gap-4">
+          <div className="card rounded-3xl p-4 shadow-sm">
+            <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard_category_chart')}</h2>
+            <div className="flex items-center gap-5">
               <div className="relative shrink-0">
                 <ResponsiveContainer width={110} height={110}>
                   <PieChart>
@@ -168,20 +168,20 @@ export default function Dashboard() {
                     <Tooltip
                       formatter={(v) => formatCurrency(v as number, data?.primaryCurrency ?? 'CAD')}
                       contentStyle={{
-                        borderRadius: '10px',
-                        border: '1px solid #e2e8f0',
+                        borderRadius: '16px',
+                        border: '1px solid rgb(226 232 240 / 0.9)',
                         fontSize: '12px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.08)',
+                        boxShadow: '0 20px 45px -20px rgb(15 23 42 / 0.2)',
                       }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex-1 space-y-2 min-w-0">
+              <div className="min-w-0 flex-1 space-y-2">
                 {data.categoryBreakdown.slice(0, 5).map((cat) => (
                   <div key={cat.id} className="flex items-center justify-between gap-2">
                     <CategoryBadge color={cat.color} label={cat.name} size="sm" />
-                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums shrink-0">
+                    <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-300">
                       {formatCurrency(cat.amount, data?.primaryCurrency ?? 'CAD')}
                     </span>
                   </div>
@@ -192,25 +192,25 @@ export default function Dashboard() {
         )}
 
         {/* 최근 거래 */}
-        <div className="card overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-100 dark:border-slate-700/50">
-            <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard_recent')}</h2>
+        <div className="card overflow-hidden rounded-3xl">
+          <div className="flex items-center justify-between border-b border-slate-100/80 px-5 py-4 dark:border-slate-800/60">
+            <h2 className="text-sm font-semibold tracking-tight text-slate-700 dark:text-slate-300">{t('dashboard_recent')}</h2>
             <button
               onClick={() => navigate('/calendar')}
-              className="flex items-center gap-1 text-xs font-medium text-indigo-500 hover:text-indigo-600 transition-colors"
+              className="flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-500 transition-colors hover:bg-indigo-100 hover:text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300 dark:hover:bg-indigo-900/30"
             >
-              <CalendarDays className="h-3 w-3" /> {t('dashboard_view_calendar')}
+              <CalendarDays className="h-3.5 w-3.5" /> {t('dashboard_view_calendar')}
             </button>
           </div>
 
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => <TransactionSkeleton key={i} />)
           ) : !data?.recentTransactions.length ? (
-            <div className="px-4 py-10 text-center">
+            <div className="px-4 py-12 text-center">
               <p className="text-sm text-slate-400">{t('dashboard_empty')}</p>
               <button
                 onClick={() => navigate('/transactions/new')}
-                className="mt-2 text-xs font-medium text-indigo-500 hover:text-indigo-600 transition-colors"
+                className="mt-3 inline-flex min-h-[48px] items-center justify-center rounded-full bg-indigo-50 px-4 text-xs font-semibold text-indigo-500 transition-colors hover:bg-indigo-100 hover:text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300 dark:hover:bg-indigo-900/30"
               >
                 {t('dashboard_add_first')}
               </button>
@@ -222,10 +222,10 @@ export default function Dashboard() {
                 <div
                   key={tx.id}
                   onClick={() => navigate(`/transactions/${tx.id}/edit`)}
-                  className="flex items-center gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 last:border-0 active:bg-slate-50 dark:active:bg-slate-800/40 cursor-pointer hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors"
+                  className="flex cursor-pointer items-center gap-3 border-b border-slate-50/80 px-5 py-4 transition-colors last:border-0 hover:bg-slate-50/70 active:bg-slate-100/70 dark:border-slate-800/60 dark:hover:bg-slate-800/30 dark:active:bg-slate-800/50"
                 >
                   <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold shadow-sm"
                     style={{
                       backgroundColor: `${cat?.color ?? '#6b7280'}18`,
                       color: cat?.color ?? '#6b7280',
@@ -234,7 +234,7 @@ export default function Dashboard() {
                     {cat?.name?.[0] ?? '?'}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium text-slate-900 dark:text-white">{tx.description}</p>
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{tx.description}</p>
                     <p className="text-xs text-slate-400">{formatDateShort(tx.date)}</p>
                   </div>
                   <span className={`text-sm font-semibold tabular-nums ${
@@ -361,15 +361,15 @@ function WidgetBanner() {
 
   return (
     <div
-      className={`relative rounded-2xl bg-gradient-to-br ${current.accent} border border-slate-100 dark:border-slate-800 p-4 overflow-hidden select-none`}
+      className={`relative select-none overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-br ${current.accent} p-4 shadow-sm backdrop-blur-xl dark:border-slate-800/70`}
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
       {/* Title row */}
-      <div className="flex items-center justify-between mb-2.5">
+      <div className="mb-3 flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{current.title}</p>
-          {current.subtitle && <p className="text-[10px] text-slate-400 mt-0.5">{current.subtitle}</p>}
+          <p className="text-xs font-semibold tracking-tight text-slate-700 dark:text-slate-200">{current.title}</p>
+          {current.subtitle && <p className="mt-0.5 text-[10px] text-slate-400">{current.subtitle}</p>}
         </div>
         {/* Dot indicators */}
         <div className="flex items-center gap-1.5">
@@ -406,18 +406,18 @@ function SummaryCard({
 }) {
   const styles: Record<SummaryType, { bg: string; icon: string; amount: string }> = {
     expense: {
-      bg: 'bg-rose-50 dark:bg-rose-900/20',
-      icon: 'text-rose-500 bg-rose-100 dark:bg-rose-800/40',
+      bg: 'bg-gradient-to-br from-rose-50 via-white to-white dark:from-rose-950/30 dark:via-slate-900 dark:to-slate-900/50',
+      icon: 'text-white bg-rose-500 shadow-lg shadow-rose-500/20',
       amount: 'text-rose-600 dark:text-rose-400',
     },
     income: {
-      bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-      icon: 'text-emerald-500 bg-emerald-100 dark:bg-emerald-800/40',
+      bg: 'bg-gradient-to-br from-emerald-50 via-white to-white dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-900/50',
+      icon: 'text-white bg-emerald-500 shadow-lg shadow-emerald-500/20',
       amount: 'text-emerald-600 dark:text-emerald-400',
     },
     neutral: {
-      bg: 'bg-slate-50 dark:bg-slate-800',
-      icon: 'text-slate-500 bg-slate-100 dark:bg-slate-700',
+      bg: 'bg-gradient-to-br from-slate-50 via-white to-white dark:from-slate-800/80 dark:via-slate-900 dark:to-slate-900/60',
+      icon: 'text-white bg-slate-500 shadow-lg shadow-slate-500/20',
       amount: 'text-slate-700 dark:text-slate-300',
     },
   }
@@ -425,12 +425,12 @@ function SummaryCard({
   const s = styles[type]
 
   return (
-    <div className={`rounded-2xl p-3 ${s.bg}`}>
-      <div className={`mb-2 inline-flex h-6 w-6 items-center justify-center rounded-lg ${s.icon}`}>
+    <div className={`card rounded-3xl p-4 ${s.bg}`}>
+      <div className={`mb-4 inline-flex h-9 w-9 items-center justify-center rounded-2xl ${s.icon}`}>
         {icon}
       </div>
-      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-0.5">{label}</p>
-      <p className={`text-sm font-bold tabular-nums leading-tight ${s.amount}`}>
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{label}</p>
+      <p className={`text-[clamp(1.15rem,4vw,1.8rem)] font-bold tracking-tight tabular-nums leading-none ${s.amount}`}>
         {formatCurrency(Math.abs(amount), currency)}
       </p>
     </div>

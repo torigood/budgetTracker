@@ -63,13 +63,16 @@ export function AppLayout() {
   }, [navigate])
 
   return (
-    <div className="flex min-h-svh bg-slate-50 dark:bg-slate-950">
+    <div className="relative flex min-h-svh overflow-x-hidden bg-slate-50 dark:bg-slate-950">
+      <div className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-indigo-400/10 blur-3xl dark:bg-indigo-500/10" />
+      <div className="pointer-events-none absolute -right-24 top-24 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl dark:bg-cyan-500/10" />
+
       {/* Desktop sidebar */}
       <SideNav />
 
       {/* Main content */}
-      <div className="flex-1 md:ml-64">
-        <main className="pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
+      <div className="relative z-10 flex-1 md:ml-64">
+        <main className="pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pb-0">
           <Outlet />
         </main>
       </div>

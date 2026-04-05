@@ -60,6 +60,10 @@
   body {
     margin: 0;
     background-color: var(--color-surface-raised);
+    background-image:
+      radial-gradient(circle at top, rgb(99 102 241 / 0.08), transparent 28%),
+      radial-gradient(circle at top right, rgb(20 184 166 / 0.06), transparent 26%);
+    background-attachment: fixed;
     color: var(--color-text-primary);
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
@@ -83,8 +87,9 @@
   .card {
     background-color: var(--color-surface);
     border: 1px solid var(--color-border-subtle);
-    border-radius: 1rem;
-    box-shadow: var(--shadow-sm);
+    border-radius: 1.5rem;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 10px 30px rgb(15 23 42 / 0.05);
+    backdrop-filter: blur(16px);
     transition: background-color 0.2s ease, border-color 0.2s ease;
   }
 
@@ -101,8 +106,9 @@
     cursor: pointer;
     transition: all var(--transition-fast);
     user-select: none;
-    border-radius: 0.75rem;
-    padding: 0.75rem 1.25rem;
+    border-radius: 1rem;
+    padding: 0.875rem 1.25rem;
+    min-height: 48px;
   }
 
   .btn:focus-visible {
@@ -129,7 +135,7 @@
   }
 
   .btn-primary:active:not(:disabled) {
-    transform: translateY(0);
+    transform: scale(0.98) translateY(0);
   }
 
   .btn-ghost {

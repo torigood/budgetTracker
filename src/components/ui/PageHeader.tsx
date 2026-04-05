@@ -13,23 +13,23 @@ export function PageHeader({ title, subtitle, action, back }: PageHeaderProps) {
   const navigate = useNavigate()
 
   return (
-    <header className="flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 sticky top-0 z-10">
+    <header className="sticky top-3 z-20 mx-4 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
       <div className="flex items-center gap-3">
         {back && (
           <button
             onClick={() => navigate(-1)}
-            className="tap-target flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="tap-target flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100/80 text-slate-500 transition hover:bg-slate-200/70 active:scale-95 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-700/80"
             aria-label="뒤로가기"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
         )}
         <div>
-          {subtitle && <p className="text-xs text-slate-400 font-medium">{subtitle}</p>}
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{title}</h1>
+          {subtitle && <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{subtitle}</p>}
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">{title}</h1>
         </div>
       </div>
-      {action && <div>{action}</div>}
+      {action && <div className="shrink-0">{action}</div>}
     </header>
   )
 }

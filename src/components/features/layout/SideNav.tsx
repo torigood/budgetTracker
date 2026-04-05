@@ -22,34 +22,39 @@ export function SideNav() {
   }
 
   return (
-    <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 md:flex">
+    <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-white/70 bg-white/75 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-950/70 md:flex">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100 dark:border-slate-800">
-        <img src="/icons/logo512.png" alt="Budget Tracker" className="h-9 w-9 rounded-xl shrink-0 object-cover" />
-        <span className="text-base font-bold text-slate-900 dark:text-white">Budget Tracker</span>
+      <div className="mx-3 mt-3 flex items-center gap-3 rounded-[1.5rem] bg-gradient-to-br from-indigo-500 via-indigo-500 to-cyan-500 px-4 py-4 text-white shadow-lg shadow-indigo-500/20">
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur-sm">
+          <img src="/icons/logo512.png" alt="Budget Tracker" className="h-8 w-8 rounded-xl object-cover" />
+        </div>
+        <div>
+          <span className="block text-base font-semibold tracking-tight">Budget Tracker</span>
+          <span className="block text-[11px] font-medium text-white/75">Smart money, calm UI</span>
+        </div>
       </div>
 
       {/* Nav items */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
             to={to}
             end={to === '/dashboard'}
             className={({ isActive }) =>
-              `group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
+              `group flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98] ${
                 isActive
-                  ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                  : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-white'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl transition-colors ${
                   isActive
-                    ? 'bg-indigo-100 dark:bg-indigo-800/60 text-indigo-600 dark:text-indigo-400'
-                    : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'
+                    ? 'bg-white/15 text-white'
+                    : 'bg-slate-100 text-slate-400 group-hover:bg-white group-hover:text-slate-700 dark:bg-slate-800/80 dark:text-slate-500 dark:group-hover:bg-slate-700/80 dark:group-hover:text-white'
                 }`}>
                   <Icon className="h-4 w-4" />
                 </span>
@@ -61,12 +66,12 @@ export function SideNav() {
       </nav>
 
       {/* Logout */}
-      <div className="px-3 pb-5 border-t border-slate-100 dark:border-slate-800 pt-3">
+      <div className="px-3 pb-5 pt-3">
         <button
           onClick={handleLogout}
-          className="group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-slate-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 dark:hover:text-rose-400 transition-all"
+          className="group flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold text-slate-500 transition-all duration-200 hover:bg-rose-50 hover:text-rose-600 active:scale-[0.98] dark:hover:bg-rose-900/20 dark:hover:text-rose-300"
         >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-slate-400 group-hover:text-rose-500 transition-colors">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 transition-colors group-hover:bg-rose-100 group-hover:text-rose-500 dark:bg-slate-800/80 dark:text-slate-500 dark:group-hover:bg-rose-900/30 dark:group-hover:text-rose-300">
             <LogOut className="h-4 w-4" />
           </span>
           {t('nav_logout')}

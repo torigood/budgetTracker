@@ -8,13 +8,13 @@ interface BadgeProps {
 export function CategoryBadge({ color, label, size = 'md' }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full font-medium ${
-        size === 'sm' ? 'px-2 py-0.5 text-xs' : 'px-3 py-1 text-sm'
+      className={`inline-flex items-center gap-1.5 rounded-full border font-semibold shadow-sm backdrop-blur-sm ${
+        size === 'sm' ? 'px-2.5 py-1 text-[11px]' : 'px-3 py-1.5 text-sm'
       }`}
-      style={{ backgroundColor: `${color}20`, color }}
+      style={{ backgroundColor: `${color}14`, color, borderColor: `${color}24` }}
     >
       <span
-        className="inline-block h-1.5 w-1.5 rounded-full"
+        className="inline-block h-2 w-2 rounded-full"
         style={{ backgroundColor: color }}
       />
       {label}
