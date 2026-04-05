@@ -64,14 +64,15 @@ export default function Transactions() {
   const { lang } = useUIStore()
   const tr = translations[lang]
   const { filters, setMonth, setCategoryId, setType, setSearch, toggleSortOrder, resetFilters } = useFilterStore()
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTransactions(filters)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [showFilters, setShowFilters] = useState(false)
+  const [searchAll, setSearchAll] = useState(false)
+  const loaderRef = useRef<HTMLDivElement>(null)
+
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTransactions(filters, searchAll && !!filters.search)
   const { data: categories } = useCategories()
   const deleteMutation = useDeleteTransaction()
   const swipe = useSwipeMonth(filters.month, setMonth)
-
-  const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
-  const loaderRef = useRef<HTMLDivElement>(null)
 
   const hasActiveFilter = !!(filters.categoryId || filters.type)
   const allTransactions = data?.pages.flat() as TxWithCategory[] | undefined
@@ -126,18 +127,19 @@ export default function Transactions() {
       />
 
       {/* Search + filter bar */}
-      <div className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-          <input
-            value={filters.search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="검색..."
-            className="w-full rounded-xl bg-slate-100 dark:bg-slate-800 pl-9 pr-4 py-2 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:bg-slate-50 dark:focus:bg-slate-700 transition"
-          />
-        </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
+      <div className="px-4 pt-2.5 pb-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              value={filters.search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={t('tx_search')}
+              className="w-full rounded-xl bg-slate-100 dark:bg-slate-800 pl-9 pr-4 py-2 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:bg-slate-50 dark:focus:bg-slate-700 transition"
+            />
+          </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
           className={`flex h-9 w-9 items-center justify-center rounded-xl transition ${
             showFilters || hasActiveFilter
               ? 'bg-indigo-500 text-white shadow-sm'
@@ -147,6 +149,28 @@ export default function Transactions() {
         >
           <SlidersHorizontal className="h-4 w-4" />
         </button>
+        </div>
+        {/* 전체 기간 검색 토글 — 검색어 있을 때만 표시 */}
+        {filters.search && (
+          <div className="flex items-center gap-2 pb-2">
+            <button
+              onClick={() => setSearchAll(false)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                !searchAll ? 'bg-indigo-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+              }`}
+            >
+              {t('tx_search_month')}
+            </button>
+            <button
+              onClick={() => setSearchAll(true)}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                searchAll ? 'bg-indigo-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+              }`}
+            >
+              {t('tx_search_all')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Month + sort + active filters */}

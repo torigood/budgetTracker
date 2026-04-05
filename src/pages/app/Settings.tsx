@@ -10,8 +10,11 @@ import { translations } from '@/lib/i18n'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { getCurrentMonth } from '@/utils/format'
 import { getNotifySettings, saveNotifySetting, requestPermission, getPermission, subscribeToPush } from '@/lib/hooks/useNotifications'
+import { useMonthlyBudget } from '@/lib/hooks/useMonthlyBudget'
+import { formatCurrency } from '@/utils/format'
 import type { Lang } from '@/lib/i18n'
 import type { NotifySettings } from '@/lib/hooks/useNotifications'
+import type { CurrencyCode } from '@/lib/stores/ui.store'
 
 const LANGUAGES: { code: Lang; label: string; native: string }[] = [
   { code: 'ko', label: '한국어', native: 'Korean' },
@@ -107,6 +110,10 @@ export default function Settings() {
   const [exportFrom, setExportFrom] = useState(getCurrentMonth())
   const [exportTo, setExportTo] = useState(getCurrentMonth())
   const [notifySettings, setNotifySettings] = useState<NotifySettings>(getNotifySettings)
+  const { budget: monthlyBudget, setBudget: setMonthlyBudget } = useMonthlyBudget()
+  const [editingMonthlyBudget, setEditingMonthlyBudget] = useState(false)
+  const [mbAmount, setMbAmount] = useState('')
+  const [mbCurrency, setMbCurrency] = useState<CurrencyCode>(currency)
   const [permission, setPermission] = useState<ReturnType<typeof getPermission>>(getPermission)
 
   const updateNotify = useCallback(<K extends keyof NotifySettings>(key: K, value: NotifySettings[K]) => {
@@ -362,6 +369,85 @@ export default function Settings() {
               <Download className="h-4 w-4" />
               {t('settings_csv_export')}
             </button>
+          </div>
+        </div>
+
+        {/* 월 전체 예산 */}
+        <div>
+          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('monthly_budget_title')}</p>
+          <div className="card p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500">
+                <Target className="h-4 w-4" />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-900 dark:text-white">{t('monthly_budget_desc')}</p>
+                {monthlyBudget && !editingMonthlyBudget && (
+                  <p className="text-xs text-indigo-500 font-semibold mt-0.5">
+                    {formatCurrency(monthlyBudget.amount, monthlyBudget.currency)} / {lang === 'ko' ? '월' : 'mo'}
+                  </p>
+                )}
+                {!monthlyBudget && !editingMonthlyBudget && (
+                  <p className="text-xs text-slate-400 mt-0.5">{t('monthly_budget_no_limit')}</p>
+                )}
+              </div>
+              {!editingMonthlyBudget && (
+                <div className="flex items-center gap-1">
+                  {monthlyBudget && (
+                    <button
+                      onClick={() => { setMonthlyBudget(null); toast.success(t('monthly_budget_deleted')) }}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition"
+                    >
+                      <span className="text-xs">✕</span>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => { setMbAmount(monthlyBudget ? String(monthlyBudget.amount) : ''); setMbCurrency(monthlyBudget?.currency ?? currency); setEditingMonthlyBudget(true) }}
+                    className="rounded-lg bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition"
+                  >
+                    {t('monthly_budget_set')}
+                  </button>
+                </div>
+              )}
+            </div>
+            {editingMonthlyBudget && (
+              <div className="space-y-2.5">
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={mbAmount}
+                  onChange={(e) => setMbAmount(e.target.value)}
+                  autoFocus
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-base text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                />
+                <div className="flex gap-1.5 flex-wrap">
+                  {SUPPORTED_CURRENCIES.map((c) => (
+                    <button key={c.code} type="button" onClick={() => setMbCurrency(c.code)}
+                      className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${mbCurrency === c.code ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'border-slate-200 dark:border-slate-700 text-slate-500'}`}>
+                      {c.code}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setEditingMonthlyBudget(false)}
+                    className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    {t('budget_cancel')}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const n = parseFloat(mbAmount)
+                      if (isNaN(n) || n <= 0) return
+                      setMonthlyBudget({ amount: n, currency: mbCurrency })
+                      toast.success(t('monthly_budget_saved'))
+                      setEditingMonthlyBudget(false)
+                    }}
+                    className="flex-1 rounded-xl bg-indigo-500 py-2 text-xs font-semibold text-white hover:bg-indigo-600 transition">
+                    {t('budget_save')}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

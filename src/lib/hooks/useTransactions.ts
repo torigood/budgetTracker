@@ -8,19 +8,22 @@ type TransactionInsert = Database['public']['Tables']['transactions']['Insert']
 
 const PAGE_SIZE = 20
 
-export function useTransactions(filters: TransactionFilters) {
+export function useTransactions(filters: TransactionFilters, searchAll = false) {
   return useInfiniteQuery({
-    queryKey: ['transactions', filters],
+    queryKey: ['transactions', filters, searchAll],
     queryFn: async ({ pageParam = 0 }) => {
-      const { start, end } = getMonthRange(filters.month)
       let query = supabase
         .from('transactions')
         .select('*, categories(id, name, color, icon)')
-        .gte('date', start)
-        .lte('date', end)
         .order('date', { ascending: filters.sortOrder === 'asc' })
         .order('created_at', { ascending: filters.sortOrder === 'asc' })
         .range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1)
+
+      // Month filter — skipped when searching all time
+      if (!searchAll) {
+        const { start, end } = getMonthRange(filters.month)
+        query = query.gte('date', start).lte('date', end)
+      }
 
       if (filters.categoryId) query = query.eq('category_id', filters.categoryId)
       if (filters.type) query = query.eq('type', filters.type)

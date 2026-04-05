@@ -30,6 +30,8 @@ export const translations = {
     // Transactions
     tx_title: '거래내역',
     tx_search: '검색...',
+    tx_search_all: '전체 기간 검색',
+    tx_search_month: '이번 달',
     tx_filter_reset: '필터 초기화',
     tx_empty_title: '거래내역이 없습니다',
     tx_empty_desc: '오른쪽 상단 + 버튼을 눌러 첫 거래를 입력해보세요',
@@ -71,6 +73,14 @@ export const translations = {
     analytics_category: '카테고리별 지출',
     analytics_expense: '지출',
     analytics_income: '수입',
+    analytics_tab_monthly: '월별',
+    analytics_tab_annual: '연간',
+    analytics_annual_total_expense: '연간 총 지출',
+    analytics_annual_total_income: '연간 총 수입',
+    analytics_annual_net: '순손익',
+    analytics_annual_trend: '월별 지출/수입 추이',
+    analytics_annual_currency_note: '가장 많이 사용된 통화 기준',
+    analytics_no_data: '데이터 없음',
 
     // Receipt
     receipt_title: '영수증 촬영',
@@ -194,6 +204,16 @@ export const translations = {
     widget_no_expense: '지출 없음',
 
     // Budget goals
+    monthly_budget_title: '월 전체 예산',
+    monthly_budget_desc: '이번 달 총 지출 한도',
+    monthly_budget_no_limit: '한도 없음',
+    monthly_budget_set: '한도 설정',
+    monthly_budget_used: (pct: number) => `${pct}% 사용`,
+    monthly_budget_over: '예산 초과',
+    monthly_budget_remaining: (amt: string) => `${amt} 남음`,
+    monthly_budget_saved: '월 예산이 저장됐습니다',
+    monthly_budget_deleted: '월 예산이 삭제됐습니다',
+
     budget_title: '예산 목표',
     budget_desc: '카테고리별 월 지출 한도를 설정하세요',
     budget_no_limit: '한도 없음',
@@ -267,6 +287,8 @@ export const translations = {
     // Transactions
     tx_title: 'Transactions',
     tx_search: 'Search...',
+    tx_search_all: 'Search all time',
+    tx_search_month: 'This month',
     tx_filter_reset: 'Reset filters',
     tx_empty_title: 'No transactions',
     tx_empty_desc: 'Tap the + button to add your first transaction',
@@ -308,6 +330,14 @@ export const translations = {
     analytics_category: 'Spending by category',
     analytics_expense: 'Expenses',
     analytics_income: 'Income',
+    analytics_tab_monthly: 'Monthly',
+    analytics_tab_annual: 'Annual',
+    analytics_annual_total_expense: 'Total expenses',
+    analytics_annual_total_income: 'Total income',
+    analytics_annual_net: 'Net balance',
+    analytics_annual_trend: 'Monthly income & expenses',
+    analytics_annual_currency_note: 'Based on most-used currency',
+    analytics_no_data: 'No data',
 
     // Receipt
     receipt_title: 'Scan Receipt',
@@ -429,6 +459,17 @@ export const translations = {
     widget_this_month: 'This month',
     widget_last_month: 'Last month',
     widget_no_expense: 'No expenses',
+
+    // Monthly budget
+    monthly_budget_title: 'Monthly budget',
+    monthly_budget_desc: 'Total spending limit for the month',
+    monthly_budget_no_limit: 'No limit set',
+    monthly_budget_set: 'Set limit',
+    monthly_budget_used: (pct: number) => `${pct}% used`,
+    monthly_budget_over: 'Over budget',
+    monthly_budget_remaining: (amt: string) => `${amt} remaining`,
+    monthly_budget_saved: 'Monthly budget saved',
+    monthly_budget_deleted: 'Monthly budget removed',
 
     // Budget goals
     budget_title: 'Budget goals',

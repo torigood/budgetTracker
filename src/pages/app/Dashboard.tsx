@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useWidgetStats } from '@/lib/hooks/useWidgetStats'
 import { useReminderCheck } from '@/lib/hooks/useNotifications'
+import { useMonthlyBudget } from '@/lib/hooks/useMonthlyBudget'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useFilterStore } from '@/lib/stores/filter.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
@@ -18,12 +19,14 @@ import type { CurrencyRow } from '@/lib/hooks/useWidgetStats'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { selectedMonth, setSelectedMonth } = useUIStore()
+  const { selectedMonth, setSelectedMonth, lang } = useUIStore()
   const { setMonth: setFilterMonth } = useFilterStore()
   useReminderCheck()
   const { data, isLoading } = useDashboard(selectedMonth)
+  const { budget } = useMonthlyBudget()
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const t = useT()
+  const tr = translations[lang]
 
   return (
     <div className="pb-6" {...swipe}>
@@ -90,6 +93,38 @@ export default function Dashboard() {
             />
           </div>
         )}
+
+        {/* 월 전체 예산 진행 바 */}
+        {!isLoading && budget && (() => {
+          // Find expense for the budget currency; fallback to primaryCurrency total
+          const budgetRow = data?.byCurrency?.find(r => r.currency === budget.currency)
+          const spent = budgetRow?.expense ?? (budget.currency === data?.primaryCurrency ? data?.totalExpense ?? 0 : 0)
+          const pct = Math.min(Math.round((spent / budget.amount) * 100), 100)
+          const isOver = spent > budget.amount
+          return (
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('monthly_budget_title')}</p>
+                <p className={`text-xs font-semibold tabular-nums ${isOver ? 'text-rose-500' : 'text-slate-400'}`}>
+                  {isOver ? t('monthly_budget_over') : tr.monthly_budget_used(pct)}
+                </p>
+              </div>
+              <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden mb-2">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${isOver ? 'bg-rose-500' : pct > 80 ? 'bg-amber-400' : 'bg-indigo-500'}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span className="tabular-nums">{formatCurrency(spent, budget.currency)}</span>
+                <span className="tabular-nums">{formatCurrency(budget.amount, budget.currency)}</span>
+              </div>
+              {!isOver && (
+                <p className="mt-1 text-xs text-slate-400">{tr.monthly_budget_remaining(formatCurrency(budget.amount - spent, budget.currency))}</p>
+              )}
+            </div>
+          )
+        })()}
 
         {/* 위젯 배너 */}
         <WidgetBanner />
