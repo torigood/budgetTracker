@@ -177,29 +177,30 @@ export default function Transactions() {
       <div className="mx-4 mt-3 rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
         <div className="flex items-center justify-between gap-3">
           <MonthSelector value={filters.month} onChange={setMonth} />
-          <div className="flex items-center gap-2">
-            {hasActiveFilter && (
-              <button
-                onClick={resetFilters}
-                className="whitespace-nowrap rounded-full bg-indigo-50 px-2.5 py-1.5 text-[11px] font-semibold leading-none text-indigo-500 transition hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300"
-              >
-                {t('tx_filter_reset')}
-              </button>
-            )}
+          <button
+            onClick={toggleSortOrder}
+            className={`shrink-0 whitespace-nowrap flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+              filters.sortOrder === 'asc'
+                ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300'
+                : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
+            }`}
+            title={filters.sortOrder === 'desc' ? t('tx_sort_recent') : t('tx_sort_oldest')}
+          >
+            <ArrowUpDown className="h-3.5 w-3.5" />
+            {filters.sortOrder === 'desc' ? t('tx_sort_recent') : t('tx_sort_oldest')}
+          </button>
+        </div>
+
+        {hasActiveFilter && (
+          <div className="mt-2 flex justify-end">
             <button
-              onClick={toggleSortOrder}
-              className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                filters.sortOrder === 'asc'
-                  ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300'
-                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
-              }`}
-              title={filters.sortOrder === 'desc' ? t('tx_sort_recent') : t('tx_sort_oldest')}
+              onClick={resetFilters}
+              className="whitespace-nowrap rounded-full bg-indigo-50 px-2.5 py-1.5 text-[11px] font-semibold leading-none text-indigo-500 transition hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300"
             >
-              <ArrowUpDown className="h-3.5 w-3.5" />
-              {filters.sortOrder === 'desc' ? t('tx_sort_recent') : t('tx_sort_oldest')}
+              {t('tx_filter_reset')}
             </button>
           </div>
-        </div>
+        )}
 
         {showFilters && (
           <div className="mt-3 space-y-3">
