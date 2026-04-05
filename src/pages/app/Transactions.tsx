@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, SlidersHorizontal, List, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Search, SlidersHorizontal, List, Edit2, Trash2, ArrowUpDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useTransactions, useDeleteTransaction } from '@/lib/hooks/useTransactions'
 import { useCategories } from '@/lib/hooks/useCategories'
 import { useFilterStore } from '@/lib/stores/filter.store'
+import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { TransactionSkeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -28,10 +29,11 @@ type TxWithCategory = {
 
 export default function Transactions() {
   const navigate = useNavigate()
-  const { filters, setMonth, setCategoryId, setType, setSearch, resetFilters } = useFilterStore()
+  const { filters, setMonth, setCategoryId, setType, setSearch, toggleSortOrder, resetFilters } = useFilterStore()
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTransactions(filters)
   const { data: categories } = useCategories()
   const deleteMutation = useDeleteTransaction()
+  const swipe = useSwipeMonth(filters.month, setMonth)
 
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
@@ -74,7 +76,7 @@ export default function Transactions() {
   }
 
   return (
-    <div className="flex flex-col min-h-full">
+    <div className="flex flex-col min-h-full" {...swipe}>
       <PageHeader
         title="거래내역"
         action={
@@ -112,18 +114,32 @@ export default function Transactions() {
         </button>
       </div>
 
-      {/* Month + active filters */}
+      {/* Month + sort + active filters */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center justify-between px-4 py-2">
           <MonthSelector value={filters.month} onChange={setMonth} />
-          {hasActiveFilter && (
+          <div className="flex items-center gap-2">
+            {hasActiveFilter && (
+              <button
+                onClick={resetFilters}
+                className="text-xs font-medium text-indigo-500 hover:text-indigo-600 transition"
+              >
+                필터 초기화
+              </button>
+            )}
             <button
-              onClick={resetFilters}
-              className="text-xs font-medium text-indigo-500 hover:text-indigo-600 transition"
+              onClick={toggleSortOrder}
+              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
+                filters.sortOrder === 'asc'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                  : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+              title={filters.sortOrder === 'desc' ? '최근순' : '오래된순'}
             >
-              필터 초기화
+              <ArrowUpDown className="h-3.5 w-3.5" />
+              {filters.sortOrder === 'desc' ? '최근순' : '오래된순'}
             </button>
-          )}
+          </div>
         </div>
 
         {showFilters && (

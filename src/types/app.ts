@@ -26,6 +26,7 @@ export interface TransactionFilters {
   categoryId: string | null
   type: TransactionType | null
   search: string
+  sortOrder: 'desc' | 'asc'
 }
 
 export interface ParsedReceipt {

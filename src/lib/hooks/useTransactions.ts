@@ -18,8 +18,8 @@ export function useTransactions(filters: TransactionFilters) {
         .select('*, categories(id, name, color, icon)')
         .gte('date', start)
         .lte('date', end)
-        .order('date', { ascending: false })
-        .order('created_at', { ascending: false })
+        .order('date', { ascending: filters.sortOrder === 'asc' })
+        .order('created_at', { ascending: filters.sortOrder === 'asc' })
         .range(pageParam * PAGE_SIZE, (pageParam + 1) * PAGE_SIZE - 1)
 
       if (filters.categoryId) query = query.eq('category_id', filters.categoryId)
