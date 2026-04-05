@@ -17,6 +17,7 @@ import Recurring from '@/pages/app/Recurring'
 import Calendar from '@/pages/app/Calendar'
 import Settings from '@/pages/app/Settings'
 import SettingsCategories from '@/pages/app/SettingsCategories'
+import CsvImport from '@/pages/app/CsvImport'
 import NotFound from '@/pages/NotFound'
 
 const router = createBrowserRouter([
@@ -35,6 +36,7 @@ const router = createBrowserRouter([
       { path: '/recurring', element: <Recurring /> },
       { path: '/settings', element: <Settings /> },
       { path: '/settings/categories', element: <SettingsCategories /> },
+      { path: '/csv-import', element: <CsvImport /> },
     ],
   },
   { path: '*', element: <NotFound /> },

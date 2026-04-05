@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -6,12 +7,13 @@ import { toast } from 'sonner'
 import { useCreateTransaction, useUpdateTransaction } from '@/lib/hooks/useTransactions'
 import { useCategories } from '@/lib/hooks/useCategories'
 import { useAuthStore } from '@/lib/stores/auth.store'
-import { useUIStore } from '@/lib/stores/ui.store'
+import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PAYMENT_METHODS } from '@/types/app'
 import { todayISO } from '@/utils/format'
 import type { Transaction } from '@/types/app'
+import type { CurrencyCode } from '@/lib/stores/ui.store'
 
 const schema = z.object({
   date: z.string().min(1, '날짜를 선택해주세요'),
@@ -41,6 +43,9 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
   const { user } = useAuthStore()
   const { currency: defaultCurrency } = useUIStore()
   const { data: categories } = useCategories()
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(
+    (initialValues?.currency as CurrencyCode) ?? defaultCurrency
+  )
   const createMutation = useCreateTransaction()
   const updateMutation = useUpdateTransaction()
 
@@ -70,13 +75,13 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
   async function onSubmit(values: FormValues) {
     try {
       if (editId) {
-        await updateMutation.mutateAsync({ id: editId, data: values })
+        await updateMutation.mutateAsync({ id: editId, data: { ...values, currency: selectedCurrency } })
         toast.success('거래가 수정됐습니다')
       } else {
         await createMutation.mutateAsync({
           ...values,
           user_id: user!.id,
-          currency: initialValues?.currency ?? defaultCurrency,
+          currency: selectedCurrency,
           memo: values.memo || null,
           receipt_id: receiptId ?? null,
         })
@@ -110,14 +115,14 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
         ))}
       </div>
 
-      {/* 금액 */}
+      {/* 금액 + 통화 */}
       <Controller
         name="amount"
         control={control}
         render={({ field }) => (
           <CurrencyInput
             label="금액"
-            currency={initialValues?.currency ?? defaultCurrency}
+            currency={selectedCurrency}
             value={field.value ?? ''}
             onChange={field.onChange}
             onBlur={field.onBlur}
@@ -125,6 +130,27 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
           />
         )}
       />
+
+      {/* 통화 선택 */}
+      <div>
+        <label className={labelClass}>통화</label>
+        <div className="flex gap-2 flex-wrap">
+          {SUPPORTED_CURRENCIES.map((c) => (
+            <button
+              key={c.code}
+              type="button"
+              onClick={() => setSelectedCurrency(c.code)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                selectedCurrency === c.code
+                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                  : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'
+              }`}
+            >
+              {c.code}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* 날짜 */}
       <div>

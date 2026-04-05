@@ -17,12 +17,28 @@ export function useDashboard(month: string) {
       if (error) throw error
       const transactions = data ?? []
 
-      const totalExpense = transactions
-        .filter((t) => t.type === '지출')
-        .reduce((sum, t) => sum + t.amount, 0)
-      const totalIncome = transactions
-        .filter((t) => t.type === '수입')
-        .reduce((sum, t) => sum + t.amount, 0)
+      // Per-currency breakdown
+      const currencyMap: Record<string, { expense: number; income: number }> = {}
+      transactions.forEach((t) => {
+        const cur = t.currency ?? 'CAD'
+        if (!currencyMap[cur]) currencyMap[cur] = { expense: 0, income: 0 }
+        if (t.type === '지출') currencyMap[cur].expense += t.amount
+        else currencyMap[cur].income += t.amount
+      })
+      const byCurrency = Object.entries(currencyMap)
+        .map(([currency, { expense, income }]) => ({
+          currency,
+          expense,
+          income,
+          net: income - expense,
+        }))
+        .sort((a, b) => b.expense + b.income - (a.expense + a.income))
+
+      // Legacy single-currency totals (sum of primary currency or first found)
+      const primaryCurrency = byCurrency[0]?.currency ?? 'CAD'
+      const primaryTotals = currencyMap[primaryCurrency] ?? { expense: 0, income: 0 }
+      const totalExpense = primaryTotals.expense
+      const totalIncome = primaryTotals.income
       const netBalance = totalIncome - totalExpense
 
       const categoryMap: Record<string, { name: string; color: string; icon: string; amount: number }> = {}
@@ -43,7 +59,7 @@ export function useDashboard(month: string) {
 
       const recentTransactions = transactions.slice(0, 5)
 
-      return { totalExpense, totalIncome, netBalance, categoryBreakdown, recentTransactions }
+      return { totalExpense, totalIncome, netBalance, categoryBreakdown, recentTransactions, byCurrency, primaryCurrency }
     },
   })
 }

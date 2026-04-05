@@ -11,7 +11,7 @@ import { formatCurrency, formatDateShort } from '@/utils/format'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { selectedMonth, setSelectedMonth, currency } = useUIStore()
+  const { selectedMonth, setSelectedMonth } = useUIStore()
   const { data, isLoading } = useDashboard(selectedMonth)
   const t = useT()
 
@@ -32,6 +32,29 @@ export default function Dashboard() {
           <div className="grid grid-cols-3 gap-3">
             {Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)}
           </div>
+        ) : (data?.byCurrency ?? []).length > 1 ? (
+          // Multi-currency: show one row per currency
+          <div className="space-y-2">
+            {(data?.byCurrency ?? []).map((row) => (
+              <div key={row.currency} className="card px-4 py-3 grid grid-cols-4 gap-2 items-center">
+                <span className="text-xs font-bold text-indigo-500">{row.currency}</span>
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-400">{t('dashboard_expense')}</p>
+                  <p className="text-xs font-bold text-rose-500 tabular-nums">{formatCurrency(row.expense, row.currency)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-400">{t('dashboard_income')}</p>
+                  <p className="text-xs font-bold text-emerald-500 tabular-nums">{formatCurrency(row.income, row.currency)}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-[10px] text-slate-400">{t('dashboard_net')}</p>
+                  <p className={`text-xs font-bold tabular-nums ${row.net >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    {formatCurrency(Math.abs(row.net), row.currency)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-3 gap-3">
             <SummaryCard
@@ -39,21 +62,21 @@ export default function Dashboard() {
               amount={data?.totalExpense ?? 0}
               type="expense"
               icon={<TrendingDown className="h-3.5 w-3.5" />}
-              currency={currency}
+              currency={data?.primaryCurrency ?? 'CAD'}
             />
             <SummaryCard
               label={t('dashboard_income')}
               amount={data?.totalIncome ?? 0}
               type="income"
               icon={<TrendingUp className="h-3.5 w-3.5" />}
-              currency={currency}
+              currency={data?.primaryCurrency ?? 'CAD'}
             />
             <SummaryCard
               label={t('dashboard_net')}
               amount={data?.netBalance ?? 0}
               type={(data?.netBalance ?? 0) >= 0 ? 'income' : 'expense'}
               icon={<Minus className="h-3.5 w-3.5" />}
-              currency={currency}
+              currency={data?.primaryCurrency ?? 'CAD'}
             />
           </div>
         )}
@@ -95,7 +118,7 @@ export default function Dashboard() {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(v) => formatCurrency(v as number, currency)}
+                      formatter={(v) => formatCurrency(v as number, data?.primaryCurrency ?? 'CAD')}
                       contentStyle={{
                         borderRadius: '10px',
                         border: '1px solid #e2e8f0',
@@ -111,7 +134,7 @@ export default function Dashboard() {
                   <div key={cat.id} className="flex items-center justify-between gap-2">
                     <CategoryBadge color={cat.color} label={cat.name} size="sm" />
                     <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums shrink-0">
-                      {formatCurrency(cat.amount, currency)}
+                      {formatCurrency(cat.amount, data?.primaryCurrency ?? 'CAD')}
                     </span>
                   </div>
                 ))}

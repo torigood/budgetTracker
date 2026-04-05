@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Moon, Sun, Download, LogOut, Tag, User, Coins, Languages } from 'lucide-react'
+import { ChevronRight, Moon, Sun, Download, Upload, LogOut, Tag, User, Coins, Languages } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
@@ -192,8 +192,11 @@ export default function Settings() {
           <div className="card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Coins className="h-4 w-4 text-slate-400" />
-              <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_currency_label')}</p>
-              <span className="ml-auto text-xs font-semibold text-indigo-500">{selectedCurrencyInfo?.label}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-slate-900 dark:text-white">기본 통화</p>
+                <p className="text-xs text-slate-400 mt-0.5">새 거래 추가 시 기본으로 선택됩니다</p>
+              </div>
+              <span className="text-xs font-semibold text-indigo-500">{selectedCurrencyInfo?.label}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               {SUPPORTED_CURRENCIES.map((c) => (
@@ -216,9 +219,18 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* 데이터 내보내기 */}
+        {/* 데이터 가져오기/내보내기 */}
         <div>
           <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('settings_data')}</p>
+          <div className="card divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden mb-3">
+            <SettingRow
+              icon={<Upload className="h-4 w-4" />}
+              label="CSV 가져오기"
+              description="가계부 CSV 파일로 거래 내역을 일괄 추가"
+              onClick={() => navigate('/csv-import')}
+              right={<ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 shrink-0" />}
+            />
+          </div>
           <div className="card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Download className="h-4 w-4 text-slate-400" />
