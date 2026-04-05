@@ -87,7 +87,7 @@ export default function Calendar() {
       style={{ touchAction: 'none' }}
     >
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+      <header className="sticky top-3 z-10 mx-4 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
         <div className="flex items-center gap-1">
           {/* Today button */}
           <button
@@ -96,27 +96,27 @@ export default function Calendar() {
             className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${
               isCurrentMonth
                 ? 'text-slate-300 dark:text-slate-600 cursor-default'
-                : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 active:scale-95'
+              : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 active:scale-95'
             }`}
           >
             <CalendarDays className="h-4 w-4" />
           </button>
           <button
             onClick={() => setSelectedMonth(addMonths(selectedMonth, -1))}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="flex h-9 w-9 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           {/* Month label — opens picker */}
           <button
             onClick={() => setShowPicker(true)}
-            className="text-base font-bold min-w-[100px] text-center rounded-lg px-1 py-0.5 transition text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-95"
+            className="min-w-[100px] rounded-2xl px-2 py-1 text-center text-base font-semibold tracking-tight text-slate-900 transition hover:bg-slate-100 active:scale-95 dark:text-white dark:hover:bg-slate-800"
           >
             {getMonthLabelLocale(selectedMonth, lang)}
           </button>
           <button
             onClick={() => setSelectedMonth(addMonths(selectedMonth, 1))}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+            className="flex h-9 w-9 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -221,7 +221,7 @@ export default function Calendar() {
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="relative z-10 w-full max-w-lg rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-2xl max-h-[75vh] flex flex-col"
+            className="relative z-10 flex max-h-[75vh] w-full max-w-lg flex-col rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Sheet header */}

@@ -90,9 +90,9 @@ export default function Login() {
     : ['Category expense analytics', 'AI receipt auto-scan', 'Auto-log recurring expenses', 'Real-time multi-device sync']
 
   return (
-    <div className="flex min-h-svh bg-white dark:bg-slate-950">
+    <div className="flex min-h-svh bg-slate-50 dark:bg-slate-950">
       {/* Left panel — branding (desktop only) */}
-      <div className="hidden lg:flex lg:w-[52%] flex-col justify-between bg-gradient-to-br from-indigo-600 via-indigo-500 to-purple-600 p-12 relative overflow-hidden">
+      <div className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-500 to-cyan-500 p-12 lg:flex lg:w-[52%] lg:flex-col lg:justify-between">
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute bottom-0 -left-10 h-64 w-64 rounded-full bg-purple-400/20 blur-3xl" />
@@ -139,7 +139,7 @@ export default function Login() {
           </Link>
           <button
             onClick={() => setLang(lang === 'ko' ? 'en' : 'ko')}
-            className="flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:border-indigo-400 hover:text-indigo-500 transition"
+            className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 transition hover:border-indigo-400 hover:text-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
           >
             <Languages className="h-3.5 w-3.5" />
             {lang === 'ko' ? 'English' : '한국어'}
@@ -170,7 +170,7 @@ export default function Login() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     required
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   />
                 </div>
                 <button
@@ -206,7 +206,7 @@ export default function Login() {
               <button
                 onClick={handleGoogle}
                 disabled={submitting}
-                className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-3 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-[0.98] transition disabled:opacity-60"
+                className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -223,7 +223,7 @@ export default function Login() {
                   <div className="w-full border-t border-slate-200 dark:border-slate-700" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-white dark:bg-slate-950 px-3 text-xs text-slate-400">{t('login_or')}</span>
+                  <span className="bg-slate-50 px-3 text-xs text-slate-400 dark:bg-slate-950">{t('login_or')}</span>
                 </div>
               </div>
 
@@ -239,7 +239,7 @@ export default function Login() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     required
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   />
                 </div>
 

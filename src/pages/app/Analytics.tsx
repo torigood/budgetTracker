@@ -47,23 +47,23 @@ export default function Analytics() {
   const incomeKey = t('analytics_income')
 
   return (
-    <div {...(tab === 'monthly' ? swipe : {})}>
+    <div className="pb-6" {...(tab === 'monthly' ? swipe : {})}>
       <PageHeader
         title={t('analytics_title')}
         action={tab === 'monthly' ? <MonthSelector value={selectedMonth} onChange={setSelectedMonth} /> : undefined}
       />
 
       {/* Tab switcher */}
-      <div className="flex gap-1 mx-4 mt-3 mb-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+      <div className="mx-4 mt-3 mb-1 flex gap-1 rounded-[1.5rem] border border-white/70 bg-white/80 p-1 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
         <button
           onClick={() => startTransition(() => setTab('monthly'))}
-          className={`tap-target flex-1 rounded-lg py-2 text-sm font-semibold transition ${tab === 'monthly' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
+          className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'monthly' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 dark:text-slate-400'}`}
         >
           {t('analytics_tab_monthly')}
         </button>
         <button
           onClick={() => startTransition(() => setTab('annual'))}
-          className={`tap-target flex-1 rounded-lg py-2 text-sm font-semibold transition ${tab === 'annual' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500'}`}
+          className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'annual' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 dark:text-slate-400'}`}
         >
           {t('analytics_tab_annual')}
         </button>
@@ -81,18 +81,18 @@ export default function Analytics() {
           incomeKey={incomeKey}
         />
       ) : (
-        <div className="p-4 space-y-4">
+        <div className="space-y-4 px-4 py-4">
           {/* 전월 대비 배너 */}
           {!isLoading && expenseDiff !== null && (
-            <div className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 ${
+            <div className={`flex items-center gap-3 rounded-3xl border border-white/70 px-4 py-4 shadow-sm backdrop-blur-xl ${
               expenseDiff >= 0
-                ? 'bg-rose-50 dark:bg-rose-900/20'
-                : 'bg-emerald-50 dark:bg-emerald-900/20'
+                ? 'bg-rose-50/80 dark:border-slate-800/70 dark:bg-rose-950/30'
+                : 'bg-emerald-50/80 dark:border-slate-800/70 dark:bg-emerald-950/30'
             }`}>
               <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
                 expenseDiff >= 0
-                  ? 'bg-rose-100 dark:bg-rose-800/40 text-rose-500'
-                  : 'bg-emerald-100 dark:bg-emerald-800/40 text-emerald-500'
+                    ? 'bg-rose-100 text-rose-500 dark:bg-rose-900/40 dark:text-rose-300'
+                    : 'bg-emerald-100 text-emerald-500 dark:bg-emerald-900/40 dark:text-emerald-300'
               }`}>
                 {expenseDiff >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
               </span>
@@ -109,7 +109,7 @@ export default function Analytics() {
           )}
 
           {/* 월별 지출 추이 바 차트 */}
-          <div className="card p-4">
+          <div className="card rounded-3xl p-4">
             <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('analytics_trend')}</h2>
             {isLoading ? (
               <CardSkeleton />
@@ -142,10 +142,10 @@ export default function Analytics() {
                     <Tooltip
                       formatter={(v) => formatCurrency(v as number)}
                       contentStyle={{
-                        borderRadius: '10px',
-                        border: '1px solid #e2e8f0',
+                        borderRadius: '16px',
+                        border: '1px solid rgb(226 232 240 / 0.9)',
                         fontSize: '12px',
-                        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.08)',
+                        boxShadow: '0 20px 45px -20px rgb(15 23 42 / 0.2)',
                       }}
                     />
                     <Bar dataKey={expenseKey} fill="#f43f5e" radius={[4, 4, 0, 0]} />
@@ -168,7 +168,7 @@ export default function Analytics() {
 
           {/* 카테고리 파이 차트 */}
           {!isLoading && categoryBreakdown.length > 0 && (
-            <div className="card p-4">
+            <div className="card rounded-3xl p-4">
               <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('analytics_category')}</h2>
               <div className="flex gap-4 items-center">
                 <div className="shrink-0">
@@ -198,7 +198,7 @@ export default function Analytics() {
                         <div className="flex items-center gap-1.5 min-w-0">
                           {i < 3 && (
                             <span
-                              className="shrink-0 text-[9px] font-bold px-1 py-0.5 rounded"
+                              className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
                               style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
                             >
                               TOP{i + 1}
@@ -210,7 +210,7 @@ export default function Analytics() {
                           {formatCurrency(cat.amount)}
                         </span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{

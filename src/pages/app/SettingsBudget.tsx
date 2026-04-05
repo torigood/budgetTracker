@@ -50,22 +50,22 @@ export default function SettingsBudget() {
   }
 
   return (
-    <div className="min-h-full bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-full pb-6">
       {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center gap-3 px-4 py-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
+      <header className="sticky top-3 z-10 mx-4 flex items-center gap-3 rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
         <button
           onClick={() => navigate('/settings')}
-          className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+          className="flex h-10 w-10 items-center justify-center rounded-2xl text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
         <div>
-          <p className="text-xs text-slate-400">{t('settings_title')}</p>
-          <h1 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{t('budget_title')}</h1>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_title')}</p>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('budget_title')}</h1>
         </div>
       </header>
 
-      <div className="p-4 space-y-3">
+      <div className="space-y-3 px-4 py-4">
         {/* Description */}
         <p className="text-xs text-slate-400 px-1">{t('budget_desc')}</p>
 

@@ -23,7 +23,7 @@ export default function TransactionEdit() {
   })
 
   return (
-    <div>
+    <div className="pb-6">
       <PageHeader title="거래 수정" subtitle="내역 편집" back />
       {isLoading ? (
         <div className="flex justify-center py-16"><LoadingSpinner /></div>

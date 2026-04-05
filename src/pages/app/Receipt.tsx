@@ -112,18 +112,18 @@ export default function Receipt() {
     : undefined
 
   return (
-    <div>
+    <div className="pb-6">
       <PageHeader title={t('receipt_title')} back />
 
       {step === 'upload' && (
-        <div className="p-4 space-y-4">
+        <div className="space-y-4 px-4 py-4">
           {/* 드롭존 */}
           <div
             {...getRootProps()}
-            className={`relative rounded-2xl overflow-hidden border-2 border-dashed transition ${
+            className={`relative overflow-hidden rounded-[1.75rem] border-2 border-dashed transition ${
               isDragActive
-                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                : 'border-slate-200 dark:border-slate-700'
+                ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-900/20'
+                : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'
             }`}
           >
             <input {...getInputProps()} />
@@ -146,7 +146,7 @@ export default function Receipt() {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => cameraRef.current?.click()}
-              className="flex items-center justify-center gap-2 rounded-xl bg-indigo-500 py-3 text-sm font-semibold text-white hover:bg-indigo-600 active:scale-[0.98] transition shadow-sm shadow-indigo-500/25"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3 text-sm font-semibold text-white transition active:scale-[0.98] shadow-lg shadow-indigo-500/20"
             >
               <Camera className="h-5 w-5" />
               {t('receipt_camera')}
@@ -162,7 +162,7 @@ export default function Receipt() {
 
             <button
               onClick={() => galleryRef.current?.click()}
-              className="flex items-center justify-center gap-2 rounded-xl bg-slate-100 dark:bg-slate-800 py-3 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-slate-100 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
             >
               <ImagePlus className="h-5 w-5" />
               {t('receipt_gallery')}
@@ -188,7 +188,7 @@ export default function Receipt() {
       )}
 
       {step === 'parsing' && (
-        <div className="flex flex-col items-center justify-center py-32 gap-4">
+        <div className="flex flex-col items-center justify-center gap-4 py-32">
           <LoadingSpinner size="lg" />
           <p className="text-sm text-slate-500">{parseStep}</p>
         </div>
@@ -197,7 +197,7 @@ export default function Receipt() {
       {step === 'result' && parsedReceipt && (
         <div>
           {parsedReceipt.confidence < 0.7 && (
-            <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 px-4 py-3 text-sm text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+            <div className="mx-4 mt-4 flex items-center gap-2 rounded-3xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-700 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-400">
               <AlertTriangle className="h-5 w-5 shrink-0" />
               {tr.receipt_low_confidence(Math.round(parsedReceipt.confidence * 100))}
             </div>

@@ -112,13 +112,13 @@ export default function Transactions() {
   }
 
   return (
-    <div className="flex flex-col min-h-full" {...swipe}>
+    <div className="flex min-h-full flex-col pb-6" {...swipe}>
       <PageHeader
         title={t('tx_title')}
         action={
           <button
             onClick={() => navigate('/transactions/new')}
-            className="tap-target flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-sm shadow-indigo-500/25 hover:bg-indigo-600 transition active:scale-95"
+            className="tap-target flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/20 transition active:scale-95"
             aria-label={t('dashboard_add_prompt')}
           >
             <Plus className="h-5 w-5" />
@@ -127,7 +127,7 @@ export default function Transactions() {
       />
 
       {/* Search + filter bar */}
-      <div className="px-4 pt-2.5 pb-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+      <div className="mx-4 mt-3 rounded-[1.75rem] border border-white/70 bg-white/80 px-4 pt-4 pb-3 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
         <div className="flex items-center gap-2 mb-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -135,15 +135,15 @@ export default function Transactions() {
               value={filters.search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('tx_search')}
-              className="w-full rounded-xl bg-slate-100 dark:bg-slate-800 pl-9 pr-4 py-2 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:bg-slate-50 dark:focus:bg-slate-700 transition"
+              className="w-full rounded-2xl border border-transparent bg-slate-100/90 pl-9 pr-4 py-3 text-base text-slate-900 outline-none transition placeholder-slate-400 focus:border-indigo-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 dark:bg-slate-800/80 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
-          className={`tap-target flex h-11 w-11 items-center justify-center rounded-xl transition ${
+          className={`tap-target flex h-12 w-12 items-center justify-center rounded-2xl transition active:scale-95 ${
             showFilters || hasActiveFilter
-              ? 'bg-indigo-500 text-white shadow-sm'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+              ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+              : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-400'
           }`}
           aria-label={t('tx_filter_reset')}
         >
@@ -155,16 +155,16 @@ export default function Transactions() {
           <div className="flex items-center gap-2 pb-2">
             <button
               onClick={() => setSearchAll(false)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                !searchAll ? 'bg-indigo-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                !searchAll ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
               }`}
             >
               {t('tx_search_month')}
             </button>
             <button
               onClick={() => setSearchAll(true)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                searchAll ? 'bg-indigo-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                searchAll ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
               }`}
             >
               {t('tx_search_all')}
@@ -174,24 +174,24 @@ export default function Transactions() {
       </div>
 
       {/* Month + sort + active filters */}
-      <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
-        <div className="flex items-center justify-between px-4 py-2">
+      <div className="mx-4 mt-3 rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
+        <div className="flex items-center justify-between gap-3">
           <MonthSelector value={filters.month} onChange={setMonth} />
           <div className="flex items-center gap-2">
             {hasActiveFilter && (
               <button
                 onClick={resetFilters}
-                className="text-xs font-medium text-indigo-500 hover:text-indigo-600 transition"
+                className="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-500 transition hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300"
               >
                 {t('tx_filter_reset')}
               </button>
             )}
             <button
               onClick={toggleSortOrder}
-              className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
+              className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
                 filters.sortOrder === 'asc'
-                  ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                  : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300'
+                  : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
               }`}
               title={filters.sortOrder === 'desc' ? t('tx_sort_recent') : t('tx_sort_oldest')}
             >
@@ -202,19 +202,19 @@ export default function Transactions() {
         </div>
 
         {showFilters && (
-          <div className="px-4 pb-3 space-y-2.5">
+          <div className="mt-3 space-y-3">
             {/* Type filter */}
             <div className="flex gap-2">
               {(['지출', '수입'] as TransactionType[]).map((type) => (
                 <button
                   key={type}
                   onClick={() => setType(filters.type === type ? null : type)}
-                  className={`rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+                  className={`rounded-full px-4 py-2 text-xs font-semibold transition ${
                     filters.type === type
                       ? type === '지출'
-                        ? 'bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400'
-                        : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                        ? 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-300'
+                        : 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300'
+                      : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                   }`}
                 >
                   {type === '지출' ? t('form_expense') : t('form_income')}
@@ -227,8 +227,8 @@ export default function Transactions() {
                 <button
                   key={cat.id}
                   onClick={() => setCategoryId(filters.categoryId === cat.id ? null : cat.id)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                    filters.categoryId === cat.id ? 'text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800'
+                  className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                    filters.categoryId === cat.id ? 'text-white shadow-sm' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
                   }`}
                   style={filters.categoryId === cat.id ? { backgroundColor: cat.color } : {}}
                 >
@@ -243,7 +243,7 @@ export default function Transactions() {
       {/* List */}
       <div className="flex-1">
         {isLoading ? (
-          <div className="bg-white dark:bg-slate-900 divide-y divide-slate-50 dark:divide-slate-800">
+          <div className="mx-4 mt-3 card divide-y divide-slate-50/80 overflow-hidden rounded-3xl dark:divide-slate-800/70">
             {Array.from({ length: 8 }).map((_, i) => <TransactionSkeleton key={i} />)}
           </div>
         ) : !allTransactions?.length ? (
@@ -260,17 +260,17 @@ export default function Transactions() {
           Object.entries(grouped).map(([dateLabel, txs]) => {
             const dayExpense = txs.filter(t => t.type === '지출').reduce((s, t) => s + t.amount, 0)
             return (
-              <div key={dateLabel}>
+              <div key={dateLabel} className="mt-3 overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/80 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
                 {/* Date group header */}
-                <div className="flex items-center justify-between px-4 py-2 bg-slate-50 dark:bg-slate-950/60">
-                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{dateLabel}</span>
+                <div className="flex items-center justify-between px-5 py-3">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{dateLabel}</span>
                   {dayExpense > 0 && (
                     <span className="text-xs font-semibold text-rose-400 tabular-nums">
                       -{formatCurrency(dayExpense)}
                     </span>
                   )}
                 </div>
-                <div className="bg-white dark:bg-slate-900">
+                <div className="divide-y divide-slate-50/80 dark:divide-slate-800/60">
                   {txs.map((tx) => (
                     <TransactionRow
                       key={tx.id}
@@ -319,12 +319,12 @@ function TransactionRow({
 
   return (
     <div
-      className="relative flex items-center gap-3 px-4 py-3 border-b border-slate-50 dark:border-slate-800/60 last:border-0 active:bg-slate-50 dark:active:bg-slate-800/30 cursor-pointer"
+      className="relative flex cursor-pointer items-center gap-3 px-5 py-4 transition-colors active:bg-slate-100/70 dark:active:bg-slate-800/50"
       onClick={() => setShowActions((v) => !v)}
     >
       {/* Category avatar */}
       <div
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold shadow-sm"
         style={{
           backgroundColor: `${tx.categories?.color ?? '#94a3b8'}15`,
           color: tx.categories?.color ?? '#94a3b8',
@@ -335,7 +335,7 @@ function TransactionRow({
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="truncate text-sm font-medium text-slate-900 dark:text-white">
+          <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">
             {tx.description}
           </span>
           {tx.categories && (
@@ -355,21 +355,21 @@ function TransactionRow({
 
       {/* Inline action buttons — appear on tap, positioned to the right */}
       <div
-        className={`absolute right-3 top-1/2 -translate-y-1/2 z-10 flex gap-1 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-lg p-1 transition-all duration-150 origin-right ${
+        className={`absolute right-3 top-1/2 z-10 flex origin-right -translate-y-1/2 gap-1 rounded-2xl border border-white/70 bg-white/95 p-1 shadow-2xl shadow-slate-900/10 backdrop-blur-xl transition-all duration-150 dark:border-slate-700/70 dark:bg-slate-900/95 ${
           showActions ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onEdit}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition"
+          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-900/30"
         >
           <Edit2 className="h-3.5 w-3.5" />
           {t('tx_edit')}
         </button>
         <button
           onClick={onDelete}
-          className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition"
+          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-900/20"
         >
           <Trash2 className="h-3.5 w-3.5" />
           {t('tx_delete')}

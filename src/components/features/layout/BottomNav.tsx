@@ -40,7 +40,7 @@ export function BottomNav() {
   }
 
   const navIcon = location.pathname.startsWith('/recurring')
-    ? <RefreshCw className="h-6 w-6 animate-spin" />
+    ? <RefreshCw className="h-6 w-6" />
     : <List className="h-6 w-6" />
 
   return (

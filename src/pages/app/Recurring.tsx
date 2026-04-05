@@ -46,6 +46,7 @@ export default function Recurring() {
   const [editItem, setEditItem] = useState<RecurringItem | null>(null)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [todayKey, setTodayKey] = useState(() => new Date().toISOString().slice(0, 10))
+  const recurringItems = items as RecurringWithCategory[] | undefined
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,7 +54,6 @@ export default function Recurring() {
     defaultValues: { payment_method: '자동지출', day_of_month: 1 },
   })
 
-  const recurringItems = items as RecurringWithCategory[] | undefined
   const currentDay = useMemo(() => Number(todayKey.slice(8, 10)), [todayKey])
   const totalMonthly = recurringItems
     ?.filter((i) => i.is_active && i.day_of_month <= currentDay)
@@ -132,13 +132,13 @@ export default function Recurring() {
   }
 
   return (
-    <div>
+    <div className="pb-6">
       <PageHeader
         title={t('recurring_title')}
         action={
           <button
             onClick={openCreate}
-            className="tap-target flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-sm shadow-indigo-500/25 hover:bg-indigo-600 transition active:scale-95"
+            className="tap-target flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/20 transition active:scale-95"
             aria-label={t('recurring_add')}
           >
             <Plus className="h-5 w-5" />
@@ -147,35 +147,35 @@ export default function Recurring() {
       />
 
       {/* 이번 달 합계 배너 */}
-      <div className="mx-4 mt-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20 px-4 py-3.5 flex justify-between items-center">
+      <div className="mx-4 mt-4 flex items-center justify-between rounded-3xl border border-white/70 bg-gradient-to-br from-rose-50 via-white to-white px-4 py-4 shadow-sm dark:border-slate-800/70 dark:from-rose-950/30 dark:via-slate-900 dark:to-slate-900/60">
         <div>
-          <p className="text-xs text-rose-400 font-medium">{t('recurring_total')}</p>
-          <p className="text-xl font-bold text-rose-600 dark:text-rose-400 tabular-nums mt-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-400">{t('recurring_total')}</p>
+          <p className="mt-1 text-[clamp(1.35rem,4vw,1.9rem)] font-bold tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
             {formatCurrency(totalMonthly, defaultCurrency)}
           </p>
         </div>
         <button
           onClick={() => void handleRefresh()}
-          className="tap-target inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/70 text-rose-500 transition hover:bg-white dark:bg-slate-900/30 dark:hover:bg-slate-900/50"
+          className="tap-target inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 text-rose-500 shadow-sm transition hover:bg-white dark:bg-slate-900/30 dark:hover:bg-slate-900/50"
           aria-label={t('recurring_refresh')}
           title={t('recurring_refresh')}
         >
-          <RefreshCw className={`h-4 w-4 ${isFetching ? 'animate-spin' : ''}`} />
+          <RefreshCw className="h-4 w-4" />
         </button>
       </div>
 
       {/* 목록 */}
-      <div className="mt-4 card mx-4 divide-y divide-slate-100 dark:divide-slate-800">
+      <div className="card mx-4 mt-4 divide-y divide-slate-100/80 overflow-hidden rounded-3xl dark:divide-slate-800/70">
         {isLoading ? (
           <p className="py-8 text-center text-sm text-slate-400">{t('recurring_loading')}</p>
         ) : !recurringItems?.length ? (
           <p className="py-8 text-center text-sm text-slate-400">{t('recurring_empty')}</p>
         ) : (
           recurringItems.map((item) => (
-            <div key={item.id} className={`flex items-center gap-3 px-4 py-3.5 transition ${!item.is_active ? 'opacity-40' : ''}`}>
+            <div key={item.id} className={`flex items-center gap-3 px-5 py-4 transition ${!item.is_active ? 'opacity-40' : ''}`}>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-slate-900 dark:text-white">{item.description}</span>
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">{item.description}</span>
                   {item.categories && (
                     <CategoryBadge color={item.categories.color} label={item.categories.name} size="sm" />
                   )}
@@ -189,19 +189,19 @@ export default function Recurring() {
                 <button
                   onClick={() => toggleActive(item)}
                   title={item.is_active ? t('recurring_deactivated') : t('recurring_activated')}
-                  className={`p-2 rounded-lg transition ${item.is_active ? 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                  className={`rounded-xl p-2 transition ${item.is_active ? 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                 >
                   <Power className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => openEdit(item)}
-                  className="p-2 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition"
+                  className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
                 >
                   <Edit2 className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => setDeleteId(item.id)}
-                  className="p-2 rounded-lg text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 transition"
+                  className="rounded-xl p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -219,7 +219,7 @@ export default function Recurring() {
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative z-10 w-full max-w-sm rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 max-h-[90vh] overflow-y-auto shadow-xl"
+            className="relative z-10 w-full max-w-sm rounded-t-[2rem] sm:rounded-[2rem] border border-white/70 bg-white/95 p-6 max-h-[90vh] overflow-y-auto shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="mb-5 text-base font-bold text-slate-900 dark:text-white">
@@ -278,14 +278,14 @@ export default function Recurring() {
                 <button
                   type="button"
                   onClick={() => setShowForm(false)}
-                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 py-3 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                  className="flex-1 rounded-2xl border border-slate-200 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                 >
                   {t('recurring_cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 rounded-xl bg-indigo-500 py-3 text-sm font-semibold text-white hover:bg-indigo-600 disabled:opacity-60 transition"
+                  className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3 text-sm font-semibold text-white transition hover:from-indigo-600 hover:to-violet-600 disabled:opacity-60"
                 >
                   {t('recurring_save')}
                 </button>

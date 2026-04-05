@@ -40,11 +40,11 @@ function SettingRow({
   return (
     <El
       onClick={onClick}
-      className={`flex w-full items-center gap-3 px-4 py-3.5 transition ${
-        onClick ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 active:bg-slate-100 dark:active:bg-slate-700/50' : ''
+      className={`flex w-full items-center gap-3 px-5 py-4 transition ${
+        onClick ? 'cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/50 active:bg-slate-100/70 dark:active:bg-slate-700/50' : ''
       }`}
     >
-      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
         danger
           ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-500'
           : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
@@ -76,8 +76,8 @@ function NotifyToggleRow({
   onToggle: (v: boolean) => void
 }) {
   return (
-    <div className={`flex items-center gap-3 px-4 py-3.5 ${disabled ? 'opacity-50' : ''}`}>
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+    <div className={`flex items-center gap-3 px-5 py-4 ${disabled ? 'opacity-50' : ''}`}>
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
         {icon}
       </span>
       <div className="flex-1 min-w-0 text-left">
@@ -195,14 +195,14 @@ export default function Settings() {
   const selectedCurrencyInfo = SUPPORTED_CURRENCIES.find(c => c.code === currency)
 
   return (
-    <div>
+    <div className="pb-6">
       <PageHeader title={t('settings_title')} />
 
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 px-4 py-4">
         {/* 계정 정보 */}
         <div>
-          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('settings_account')}</p>
-          <div className="card overflow-hidden">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_account')}</p>
+          <div className="card overflow-hidden rounded-3xl">
             <SettingRow
               icon={<User className="h-4 w-4" />}
               label={user?.email ?? 'User'}
@@ -213,8 +213,8 @@ export default function Settings() {
 
         {/* 일반 설정 */}
         <div>
-          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('settings_general')}</p>
-          <div className="card divide-y divide-slate-100 dark:divide-slate-800">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_general')}</p>
+          <div className="card divide-y divide-slate-100/80 overflow-hidden rounded-3xl dark:divide-slate-800/70">
             {/* 다크모드 */}
             <SettingRow
               icon={isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
@@ -248,8 +248,8 @@ export default function Settings() {
 
         {/* 언어 선택 */}
         <div>
-          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('settings_language')}</p>
-          <div className="card p-4 space-y-3">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_language')}</p>
+          <div className="card rounded-3xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Languages className="h-4 w-4 text-slate-400" />
               <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_language_label')}</p>
@@ -259,13 +259,13 @@ export default function Settings() {
                 <button
                   key={l.code}
                   onClick={() => setLang(l.code)}
-                  className={`flex-1 rounded-xl border px-4 py-3 text-center transition ${
+                  className={`flex-1 rounded-2xl border px-4 py-3 text-center transition active:scale-[0.99] ${
                     lang === l.code
-                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      ? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300'
+                      : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'
                   }`}
                 >
-                  <p className={`text-sm font-bold ${lang === l.code ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
+                  <p className={`text-sm font-bold tracking-tight ${lang === l.code ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-900 dark:text-white'}`}>
                     {l.label}
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">{l.native}</p>
@@ -277,8 +277,8 @@ export default function Settings() {
 
         {/* 통화 설정 */}
         <div>
-          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('settings_currency_title')}</p>
-          <div className="card p-4 space-y-3">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_currency_title')}</p>
+          <div className="card rounded-3xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Coins className="h-4 w-4 text-slate-400" />
               <div className="flex-1 min-w-0">
@@ -294,10 +294,10 @@ export default function Settings() {
                 <button
                   key={c.code}
                   onClick={() => setCurrency(c.code)}
-                  className={`rounded-xl border px-3 py-2.5 text-left transition ${
+                  className={`rounded-2xl border px-3 py-3 text-left transition active:scale-[0.99] ${
                     currency === c.code
                       ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                      : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'
                   }`}
                 >
                   <p className={`text-sm font-semibold ${currency === c.code ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
@@ -319,8 +319,8 @@ export default function Settings() {
 
         {/* 데이터 가져오기/내보내기 */}
         <div>
-          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('settings_data')}</p>
-          <div className="card divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden mb-3">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_data')}</p>
+          <div className="card divide-y divide-slate-100/80 overflow-hidden rounded-3xl mb-3 dark:divide-slate-800/70">
             <SettingRow
               icon={<Upload className="h-4 w-4" />}
               label={t('settings_csv_import')}
@@ -329,7 +329,7 @@ export default function Settings() {
               right={<ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 shrink-0" />}
             />
           </div>
-          <div className="card p-4 space-y-3">
+          <div className="card rounded-3xl p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Download className="h-4 w-4 text-slate-400" />
               <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_csv_export')}</p>
@@ -344,7 +344,7 @@ export default function Settings() {
                     setExportFrom(e.target.value)
                     if (e.target.value > exportTo) setExportTo(e.target.value)
                   }}
-                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-base text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -354,7 +354,7 @@ export default function Settings() {
                   value={exportTo}
                   min={exportFrom}
                   onChange={(e) => setExportTo(e.target.value)}
-                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-base text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
             </div>
@@ -365,7 +365,7 @@ export default function Settings() {
             </p>
             <button
               onClick={handleExportCSV}
-              className="btn btn-primary w-full flex items-center justify-center gap-2 py-2.5 text-sm"
+              className="btn btn-primary w-full flex items-center justify-center gap-2 py-3 text-sm"
             >
               <Download className="h-4 w-4" />
               {t('settings_csv_export')}
@@ -375,10 +375,10 @@ export default function Settings() {
 
         {/* 월 전체 예산 */}
         <div>
-          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('monthly_budget_title')}</p>
-          <div className="card p-4 space-y-3">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('monthly_budget_title')}</p>
+          <div className="card rounded-3xl p-4 space-y-3">
             <div className="flex items-center gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800">
                 <Target className="h-4 w-4" />
               </span>
               <div className="flex-1 min-w-0">
@@ -397,14 +397,14 @@ export default function Settings() {
                   {monthlyBudget && (
                     <button
                       onClick={() => { setMonthlyBudget(null); toast.success(t('monthly_budget_deleted')) }}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition"
+                      className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-300 transition hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20"
                     >
                       <span className="text-xs">✕</span>
                     </button>
                   )}
                   <button
                     onClick={() => { setMbAmount(monthlyBudget ? String(monthlyBudget.amount) : ''); setMbCurrency(monthlyBudget?.currency ?? currency); setEditingMonthlyBudget(true) }}
-                    className="rounded-lg bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 transition"
+                    className="rounded-full bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300"
                   >
                     {t('monthly_budget_set')}
                   </button>
@@ -420,19 +420,19 @@ export default function Settings() {
                   value={mbAmount}
                   onChange={(e) => setMbAmount(e.target.value)}
                   autoFocus
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-base text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
                 <div className="flex gap-1.5 flex-wrap">
                   {SUPPORTED_CURRENCIES.map((c) => (
                     <button key={c.code} type="button" onClick={() => setMbCurrency(c.code)}
-                      className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${mbCurrency === c.code ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400' : 'border-slate-200 dark:border-slate-700 text-slate-500'}`}>
+                      className={`rounded-full border px-2.5 py-1.5 text-xs font-semibold transition ${mbCurrency === c.code ? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300' : 'border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'}`}>
                       {c.code}
                     </button>
                   ))}
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => setEditingMonthlyBudget(false)}
-                    className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+                    className="flex-1 rounded-2xl border border-slate-200 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
                     {t('budget_cancel')}
                   </button>
                   <button
@@ -443,7 +443,7 @@ export default function Settings() {
                       toast.success(t('monthly_budget_saved'))
                       setEditingMonthlyBudget(false)
                     }}
-                    className="flex-1 rounded-xl bg-indigo-500 py-2 text-xs font-semibold text-white hover:bg-indigo-600 transition">
+                    className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 py-2.5 text-xs font-semibold text-white transition hover:from-indigo-600 hover:to-violet-600">
                     {t('budget_save')}
                   </button>
                 </div>
@@ -454,8 +454,8 @@ export default function Settings() {
 
         {/* 예산 목표 */}
         <div>
-          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('budget_title')}</p>
-          <div className="card overflow-hidden">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('budget_title')}</p>
+          <div className="card overflow-hidden rounded-3xl">
             <SettingRow
               icon={<Target className="h-4 w-4" />}
               label={t('budget_title')}
@@ -468,12 +468,12 @@ export default function Settings() {
 
         {/* 알림 */}
         <div>
-          <p className="mb-1.5 px-1 text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('notify_title')}</p>
-          <div className="card divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('notify_title')}</p>
+          <div className="card divide-y divide-slate-100/80 overflow-hidden rounded-3xl dark:divide-slate-800/70">
             {/* Permission status */}
             {permission !== 'granted' && (
               <div className="px-4 py-3.5 flex items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-50 dark:bg-amber-900/20 text-amber-500">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-500 dark:bg-amber-900/20">
                   <BellOff className="h-4 w-4" />
                 </span>
                 <div className="flex-1 min-w-0">
@@ -485,7 +485,7 @@ export default function Settings() {
                 {permission !== 'denied' && (
                   <button
                     onClick={handleAllowNotifications}
-                    className="shrink-0 rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-600 transition"
+                    className="shrink-0 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-3 py-2 text-xs font-semibold text-white transition hover:from-indigo-600 hover:to-violet-600"
                   >
                     {t('notify_allow')}
                   </button>

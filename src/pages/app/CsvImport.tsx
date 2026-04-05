@@ -165,15 +165,15 @@ export default function CsvImport() {
   // ── Upload step ──────────────────────────────────────────────────────────
   if (step === 'upload') {
     return (
-      <div>
+      <div className="pb-6">
         <PageHeader title={t('csv_import_title')} back />
-        <div className="p-4 space-y-4">
+        <div className="space-y-4 px-4 py-4">
           <div
             {...getRootProps()}
-            className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 text-center cursor-pointer transition ${
+            className={`flex flex-col items-center justify-center rounded-[1.75rem] border-2 border-dashed p-12 text-center cursor-pointer transition ${
               isDragActive
-                ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                : 'border-slate-200 dark:border-slate-700 hover:border-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-900/20'
+                : 'border-slate-200 bg-white hover:border-indigo-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800/50'
             }`}
           >
             <input {...getInputProps()} />
@@ -185,7 +185,7 @@ export default function CsvImport() {
           </div>
 
           {/* Format hint */}
-          <div className="card p-4 space-y-2">
+          <div className="card rounded-3xl p-4 space-y-2">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('csv_import_format')}</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs text-slate-500 dark:text-slate-400">
@@ -226,7 +226,7 @@ export default function CsvImport() {
   // ── Importing step ──────────────────────────────────────────────────────
   if (step === 'importing') {
     return (
-      <div>
+      <div className="pb-6">
         <PageHeader title={t('csv_import_title')} back />
         <div className="flex flex-col items-center justify-center py-32 gap-4">
           <LoadingSpinner size="lg" />
@@ -239,7 +239,7 @@ export default function CsvImport() {
   // ── Done step ───────────────────────────────────────────────────────────
   if (step === 'done') {
     return (
-      <div>
+      <div className="pb-6">
         <PageHeader title={t('csv_import_title')} back />
         <div className="flex flex-col items-center justify-center py-32 gap-5 p-6 text-center">
           <span className="flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/30">
@@ -265,7 +265,7 @@ export default function CsvImport() {
   const someUncategorized = rows.some((r) => r.include && !r.categoryId)
 
   return (
-    <div>
+      <div className="pb-6">
       <PageHeader title={t('csv_import_title')} back />
 
       <div className="p-4 space-y-3">
