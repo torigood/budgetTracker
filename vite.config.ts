@@ -25,7 +25,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        maximumFileSizeToCacheInBytes: 8 * 1024 * 1024, // 8MB
+        globPatterns: ['**/*.{js,css,html,ico,svg}'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
@@ -41,5 +42,17 @@ export default defineConfig({
   ],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
+  },
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('recharts') || id.includes('d3-')) return 'charts'
+          if (id.includes('@supabase')) return 'supabase'
+          if (id.includes('node_modules')) return 'vendor'
+        },
+      },
+    },
   },
 })
