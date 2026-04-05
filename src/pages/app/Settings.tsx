@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useT } from '@/lib/hooks/useT'
+import { translations } from '@/lib/i18n'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { getCurrentMonth } from '@/utils/format'
 import { getNotifySettings, saveNotifySetting, requestPermission, getPermission, subscribeToPush } from '@/lib/hooks/useNotifications'
@@ -102,6 +103,7 @@ export default function Settings() {
   const { user } = useAuthStore()
   const { isDark, toggleDark, currency, setCurrency, lang, setLang } = useUIStore()
   const t = useT()
+  const tr = translations[lang]
   const [exportFrom, setExportFrom] = useState(getCurrentMonth())
   const [exportTo, setExportTo] = useState(getCurrentMonth())
   const [notifySettings, setNotifySettings] = useState<NotifySettings>(getNotifySettings)
@@ -142,7 +144,7 @@ export default function Settings() {
     toDate.setDate(0) // 해당 월 마지막 날
     const end = toDate.toISOString().slice(0, 10)
 
-    if (start > end) { toast.error('시작 월이 종료 월보다 늦습니다'); return }
+    if (start > end) { toast.error(t('settings_export_date_error')); return }
 
     const { data, error } = await supabase
       .from('transactions')
@@ -151,8 +153,8 @@ export default function Settings() {
       .lte('date', end)
       .order('date', { ascending: false })
 
-    if (error) { toast.error('내보내기 실패'); return }
-    if (!data?.length) { toast.error('해당 기간에 거래 내역이 없습니다'); return }
+    if (error) { toast.error(t('settings_export_fail')); return }
+    if (!data?.length) { toast.error(t('settings_export_empty')); return }
 
     type ExportRow = {
       date: string; type: string; description: string; amount: number
@@ -178,7 +180,7 @@ export default function Settings() {
     a.download = `budget_${suffix}.csv`
     a.click()
     URL.revokeObjectURL(url)
-    toast.success(`${data.length}개 거래 내역을 내보냈습니다`)
+    toast.success(tr.settings_export_success_n(data.length))
   }
 
   const selectedCurrencyInfo = SUPPORTED_CURRENCIES.find(c => c.code === currency)
@@ -271,8 +273,8 @@ export default function Settings() {
             <div className="flex items-center gap-2">
               <Coins className="h-4 w-4 text-slate-400" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-white">기본 통화</p>
-                <p className="text-xs text-slate-400 mt-0.5">새 거래 추가 시 기본으로 선택됩니다</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_currency_label')}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{t('settings_currency_desc')}</p>
               </div>
               <span className="text-xs font-semibold text-indigo-500">{selectedCurrencyInfo?.label}</span>
             </div>
@@ -303,8 +305,8 @@ export default function Settings() {
           <div className="card divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden mb-3">
             <SettingRow
               icon={<Upload className="h-4 w-4" />}
-              label="CSV 가져오기"
-              description="가계부 CSV 파일로 거래 내역을 일괄 추가"
+              label={t('settings_csv_import')}
+              description={t('settings_csv_import_desc')}
               onClick={() => navigate('/csv-import')}
               right={<ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 shrink-0" />}
             />
@@ -312,11 +314,11 @@ export default function Settings() {
           <div className="card p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Download className="h-4 w-4 text-slate-400" />
-              <p className="text-sm font-medium text-slate-900 dark:text-white">CSV 내보내기</p>
+              <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_csv_export')}</p>
             </div>
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <p className="w-14 shrink-0 text-xs text-slate-400">시작 월</p>
+                <p className="w-14 shrink-0 text-xs text-slate-400">{t('settings_export_from')}</p>
                 <input
                   type="month"
                   value={exportFrom}
@@ -328,7 +330,7 @@ export default function Settings() {
                 />
               </div>
               <div className="flex items-center gap-3">
-                <p className="w-14 shrink-0 text-xs text-slate-400">종료 월</p>
+                <p className="w-14 shrink-0 text-xs text-slate-400">{t('settings_export_to')}</p>
                 <input
                   type="month"
                   value={exportTo}
@@ -338,17 +340,17 @@ export default function Settings() {
                 />
               </div>
             </div>
-            {exportFrom === exportTo ? (
-              <p className="text-xs text-slate-400">{exportFrom} 1개월 내보내기</p>
-            ) : (
-              <p className="text-xs text-slate-400">{exportFrom} ~ {exportTo} 내보내기</p>
-            )}
+            <p className="text-xs text-slate-400">
+              {exportFrom === exportTo
+                ? tr.settings_export_one_month(exportFrom)
+                : tr.settings_export_range(exportFrom, exportTo)}
+            </p>
             <button
               onClick={handleExportCSV}
               className="btn btn-primary w-full flex items-center justify-center gap-2 py-2.5 text-sm"
             >
               <Download className="h-4 w-4" />
-              CSV 내보내기
+              {t('settings_csv_export')}
             </button>
           </div>
         </div>
