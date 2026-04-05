@@ -12,12 +12,24 @@ export function useSwipeMonth(
   threshold = 50
 ) {
   const touchStart = useRef<{ x: number; y: number } | null>(null)
+  const ignoreSwipe = useRef(false)
 
   const onTouchStart = (e: React.TouchEvent) => {
+    const target = e.target as HTMLElement | null
+    if (target?.closest('[data-swipe-month-ignore="true"]')) {
+      ignoreSwipe.current = true
+      touchStart.current = null
+      return
+    }
+    ignoreSwipe.current = false
     touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
   }
 
   const onTouchEnd = (e: React.TouchEvent) => {
+    if (ignoreSwipe.current) {
+      ignoreSwipe.current = false
+      return
+    }
     if (!touchStart.current) return
     const dx = touchStart.current.x - e.changedTouches[0].clientX
     const dy = touchStart.current.y - e.changedTouches[0].clientY

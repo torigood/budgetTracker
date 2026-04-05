@@ -181,7 +181,7 @@ export default function Transactions() {
             {hasActiveFilter && (
               <button
                 onClick={resetFilters}
-                className="rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-500 transition hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300"
+                className="whitespace-nowrap rounded-full bg-indigo-50 px-2.5 py-1.5 text-[11px] font-semibold leading-none text-indigo-500 transition hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300"
               >
                 {t('tx_filter_reset')}
               </button>
@@ -222,7 +222,10 @@ export default function Transactions() {
               ))}
             </div>
             {/* Category filter */}
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            <div
+              className="flex gap-2 overflow-x-auto pb-1 no-scrollbar"
+              data-swipe-month-ignore="true"
+            >
               {categories?.map((cat) => (
                 <button
                   key={cat.id}
