@@ -23,6 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 .claude
-.env.local
-.env.*.local
-supabase/.env

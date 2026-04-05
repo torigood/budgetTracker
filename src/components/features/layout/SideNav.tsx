@@ -26,7 +26,7 @@ export function SideNav() {
     <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 md:flex">
       {/* Logo */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-slate-100 dark:border-slate-800">
-        <img src="/icons/logo128.png" alt="Budget Tracker" className="h-9 w-9 rounded-xl shrink-0 object-cover" />
+        <img src="/icons/logo512.png" alt="Budget Tracker" className="h-9 w-9 rounded-xl shrink-0 object-cover" />
         <span className="text-base font-bold text-slate-900 dark:text-white">Budget Tracker</span>
       </div>
 

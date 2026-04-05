@@ -58,7 +58,7 @@ export default function Landing() {
       <header className="sticky top-0 z-30 border-b border-slate-100 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2.5">
-            <img src="/icons/logo128.png" alt="Budget Tracker" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
+            <img src="/icons/logo512.png" alt="Budget Tracker" className="h-9 w-9 rounded-xl object-cover shadow-sm" />
             <span className="text-base font-bold text-slate-900 dark:text-white">Budget Tracker</span>
           </div>
           <div className="flex items-center gap-3">

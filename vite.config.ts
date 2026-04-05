@@ -10,17 +10,16 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/logo128.png', 'icons/logo512.png'],
+      includeAssets: ['icons/logo512.png'],
       manifest: {
         name: 'Budget Tracker',
         short_name: 'Budget',
         description: '개인 가계부 앱',
         theme_color: '#6366f1',
-        background_color: '#ffffff',
+        background_color: '#6366f1',
         display: 'standalone',
         start_url: '/',
         icons: [
-          { src: 'icons/logo128.png', sizes: '128x128', type: 'image/png' },
           { src: 'icons/logo512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
