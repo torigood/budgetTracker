@@ -78,6 +78,12 @@ export default function Recurring() {
     }
   }, [])
 
+  // Hide the mobile bottom nav while the recurring form sheet is open.
+  useEffect(() => {
+    document.body.classList.toggle('sheet-open', showForm)
+    return () => document.body.classList.remove('sheet-open')
+  }, [showForm])
+
   function openCreate() {
     setEditItem(null)
     reset({ payment_method: '자동지출', day_of_month: 1, currency: defaultCurrency })

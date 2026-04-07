@@ -45,7 +45,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:hidden"
+      className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-50 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] transition-all duration-200 md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       onTouchStart={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
