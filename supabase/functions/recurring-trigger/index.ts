@@ -2,34 +2,21 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 serve(async (req) => {
-  const authHeader = req.headers.get('Authorization') ?? ''
-  const providedToken = authHeader.replace(/^Bearer\s+/i, '').trim()
-  const expectedToken = (Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '').trim()
+  const providedCronSecret = (req.headers.get('x-cron-secret') ?? '').trim()
+  const expectedCronSecret = (Deno.env.get('CRON_SECRET') ?? '').trim()
 
-  if (!expectedToken) {
+  if (!expectedCronSecret) {
     return new Response(
-      JSON.stringify({ error: 'Server misconfigured: missing SUPABASE_SERVICE_ROLE_KEY in function env' }),
+      JSON.stringify({ error: 'Server misconfigured: missing CRON_SECRET in function env' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
 
-  if (!providedToken || providedToken !== expectedToken) {
-    let providedRole: string | null = null
-    try {
-      const payload = providedToken.split('.')[1]
-      if (payload) {
-        const decoded = JSON.parse(atob(payload)) as { role?: unknown }
-        if (typeof decoded.role === 'string') providedRole = decoded.role
-      }
-    } catch {
-      // Ignore decode errors; token may not be JWT format.
-    }
-
+  if (!providedCronSecret || providedCronSecret !== expectedCronSecret) {
     return new Response(
       JSON.stringify({
         error: 'Unauthorized',
-        hint: 'Use the same project legacy service_role JWT in GitHub secret SUPABASE_SERVICE_ROLE_KEY.',
-        provided_role: providedRole,
+        hint: 'Set identical CRON_SECRET in GitHub Actions secrets and Supabase function secrets.',
       }),
       { status: 401, headers: { 'Content-Type': 'application/json' } }
     )

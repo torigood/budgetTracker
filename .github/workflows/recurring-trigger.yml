@@ -14,7 +14,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
 
@@ -24,15 +24,15 @@ jobs:
             exit 1
           fi
 
-          if [[ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
-            echo "::error::Missing secret: SUPABASE_SERVICE_ROLE_KEY"
+          if [[ -z "${CRON_SECRET:-}" ]]; then
+            echo "::error::Missing secret: CRON_SECRET"
             exit 1
           fi
 
           RESPONSE_FILE="$(mktemp)"
           HTTP_CODE="$(curl -sS -o "$RESPONSE_FILE" -w "%{http_code}" \
             -X POST "${BASE_URL%/}/functions/v1/recurring-trigger" \
-            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "x-cron-secret: $CRON_SECRET" \
             -H "Content-Type: application/json")"
 
           echo "HTTP status: $HTTP_CODE"
