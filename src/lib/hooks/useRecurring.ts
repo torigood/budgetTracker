@@ -67,3 +67,80 @@ export function useDeleteRecurring() {
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: ['recurring'] }),
   })
 }
+
+export function useRunRecurringNow() {
+  const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('로그인이 필요합니다')
+
+      const now = new Date()
+      const today = now.getDate()
+      const year = now.getFullYear()
+      const month = now.getMonth() + 1
+      const yearMonth = `${year}-${String(month).padStart(2, '0')}`
+      const startOfMonth = `${yearMonth}-01`
+      const endOfMonth = `${yearMonth}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`
+      const todayDate = `${yearMonth}-${String(today).padStart(2, '0')}`
+
+      const { data: items, error } = await supabase
+        .from('recurring_items')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('day_of_month', today)
+        .eq('is_active', true)
+
+      if (error) throw error
+
+      let inserted = 0
+      let skipped = 0
+      let failed = 0
+
+      for (const item of items ?? []) {
+        const { count, error: countError } = await supabase
+          .from('transactions')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('description', item.description)
+          .eq('category_id', item.category_id)
+          .eq('payment_method', '자동지출')
+          .gte('date', startOfMonth)
+          .lte('date', endOfMonth)
+
+        if (countError) {
+          failed++
+          continue
+        }
+
+        if ((count ?? 0) > 0) {
+          skipped++
+          continue
+        }
+
+        const { error: insertError } = await supabase.from('transactions').insert({
+          user_id: user.id,
+          date: todayDate,
+          type: '지출',
+          category_id: item.category_id,
+          description: item.description,
+          amount: item.amount,
+          currency: item.currency ?? 'CAD',
+          payment_method: '자동지출',
+          memo: '자동지출 자동 생성',
+        })
+
+        if (insertError) failed++
+        else inserted++
+      }
+
+      return { inserted, skipped, failed, total: (items ?? []).length }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['recurring'] })
+      void queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    },
+  })
+}

@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useRecurringItems, useCreateRecurring, useUpdateRecurring, useDeleteRecurring, type RecurringWithCategory } from '@/lib/hooks/useRecurring'
+import { useRecurringItems, useCreateRecurring, useUpdateRecurring, useDeleteRecurring, useRunRecurringNow, type RecurringWithCategory } from '@/lib/hooks/useRecurring'
 import { useCategories } from '@/lib/hooks/useCategories'
 import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { translations } from '@/lib/i18n'
@@ -41,6 +41,7 @@ export default function Recurring() {
   const createMutation = useCreateRecurring()
   const updateMutation = useUpdateRecurring()
   const deleteMutation = useDeleteRecurring()
+  const runRecurringNow = useRunRecurringNow()
 
   const [showForm, setShowForm] = useState(false)
   const [editItem, setEditItem] = useState<RecurringItem | null>(null)
@@ -134,7 +135,24 @@ export default function Recurring() {
 
   async function handleRefresh() {
     setTodayKey(new Date().toISOString().slice(0, 10))
-    await refetch()
+    try {
+      const result = await runRecurringNow.mutateAsync()
+      await refetch()
+
+      if (result.total === 0) {
+        toast.message('오늘 실행 대상 자동지출이 없습니다')
+        return
+      }
+
+      if (result.failed > 0) {
+        toast.error(`자동지출 점검 완료: 생성 ${result.inserted}건, 중복 건너뜀 ${result.skipped}건, 실패 ${result.failed}건`)
+        return
+      }
+
+      toast.success(`자동지출 점검 완료: 생성 ${result.inserted}건, 중복 건너뜀 ${result.skipped}건`)
+    } catch {
+      toast.error('자동지출 점검 실패. 다시 시도해주세요')
+    }
   }
 
   return (
@@ -162,11 +180,12 @@ export default function Recurring() {
         </div>
         <button
           onClick={() => void handleRefresh()}
+          disabled={isFetching || runRecurringNow.isPending}
           className="tap-target inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 text-rose-500 shadow-sm transition hover:bg-white dark:bg-slate-900/30 dark:hover:bg-slate-900/50"
           aria-label={t('recurring_refresh')}
           title={t('recurring_refresh')}
         >
-          <RefreshCw className="h-4 w-4" />
+          <RefreshCw className={`h-4 w-4 ${(isFetching || runRecurringNow.isPending) ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
