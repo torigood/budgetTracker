@@ -30,7 +30,7 @@ function createSchema() {
 const schema = createSchema()
 type FormValues = z.infer<typeof schema>
 
-const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition'
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition'
 
 export default function Recurring() {
   const t = useT()
@@ -214,12 +214,12 @@ export default function Recurring() {
       {/* Bottom sheet 폼 */}
       {showForm && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center p-2 pt-8 sm:items-center sm:p-4"
           onClick={() => setShowForm(false)}
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative z-10 w-full max-w-sm rounded-t-[2rem] sm:rounded-[2rem] border border-white/70 bg-white/95 p-6 max-h-[90vh] overflow-y-auto shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95"
+            className="relative z-10 w-full max-w-sm rounded-t-[2rem] sm:rounded-[2rem] border border-white/70 bg-white/95 p-6 pb-[calc(env(safe-area-inset-bottom)+1rem)] max-h-[88dvh] overflow-y-auto overscroll-contain shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="mb-5 text-base font-bold text-slate-900 dark:text-white">
