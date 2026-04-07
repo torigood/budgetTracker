@@ -21,7 +21,7 @@ const schema = z.object({
   type: z.union([z.literal('지출'), z.literal('수입')]),
   category_id: z.string().min(1, '카테고리를 선택해주세요'),
   description: z.string().min(1, '내용을 입력해주세요'),
-  amount: z.number().positive('금액을 입력해주세요'),
+  amount: z.coerce.number().positive('금액을 입력해주세요'),
   payment_method: z.string().min(1, '결제수단을 선택해주세요'),
   memo: z.string().optional(),
 })
@@ -35,7 +35,7 @@ interface TransactionFormProps {
 }
 
 const inputClass =
-  'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition'
+  'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition'
 
 const labelClass = 'mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide'
 
