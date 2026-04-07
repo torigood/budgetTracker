@@ -160,6 +160,7 @@ export default function Dashboard() {
                       outerRadius={52}
                       strokeWidth={2}
                       stroke="transparent"
+                      animationDuration={350}
                     >
                       {data.categoryBreakdown.map((entry, i) => (
                         <Cell key={i} fill={entry.color} />

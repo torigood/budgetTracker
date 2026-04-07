@@ -1,4 +1,4 @@
-import { useState, useTransition } from 'react'
+import { useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAnalytics } from '@/lib/hooks/useDashboard'
@@ -16,7 +16,6 @@ import type { TranslationKey } from '@/lib/i18n'
 export default function Analytics() {
   const { selectedMonth, setSelectedMonth, lang } = useUIStore()
   const [tab, setTab] = useState<'monthly' | 'annual'>('monthly')
-  const [, startTransition] = useTransition()
   const [annualYear, setAnnualYear] = useState(() => new Date().getFullYear())
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const { data: months, isLoading } = useAnalytics(selectedMonth)
@@ -56,13 +55,13 @@ export default function Analytics() {
       {/* Tab switcher */}
       <div className="mx-4 mt-3 mb-1 flex gap-1 rounded-[1.5rem] border border-white/70 bg-white/80 p-1 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
         <button
-          onClick={() => startTransition(() => setTab('monthly'))}
+          onClick={() => setTab('monthly')}
           className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'monthly' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 dark:text-slate-400'}`}
         >
           {t('analytics_tab_monthly')}
         </button>
         <button
-          onClick={() => startTransition(() => setTab('annual'))}
+          onClick={() => setTab('annual')}
           className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'annual' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 dark:text-slate-400'}`}
         >
           {t('analytics_tab_annual')}
@@ -148,8 +147,8 @@ export default function Analytics() {
                         boxShadow: '0 20px 45px -20px rgb(15 23 42 / 0.2)',
                       }}
                     />
-                    <Bar dataKey={expenseKey} fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey={incomeKey} fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey={expenseKey} fill="#f43f5e" radius={[4, 4, 0, 0]} animationDuration={350} />
+                    <Bar dataKey={incomeKey} fill="#10b981" radius={[4, 4, 0, 0]} animationDuration={350} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -183,6 +182,7 @@ export default function Analytics() {
                         outerRadius={52}
                         strokeWidth={2}
                         stroke="transparent"
+                        animationDuration={350}
                       >
                         {categoryBreakdown.map((entry, i) => (
                           <Cell key={i} fill={entry.color} />
@@ -348,8 +348,8 @@ function AnnualReport({
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.08)',
                   }}
                 />
-                <Bar dataKey={expenseKey} fill="#f43f5e" radius={[3, 3, 0, 0]} />
-                <Bar dataKey={incomeKey} fill="#10b981" radius={[3, 3, 0, 0]} />
+                <Bar dataKey={expenseKey} fill="#f43f5e" radius={[3, 3, 0, 0]} animationDuration={350} />
+                <Bar dataKey={incomeKey} fill="#10b981" radius={[3, 3, 0, 0]} animationDuration={350} />
               </BarChart>
             </ResponsiveContainer>
           </div>

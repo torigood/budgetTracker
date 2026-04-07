@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useTransition } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, List, Camera, BarChart2, Settings, RefreshCw } from 'lucide-react'
 import { useT } from '@/lib/hooks/useT'
@@ -10,7 +10,6 @@ export function BottomNav() {
   const [popupOpen, setPopupOpen] = useState(false)
   const popupRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const [, startTransition] = useTransition()
 
   const isTransactionActive =
     location.pathname.startsWith('/transactions') || location.pathname.startsWith('/recurring')
@@ -32,7 +31,7 @@ export function BottomNav() {
 
   function go(to: string) {
     setPopupOpen(false)
-    startTransition(() => navigate(to))
+    navigate(to)
   }
 
   function togglePopup() {
