@@ -338,8 +338,8 @@ function TransactionRow({
       </div>
 
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5">
-          <span className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+        <div className="flex min-w-0 items-start gap-1.5">
+          <span className="min-w-0 whitespace-normal break-words [overflow-wrap:anywhere] text-sm font-semibold text-slate-900 dark:text-white">
             {tx.description}
           </span>
           {tx.categories && (
