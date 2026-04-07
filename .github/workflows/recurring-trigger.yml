@@ -11,9 +11,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Call recurring-trigger Edge Function
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          curl -s -o /dev/null -w "%{http_code}" \
-            -X POST "${{ secrets.SUPABASE_URL }}/functions/v1/recurring-trigger" \
-            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-            -H "Content-Type: application/json" \
-          | grep -E "^2" || (echo "Edge Function call failed" && exit 1)
+          set -euo pipefail
+
+          BASE_URL="${SUPABASE_URL:-${VITE_SUPABASE_URL:-}}"
+          if [[ -z "$BASE_URL" ]]; then
+            echo "::error::Missing secret: SUPABASE_URL (or fallback VITE_SUPABASE_URL)"
+            exit 1
+          fi
+
+          if [[ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
+            echo "::error::Missing secret: SUPABASE_SERVICE_ROLE_KEY"
+            exit 1
+          fi
+
+          RESPONSE_FILE="$(mktemp)"
+          HTTP_CODE="$(curl -sS -o "$RESPONSE_FILE" -w "%{http_code}" \
+            -X POST "${BASE_URL%/}/functions/v1/recurring-trigger" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json")"
+
+          echo "HTTP status: $HTTP_CODE"
+          if [[ ! "$HTTP_CODE" =~ ^2 ]]; then
+            echo "::error::Edge Function call failed"
+            echo "Response body:"
+            cat "$RESPONSE_FILE"
+            exit 1
+          fi
+
+          echo "Edge Function call succeeded"
+          echo "Response body:"
+          cat "$RESPONSE_FILE"
