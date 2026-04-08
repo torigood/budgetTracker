@@ -44,6 +44,7 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const { resetFilters, setMonth } = useFilterStore()
+  const setDashboardMonth = useUIStore((s) => s.setSelectedMonth)
   const { currency: defaultCurrency } = useUIStore()
   const { data: categories } = useCategories()
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(
@@ -102,6 +103,7 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
       // After save, show the month where this transaction actually belongs.
       resetFilters()
       setMonth(values.date.slice(0, 7))
+      setDashboardMonth(values.date.slice(0, 7))
       navigate('/transactions')
     } catch (err) {
       const msg = err instanceof Error ? err.message : '저장 실패. 다시 시도해주세요'
