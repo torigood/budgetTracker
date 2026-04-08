@@ -62,6 +62,33 @@ function extractJsonText(raw: string) {
   throw new Error('AI 응답에서 JSON을 찾을 수 없습니다')
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  const chunkSize = 0x8000
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize)
+    binary += String.fromCharCode(...chunk)
+  }
+  return btoa(binary)
+}
+
+function extractOpenRouterText(content: unknown) {
+  if (typeof content === 'string') return content
+  if (!Array.isArray(content)) return ''
+
+  return content
+    .map((part) => {
+      if (typeof part === 'string') return part
+      if (typeof part === 'object' && part !== null && typeof (part as Record<string, unknown>).text === 'string') {
+        return (part as Record<string, unknown>).text as string
+      }
+      return ''
+    })
+    .join('\n')
+    .trim()
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -121,7 +148,7 @@ serve(async (req) => {
     if (storageError || !imageData) throw storageError
 
     const arrayBuffer = await imageData.arrayBuffer()
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)))
+    const base64 = arrayBufferToBase64(arrayBuffer)
     const mimeType = storage_path.endsWith('.png') ? 'image/png' : 'image/jpeg'
 
     // OpenRouter API 호출 (OpenAI 호환 포맷)
@@ -174,10 +201,10 @@ serve(async (req) => {
     }
 
     const claudeData = await claudeResponse.json() as {
-      choices: Array<{ message: { content: string } }>
+      choices?: Array<{ message?: { content?: unknown } }>
     }
-    const rawResponse = claudeData.choices?.[0]?.message?.content
-    if (!rawResponse || typeof rawResponse !== 'string') {
+    const rawResponse = extractOpenRouterText(claudeData.choices?.[0]?.message?.content)
+    if (!rawResponse) {
       throw new Error('AI 응답 형식이 예상과 다릅니다')
     }
     const parsed = validateParsedReceipt(JSON.parse(extractJsonText(rawResponse)))

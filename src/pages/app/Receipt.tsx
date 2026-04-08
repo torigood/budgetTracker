@@ -16,6 +16,15 @@ import type { Transaction } from '@/types/app'
 
 type Step = 'upload' | 'parsing' | 'result'
 
+function buildReceiptMemo(parsed: ParsedReceipt) {
+  const lines = parsed.items
+    .filter((item) => item.name?.trim())
+    .map((item) => `- ${item.name}: ${item.amount.toFixed(2)}`)
+
+  if (lines.length === 0) return ''
+  return ['영수증 품목', ...lines].join('\n')
+}
+
 export default function Receipt() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
@@ -126,8 +135,9 @@ export default function Receipt() {
     ? {
         date: parsedReceipt.date ?? undefined,
         amount: parsedReceipt.total_amount ?? undefined,
-        description: parsedReceipt.store_name ?? '',
+        description: parsedReceipt.store_name ?? '영수증 결제',
         payment_method: parsedReceipt.payment_method ?? '크레딧',
+        memo: buildReceiptMemo(parsedReceipt),
         type: '지출',
       }
     : undefined
