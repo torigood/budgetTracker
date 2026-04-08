@@ -31,6 +31,16 @@ export default function Receipt() {
   const [receiptId, setReceiptId] = useState<string | null>(null)
   const [parseStep, setParseStep] = useState('')
 
+  function normalizeReceiptErrorMessage(err: unknown) {
+    const message = err instanceof Error ? err.message : String(err ?? '')
+    if (message.toLowerCase().includes('row-level security policy')) {
+      return lang === 'ko'
+        ? '영수증 업로드 권한이 없습니다. Supabase Storage의 receipts 버킷 RLS 정책을 확인해주세요.'
+        : 'No permission to upload receipt. Please check RLS policies for the Supabase Storage receipts bucket.'
+    }
+    return message || t('receipt_parse_fail')
+  }
+
   async function handleFile(file: File) {
     if (!file.type.startsWith('image/')) {
       toast.error(t('receipt_image_only'))
@@ -58,7 +68,7 @@ export default function Receipt() {
         .from('receipts')
         .upload(storagePath, fileInput, { contentType: fileInput.type })
 
-      if (uploadError) throw uploadError
+      if (uploadError) throw new Error(uploadError.message)
 
       setParseStep(t('receipt_analyzing'))
       const { data: { session } } = await supabase.auth.getSession()
@@ -84,7 +94,7 @@ export default function Receipt() {
       setReceiptId(result.receipt.id)
       setStep('result')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : t('receipt_parse_fail'))
+      toast.error(normalizeReceiptErrorMessage(err))
       setStep('upload')
     }
   }
