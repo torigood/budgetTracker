@@ -123,12 +123,12 @@ export default function SettingsCategories() {
       {/* 카테고리 폼 시트 */}
       {showForm && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center pb-[calc(7.25rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-0"
           onClick={() => setShowForm(false)}
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative z-10 w-full max-w-sm rounded-t-2xl sm:rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 shadow-xl"
+            className="relative z-10 w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="mb-5 text-base font-bold text-slate-900 dark:text-white">
