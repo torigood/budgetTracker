@@ -93,7 +93,13 @@ export default function Receipt() {
             apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
             Authorization: `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ storage_path: storagePath }),
+          body: JSON.stringify({
+            storage_path: storagePath,
+            date_preference: lang === 'ko' ? 'DMY' : 'MDY',
+            current_date: new Date().toISOString().slice(0, 10),
+            locale: navigator.language,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          }),
         }
       )
 

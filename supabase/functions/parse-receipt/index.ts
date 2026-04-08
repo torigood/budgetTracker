@@ -107,6 +107,83 @@ function extractOpenRouterText(content: unknown) {
     .trim()
 }
 
+function toIsoDate(year: number, month: number, day: number) {
+  const d = new Date(Date.UTC(year, month - 1, day))
+  if (
+    d.getUTCFullYear() !== year ||
+    d.getUTCMonth() !== month - 1 ||
+    d.getUTCDate() !== day
+  ) {
+    return null
+  }
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+function daysDiff(a: string, b: string) {
+  const da = new Date(`${a}T00:00:00Z`).getTime()
+  const db = new Date(`${b}T00:00:00Z`).getTime()
+  return Math.round((da - db) / (1000 * 60 * 60 * 24))
+}
+
+function chooseMostLikelyDate(candidates: string[], currentDate?: string) {
+  if (candidates.length === 0) return null
+  if (!currentDate) return candidates[0]
+
+  const sorted = [...new Set(candidates)].sort((a, b) => {
+    const da = daysDiff(a, currentDate)
+    const db = daysDiff(b, currentDate)
+
+    // Prefer not-too-far future dates for receipts.
+    const scoreA = Math.abs(da) + (da > 30 ? 1000 : 0)
+    const scoreB = Math.abs(db) + (db > 30 ? 1000 : 0)
+    return scoreA - scoreB
+  })
+
+  return sorted[0]
+}
+
+function normalizeParsedDate(raw: string | null, preference: 'DMY' | 'MDY', currentDate?: string) {
+  if (!raw) return null
+
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (iso) {
+    const y = Number(iso[1])
+    const m = Number(iso[2])
+    const d = Number(iso[3])
+    return toIsoDate(y, m, d)
+  }
+
+  const slash = raw.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/)
+  if (!slash) return raw
+
+  const a = Number(slash[1])
+  const b = Number(slash[2])
+  const yRaw = Number(slash[3])
+  const year = yRaw < 100 ? 2000 + yRaw : yRaw
+
+  const candidates: string[] = []
+
+  if (a > 12 && b <= 12) {
+    const c = toIsoDate(year, b, a)
+    if (c) candidates.push(c)
+  } else if (b > 12 && a <= 12) {
+    const c = toIsoDate(year, a, b)
+    if (c) candidates.push(c)
+  } else {
+    const dmy = toIsoDate(year, b, a)
+    const mdy = toIsoDate(year, a, b)
+    if (preference === 'DMY') {
+      if (dmy) candidates.push(dmy)
+      if (mdy) candidates.push(mdy)
+    } else {
+      if (mdy) candidates.push(mdy)
+      if (dmy) candidates.push(dmy)
+    }
+  }
+
+  return chooseMostLikelyDate(candidates, currentDate)
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -149,7 +226,13 @@ serve(async (req) => {
       )
     }
 
-    const { storage_path } = await req.json() as { storage_path: string }
+    const { storage_path, date_preference, current_date, locale, timezone } = await req.json() as {
+      storage_path: string
+      date_preference?: 'DMY' | 'MDY'
+      current_date?: string
+      locale?: string
+      timezone?: string
+    }
 
     // storage_path 형식 검증: {uuid}/{timestamp}.{ext}
     if (!storage_path || !/^[0-9a-f-]{36}\/\d+\.(jpg|jpeg|png|webp|heic|gif)$/i.test(storage_path)) {
@@ -198,7 +281,15 @@ serve(async (req) => {
   "items": [{"name": "항목명", "amount": 숫자}],
   "payment_method": "결제수단 또는 null",
   "confidence": 0~1 사이의 신뢰도 숫자
-}`,
+}
+
+날짜 규칙:
+- 날짜는 반드시 YYYY-MM-DD로 반환하세요.
+- 만약 영수증 날짜가 08/04/26처럼 모호하면 ${date_preference === 'MDY' ? '월/일/년(MDY)' : '일/월/년(DMY)'} 우선으로 해석하세요.
+- 영수증 주소/상점 국가 힌트가 보이면 그 국가 날짜 관행을 참고하세요.
+- 현재 날짜는 ${current_date ?? 'unknown'} 이고, locale은 ${locale ?? 'unknown'}, timezone은 ${timezone ?? 'unknown'} 입니다.
+- 영수증 날짜는 보통 현재 날짜와 아주 멀지 않다는 점을 반영하세요.
+`,
           },
           {
             role: 'user',
@@ -226,6 +317,11 @@ serve(async (req) => {
       throw new Error('AI 응답 형식이 예상과 다릅니다')
     }
     const parsed = validateParsedReceipt(JSON.parse(extractJsonText(rawResponse)))
+    const normalizedDate = normalizeParsedDate(
+      parsed.date,
+      date_preference === 'MDY' ? 'MDY' : 'DMY',
+      current_date
+    )
 
     // receipts 테이블에 저장
     const { data: receipt, error: insertError } = await supabase
@@ -234,7 +330,7 @@ serve(async (req) => {
         user_id: user.id,
         storage_path,
         store_name: parsed.store_name,
-        parsed_date: parsed.date,
+        parsed_date: normalizedDate,
         parsed_amount: parsed.total_amount,
         parsed_items: parsed.items,
         raw_response: rawResponse,
@@ -246,7 +342,7 @@ serve(async (req) => {
     if (insertError) throw insertError
 
     return new Response(
-      JSON.stringify({ receipt, parsed }),
+      JSON.stringify({ receipt, parsed: { ...parsed, date: normalizedDate } }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   } catch (err) {
