@@ -27,8 +27,18 @@ function validateParsedReceipt(data: unknown): {
   if (typeof data !== 'object' || data === null) throw new Error('AI 응답이 올바른 JSON 형식이 아닙니다')
   const d = data as Record<string, unknown>
 
+  const toNumber = (value: unknown) => {
+    if (typeof value === 'number' && isFinite(value)) return value
+    if (typeof value === 'string') {
+      const cleaned = value.replace(/[^0-9.-]/g, '')
+      const n = Number(cleaned)
+      if (isFinite(n)) return n
+    }
+    return null
+  }
+
   const date = typeof d.date === 'string' ? d.date : null
-  const total_amount = typeof d.total_amount === 'number' && isFinite(d.total_amount) ? d.total_amount : null
+  const total_amount = toNumber(d.total_amount)
   const store_name = typeof d.store_name === 'string' ? d.store_name.slice(0, 200) : null
   const payment_method = typeof d.payment_method === 'string' ? d.payment_method.slice(0, 100) : null
   const confidence = typeof d.confidence === 'number' && isFinite(d.confidence)
@@ -37,12 +47,20 @@ function validateParsedReceipt(data: unknown): {
 
   const rawItems = Array.isArray(d.items) ? d.items : []
   const items = rawItems
-    .filter((item): item is { name: string; amount: number } =>
-      typeof item === 'object' && item !== null &&
-      typeof (item as Record<string, unknown>).name === 'string' &&
-      typeof (item as Record<string, unknown>).amount === 'number' &&
-      isFinite((item as Record<string, unknown>).amount as number)
-    )
+    .map((item) => {
+      if (typeof item !== 'object' || item === null) return null
+      const obj = item as Record<string, unknown>
+
+      const name = typeof obj.name === 'string'
+        ? obj.name
+        : (typeof obj.item === 'string' ? obj.item : (typeof obj.description === 'string' ? obj.description : ''))
+
+      const amount = toNumber(obj.amount ?? obj.price ?? obj.total)
+      if (!name || amount === null) return null
+
+      return { name: name.slice(0, 200), amount }
+    })
+    .filter((item): item is { name: string; amount: number } => item !== null)
     .slice(0, 100)
 
   return { date, total_amount, store_name, items, payment_method, confidence }

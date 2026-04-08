@@ -97,8 +97,9 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
         }
       }
       navigate('/transactions')
-    } catch {
-      toast.error('저장 실패. 다시 시도해주세요')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '저장 실패. 다시 시도해주세요'
+      toast.error(msg)
     }
   }
 

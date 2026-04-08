@@ -19,7 +19,7 @@ type Step = 'upload' | 'parsing' | 'result'
 function buildReceiptMemo(parsed: ParsedReceipt) {
   const lines = parsed.items
     .filter((item) => item.name?.trim())
-    .map((item) => `- ${item.name}: ${item.amount.toFixed(2)}`)
+    .map((item) => `${item.name}(${item.amount.toFixed(2)})`)
 
   if (lines.length === 0) return ''
   return ['영수증 품목', ...lines].join('\n')
