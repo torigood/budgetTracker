@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .claude
 vapid.json
+
+# Supabase local metadata
+supabase/.temp/
