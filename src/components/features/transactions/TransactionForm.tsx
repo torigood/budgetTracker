@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { useCreateTransaction, useUpdateTransaction } from '@/lib/hooks/useTransactions'
 import { useCategories } from '@/lib/hooks/useCategories'
 import { useAuthStore } from '@/lib/stores/auth.store'
+import { useFilterStore } from '@/lib/stores/filter.store'
 import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
@@ -42,6 +43,7 @@ const labelClass = 'mb-1.5 block text-xs font-semibold text-slate-600 dark:text-
 export function TransactionForm({ initialValues, editId, receiptId }: TransactionFormProps) {
   const navigate = useNavigate()
   const { user } = useAuthStore()
+  const { resetFilters, setMonth } = useFilterStore()
   const { currency: defaultCurrency } = useUIStore()
   const { data: categories } = useCategories()
   const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(
@@ -96,6 +98,10 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
           void checkAnomalyAlert(selectedCurrency)
         }
       }
+
+      // After save, show the month where this transaction actually belongs.
+      resetFilters()
+      setMonth(values.date.slice(0, 7))
       navigate('/transactions')
     } catch (err) {
       const msg = err instanceof Error ? err.message : '저장 실패. 다시 시도해주세요'
