@@ -84,7 +84,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: '로그인 세션이 유효하지 않습니다' }),
+        JSON.stringify({ error: `로그인 세션이 유효하지 않습니다: ${authError?.message ?? 'user not found'}` }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
