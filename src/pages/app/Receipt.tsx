@@ -72,21 +72,31 @@ export default function Receipt() {
 
       setParseStep(t('receipt_analyzing'))
       const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        throw new Error(lang === 'ko' ? '로그인 세션이 만료되었습니다. 다시 로그인해주세요.' : 'Session expired. Please sign in again.')
+      }
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-receipt`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${session?.access_token}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ storage_path: storagePath }),
         }
       )
 
       if (!response.ok) {
-        const err = await response.json() as { error?: string }
-        throw new Error(err.error ?? t('receipt_parse_fail'))
+        const raw = await response.text()
+        let message = t('receipt_parse_fail')
+        try {
+          const parsed = JSON.parse(raw) as { error?: string; message?: string }
+          message = parsed.error ?? parsed.message ?? message
+        } catch {
+          if (raw.trim()) message = raw
+        }
+        throw new Error(message)
       }
 
       const result = await response.json() as { receipt: { id: string }; parsed: ParsedReceipt }

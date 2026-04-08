@@ -48,13 +48,32 @@ function validateParsedReceipt(data: unknown): {
   return { date, total_amount, store_name, items, payment_method, confidence }
 }
 
+function extractJsonText(raw: string) {
+  const trimmed = raw.trim()
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) return trimmed
+
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i)
+  if (fenced?.[1]) return fenced[1].trim()
+
+  const first = trimmed.indexOf('{')
+  const last = trimmed.lastIndexOf('}')
+  if (first >= 0 && last > first) return trimmed.slice(first, last + 1)
+
+  throw new Error('AI 응답에서 JSON을 찾을 수 없습니다')
+}
+
 serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
     const authHeader = req.headers.get('Authorization')
-    if (!authHeader) return new Response('Unauthorized', { status: 401 })
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: '인증 토큰이 없습니다' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -63,7 +82,12 @@ serve(async (req) => {
     )
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) return new Response('Unauthorized', { status: 401 })
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: '로그인 세션이 유효하지 않습니다' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Rate limiting: 하루 20회
     const today = new Date().toISOString().split('T')[0]
@@ -152,8 +176,11 @@ serve(async (req) => {
     const claudeData = await claudeResponse.json() as {
       choices: Array<{ message: { content: string } }>
     }
-    const rawResponse = claudeData.choices[0].message.content
-    const parsed = validateParsedReceipt(JSON.parse(rawResponse))
+    const rawResponse = claudeData.choices?.[0]?.message?.content
+    if (!rawResponse || typeof rawResponse !== 'string') {
+      throw new Error('AI 응답 형식이 예상과 다릅니다')
+    }
+    const parsed = validateParsedReceipt(JSON.parse(extractJsonText(rawResponse)))
 
     // receipts 테이블에 저장
     const { data: receipt, error: insertError } = await supabase
@@ -179,8 +206,9 @@ serve(async (req) => {
     )
   } catch (err) {
     console.error(err)
+    const message = err instanceof Error ? err.message : '처리 중 오류가 발생했습니다'
     return new Response(
-      JSON.stringify({ error: '처리 중 오류가 발생했습니다' }),
+      JSON.stringify({ error: message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
