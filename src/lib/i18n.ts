@@ -144,7 +144,7 @@ export const translations = {
     recurring_delete_fail: '삭제 실패',
     recurring_delete_title: '삭제할까요?',
     recurring_delete_desc: '이 자동거래 항목이 영구 삭제됩니다.',
-    recurring_refresh_none: '오늘 실행 대상 자동거래가 없습니다',
+    recurring_refresh_none: '오늘 실행할 자동거래가 없습니다',
     recurring_refresh_success: (inserted: number, skipped: number, exp: number, inc: number) => `자동거래 점검 완료: 생성 ${inserted}건(지출 ${exp}, 입금 ${inc}), 중복 건너뜀 ${skipped}건`,
     recurring_refresh_partial: (inserted: number, skipped: number, failed: number, exp: number, inc: number) => `자동거래 점검 완료: 생성 ${inserted}건(지출 ${exp}, 입금 ${inc}), 중복 건너뜀 ${skipped}건, 실패 ${failed}건`,
     recurring_refresh_fail: '자동거래 점검 실패. 다시 시도해주세요',

@@ -41,6 +41,7 @@ export function BottomNav() {
   const navIcon = location.pathname.startsWith('/recurring')
     ? <RefreshCw className="h-6 w-6" />
     : <List className="h-6 w-6" />
+  const navLabel = location.pathname.startsWith('/recurring') ? t('nav_recurring') : t('nav_transactions')
 
   return (
     <nav
@@ -105,14 +106,14 @@ export function BottomNav() {
             }`}
             aria-haspopup="menu"
             aria-expanded={popupOpen}
-            aria-label={t('nav_transactions')}
+            aria-label={navLabel}
           >
             <span className={`flex h-10 w-10 items-center justify-center rounded-2xl transition-colors ${
               isTransactionActive ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'bg-slate-100 text-slate-500 dark:bg-slate-800/80 dark:text-slate-400'
             }`}>
               {navIcon}
             </span>
-            <span className="mt-1 text-[10px] font-semibold tracking-tight">{t('nav_transactions')}</span>
+            <span className="mt-1 text-[10px] font-semibold tracking-tight">{navLabel}</span>
           </button>
         </div>
 
