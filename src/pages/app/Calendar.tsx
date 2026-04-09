@@ -82,12 +82,12 @@ export default function Calendar() {
 
   return (
     <div
-      className="flex flex-col h-full overflow-hidden"
+      className="flex min-h-full flex-col pb-6"
       {...swipe}
       style={{ touchAction: 'none' }}
     >
       {/* Header */}
-      <header className="sticky top-3 z-10 mx-4 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
+      <header className="mx-4 mt-3 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
         <div className="flex items-center gap-1">
           {/* Today button */}
           <button
@@ -139,7 +139,7 @@ export default function Calendar() {
       )}
 
       {/* Weekday headers */}
-      <div className="grid grid-cols-7 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+      <div className="mx-4 mt-3 grid grid-cols-7 rounded-t-2xl border border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900">
         {WEEKDAYS.map((wd, i) => (
           <div
             key={wd}
@@ -153,8 +153,8 @@ export default function Calendar() {
       </div>
 
       {/* Calendar grid — overflow-hidden to prevent page scroll */}
-      <div className="flex-1 bg-white dark:bg-slate-900 overflow-hidden">
-        <div className="grid grid-cols-7 divide-x divide-y divide-slate-100 dark:divide-slate-800 border-b border-slate-100 dark:border-slate-800">
+      <div className="mx-4 overflow-hidden rounded-b-2xl border-x border-b border-slate-100 bg-white dark:border-slate-800 dark:bg-slate-900">
+        <div className="grid grid-cols-7 divide-x divide-y divide-slate-100 dark:divide-slate-800">
           {days.map(({ date, day, isCurrentMonth }, idx) => {
             const summary = byDate?.[date]
             const isToday = date === today

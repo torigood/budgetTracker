@@ -72,7 +72,7 @@ export function AppLayout() {
 
       {/* Main content */}
       <div className="relative z-10 flex-1 md:ml-64">
-        <main className="pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pb-0">
+        <main className="pt-2 pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pt-3 md:pb-0">
           <Outlet />
         </main>
       </div>

@@ -13,7 +13,7 @@ export function PageHeader({ title, subtitle, action, back }: PageHeaderProps) {
   const navigate = useNavigate()
 
   return (
-    <header className="sticky top-3 z-20 mx-4 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
+    <header className="sticky top-3 z-20 mx-4 mt-3 mb-4 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
       <div className="flex items-center gap-3">
         {back && (
           <button
