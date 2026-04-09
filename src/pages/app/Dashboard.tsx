@@ -14,7 +14,7 @@ import { translations } from '@/lib/i18n'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton, TransactionSkeleton } from '@/components/ui/Skeleton'
 import { CategoryBadge } from '@/components/ui/Badge'
-import { formatCurrency, formatDateShort } from '@/utils/format'
+import { formatCompactCurrency, formatCurrency, formatDateShort } from '@/utils/format'
 import type { CurrencyRow } from '@/lib/hooks/useWidgetStats'
 
 export default function Dashboard() {
@@ -424,6 +424,10 @@ function SummaryCard({
   }
 
   const s = styles[type]
+  const absAmount = Math.abs(amount)
+  const displayAmount = absAmount >= 1_000_000
+    ? formatCompactCurrency(absAmount, currency)
+    : formatCurrency(absAmount, currency)
 
   return (
     <div className={`card rounded-3xl p-4 ${s.bg}`}>
@@ -432,7 +436,7 @@ function SummaryCard({
       </div>
       <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{label}</p>
       <p className={`text-[clamp(1.15rem,4vw,1.8rem)] font-bold tracking-tight tabular-nums leading-none ${s.amount}`}>
-        {formatCurrency(Math.abs(amount), currency)}
+        {displayAmount}
       </p>
     </div>
   )

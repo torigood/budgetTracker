@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useAnalytics } from '@/lib/hooks/useDashboard'
@@ -9,14 +9,15 @@ import { useT } from '@/lib/hooks/useT'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { CardSkeleton } from '@/components/ui/Skeleton'
-import { formatCurrency, getMonthShortLabel } from '@/utils/format'
+import { formatCompactAmount, formatCurrency, getMonthShortLabel } from '@/utils/format'
 import type { AnnualMonth } from '@/lib/hooks/useAnnualReport'
 import type { TranslationKey } from '@/lib/i18n'
 
 export default function Analytics() {
-  const { selectedMonth, setSelectedMonth, lang } = useUIStore()
+  const { selectedMonth, setSelectedMonth, lang, currency: fallbackCurrency } = useUIStore()
   const [tab, setTab] = useState<'monthly' | 'annual'>('monthly')
   const [annualYear, setAnnualYear] = useState(() => new Date().getFullYear())
+  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null)
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const { data: months, isLoading } = useAnalytics(selectedMonth)
   const { data: annualData, isLoading: annualLoading } = useAnnualReport(annualYear)
@@ -25,12 +26,50 @@ export default function Analytics() {
   const current = months?.at(-1)
   const previous = months?.at(-2)
 
-  const expenseDiff = current && previous && previous.expense > 0
-    ? ((current.expense - previous.expense) / previous.expense) * 100
+  const availableCurrencies = Array.from(
+    new Set((months ?? []).flatMap((m) => m.rows.map((r) => r.currency ?? 'CAD')))
+  )
+  const preferredCurrency = current?.primaryCurrency ?? fallbackCurrency
+
+  useEffect(() => {
+    if (!availableCurrencies.length) {
+      setSelectedCurrency(null)
+      return
+    }
+    if (selectedCurrency && availableCurrencies.includes(selectedCurrency)) return
+    const next = availableCurrencies.includes(preferredCurrency)
+      ? preferredCurrency
+      : availableCurrencies[0]
+    setSelectedCurrency(next)
+  }, [availableCurrencies, preferredCurrency, selectedCurrency])
+
+  const analyticsCurrency = selectedCurrency ?? preferredCurrency
+
+  const monthlySeries = (months ?? []).map((m) => {
+    const expense = m.rows
+      .filter((r) => (r.currency ?? 'CAD') === analyticsCurrency && r.type === '지출')
+      .reduce((s, r) => s + r.amount, 0)
+    const income = m.rows
+      .filter((r) => (r.currency ?? 'CAD') === analyticsCurrency && r.type === '수입')
+      .reduce((s, r) => s + r.amount, 0)
+    return {
+      month: m.month,
+      expense,
+      income,
+    }
+  })
+
+  const currentSeries = monthlySeries.at(-1)
+  const previousSeries = monthlySeries.at(-2)
+
+  const expenseDiff = currentSeries && previousSeries && previousSeries.expense > 0
+    ? ((currentSeries.expense - previousSeries.expense) / previousSeries.expense) * 100
     : null
 
   const categoryMap: Record<string, { name: string; color: string; amount: number }> = {}
-  current?.rows.filter((r) => r.type === '지출').forEach((r) => {
+  current?.rows
+    .filter((r) => r.type === '지출' && (r.currency ?? 'CAD') === analyticsCurrency)
+    .forEach((r) => {
     const cat = r.categories as { name: string; color: string } | null
     if (!cat || !r.category_id) return
     if (!categoryMap[r.category_id]) categoryMap[r.category_id] = { name: cat.name, color: cat.color, amount: 0 }
@@ -81,6 +120,30 @@ export default function Analytics() {
         />
       ) : (
         <div className="space-y-4 px-4 py-4">
+          {availableCurrencies.length > 1 && (
+            <div className="card rounded-2xl p-3">
+              <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                {t('settings_currency_title')}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {availableCurrencies.map((cur) => (
+                  <button
+                    key={cur}
+                    onClick={() => setSelectedCurrency(cur)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                      cur === analyticsCurrency
+                        ? 'bg-indigo-500 text-white'
+                        : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                    }`}
+                  >
+                    {cur}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-slate-400">{t('analytics_annual_currency_note')}</p>
+            </div>
+          )}
+
           {/* 전월 대비 배너 */}
           {!isLoading && expenseDiff !== null && (
             <div className={`flex items-center gap-3 rounded-3xl border border-white/70 px-4 py-4 shadow-sm backdrop-blur-xl ${
@@ -116,7 +179,7 @@ export default function Analytics() {
               <div className="overflow-x-auto">
                 <ResponsiveContainer width="100%" height={200} minWidth={300}>
                   <BarChart
-                    data={months?.map((m) => ({
+                    data={monthlySeries.map((m) => ({
                       name: getMonthShortLabel(m.month, lang),
                       [expenseKey]: m.expense,
                       [incomeKey]: m.income,
@@ -133,13 +196,13 @@ export default function Analytics() {
                     />
                     <YAxis
                       tick={{ fontSize: 11, fill: '#94a3b8' }}
-                      tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                      tickFormatter={(v) => formatCompactAmount(v as number, analyticsCurrency)}
                       axisLine={false}
                       tickLine={false}
-                      width={36}
+                      width={48}
                     />
                     <Tooltip
-                      formatter={(v) => formatCurrency(v as number)}
+                      formatter={(v) => formatCurrency(v as number, analyticsCurrency)}
                       contentStyle={{
                         borderRadius: '16px',
                         border: '1px solid rgb(226 232 240 / 0.9)',
@@ -207,7 +270,7 @@ export default function Analytics() {
                           <span className="truncate text-xs text-slate-600 dark:text-slate-400">{cat.name}</span>
                         </div>
                         <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums shrink-0 ml-2">
-                          {formatCurrency(cat.amount)}
+                          {formatCurrency(cat.amount, analyticsCurrency)}
                         </span>
                       </div>
                       <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
@@ -334,10 +397,10 @@ function AnnualReport({
                 />
                 <YAxis
                   tick={{ fontSize: 10, fill: '#94a3b8' }}
-                  tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
+                  tickFormatter={(v) => formatCompactAmount(v as number, currency)}
                   axisLine={false}
                   tickLine={false}
-                  width={34}
+                  width={48}
                 />
                 <Tooltip
                   formatter={(v) => formatCurrency(v as number, currency)}

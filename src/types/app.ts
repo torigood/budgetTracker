@@ -9,9 +9,9 @@ export type BudgetLimit = Database['public']['Tables']['budget_limits']['Row']
 
 export type TransactionType = '지출' | '수입'
 
-export type PaymentMethod = '크레딧' | '데빗' | '이체' | '자동지출' | '현금'
+export type PaymentMethod = '크레딧' | '데빗' | '이체' | '자동지출' | '자동입금' | '현금'
 
-export const PAYMENT_METHODS: PaymentMethod[] = ['크레딧', '데빗', '이체', '자동지출', '현금']
+export const PAYMENT_METHODS: PaymentMethod[] = ['크레딧', '데빗', '이체', '자동지출', '자동입금', '현금']
 
 export const CATEGORY_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308',

@@ -82,15 +82,24 @@ export function useAnalytics(month: string) {
           const { start, end } = getMonthRange(mo)
           const { data } = await supabase
             .from('transactions')
-            .select('type, amount, category_id, categories(name, color)')
+            .select('type, amount, category_id, currency, categories(name, color)')
             .gte('date', start)
             .lte('date', end)
           const rows = data ?? []
+
+          const currencyCount: Record<string, number> = {}
+          rows.forEach((r) => {
+            const c = r.currency ?? 'CAD'
+            currencyCount[c] = (currencyCount[c] ?? 0) + 1
+          })
+          const primaryCurrency = Object.entries(currencyCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'CAD'
+
           return {
             month: mo,
             expense: rows.filter((r) => r.type === '지출').reduce((s, r) => s + r.amount, 0),
             income: rows.filter((r) => r.type === '수입').reduce((s, r) => s + r.amount, 0),
             rows,
+            primaryCurrency,
           }
         })
       )

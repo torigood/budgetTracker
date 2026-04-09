@@ -31,7 +31,7 @@ serve(async (req) => {
   const today = now.getDate()
   const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
 
-  // 오늘 날짜에 해당하는 활성 자동지출 조회
+  // 오늘 날짜에 해당하는 활성 자동 거래 조회(자동지출/자동입금)
   const { data: items, error } = await supabase
     .from('recurring_items')
     .select('*')
@@ -44,10 +44,16 @@ serve(async (req) => {
   }
 
   let inserted = 0
+  let expenseInserted = 0
+  let incomeInserted = 0
   let skipped = 0
 
   for (const item of items ?? []) {
-    // 중복 방지: 해당 월에 이미 생성된 자동지출인지 확인
+    const paymentMethod = item.payment_method === '자동입금' ? '자동입금' : '자동지출'
+    const transactionType = paymentMethod === '자동입금' ? '수입' : '지출'
+    const autoMemo = paymentMethod === '자동입금' ? '자동입금 자동 생성' : '자동지출 자동 생성'
+
+    // 중복 방지: 해당 월에 이미 생성된 자동 거래인지 확인
     const startOfMonth = `${yearMonth}-01`
     const { count } = await supabase
       .from('transactions')
@@ -55,7 +61,7 @@ serve(async (req) => {
       .eq('user_id', item.user_id)
       .eq('description', item.description)
       .eq('category_id', item.category_id)
-      .eq('payment_method', '자동지출')
+      .eq('payment_method', paymentMethod)
       .gte('date', startOfMonth)
       .lte('date', `${yearMonth}-31`)
 
@@ -67,24 +73,26 @@ serve(async (req) => {
     const { error: insertError } = await supabase.from('transactions').insert({
       user_id: item.user_id,
       date: `${yearMonth}-${String(today).padStart(2, '0')}`,
-      type: '지출',
+      type: transactionType,
       category_id: item.category_id,
       description: item.description,
       amount: item.amount,
       currency: item.currency ?? 'CAD',
-      payment_method: '자동지출',
-      memo: '자동지출 자동 생성',
+      payment_method: paymentMethod,
+      memo: autoMemo,
     })
 
     if (insertError) {
-      console.error(`자동지출 생성 실패 (${item.description}):`, insertError)
+      console.error(`자동 거래 생성 실패 (${item.description}):`, insertError)
     } else {
       inserted++
+      if (paymentMethod === '자동입금') incomeInserted++
+      else expenseInserted++
     }
   }
 
   return new Response(
-    JSON.stringify({ message: '완료', inserted, skipped }),
+    JSON.stringify({ message: '완료', inserted, skipped, expenseInserted, incomeInserted }),
     { headers: { 'Content-Type': 'application/json' } }
   )
 })

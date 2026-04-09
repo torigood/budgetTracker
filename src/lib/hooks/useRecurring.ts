@@ -97,15 +97,21 @@ export function useRunRecurringNow() {
       let inserted = 0
       let skipped = 0
       let failed = 0
+      let expenseInserted = 0
+      let incomeInserted = 0
 
       for (const item of items ?? []) {
+        const paymentMethod = item.payment_method === '자동입금' ? '자동입금' : '자동지출'
+        const transactionType = paymentMethod === '자동입금' ? '수입' : '지출'
+        const autoMemo = paymentMethod === '자동입금' ? '자동입금 자동 생성' : '자동지출 자동 생성'
+
         const { count, error: countError } = await supabase
           .from('transactions')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('description', item.description)
           .eq('category_id', item.category_id)
-          .eq('payment_method', '자동지출')
+          .eq('payment_method', paymentMethod)
           .gte('date', startOfMonth)
           .lte('date', endOfMonth)
 
@@ -122,20 +128,25 @@ export function useRunRecurringNow() {
         const { error: insertError } = await supabase.from('transactions').insert({
           user_id: user.id,
           date: todayDate,
-          type: '지출',
+          type: transactionType,
           category_id: item.category_id,
           description: item.description,
           amount: item.amount,
           currency: item.currency ?? 'CAD',
-          payment_method: '자동지출',
-          memo: '자동지출 자동 생성',
+          payment_method: paymentMethod,
+          memo: autoMemo,
         })
 
-        if (insertError) failed++
-        else inserted++
+        if (insertError) {
+          failed++
+        } else {
+          inserted++
+          if (paymentMethod === '자동입금') incomeInserted++
+          else expenseInserted++
+        }
       }
 
-      return { inserted, skipped, failed, total: (items ?? []).length }
+      return { inserted, skipped, failed, total: (items ?? []).length, expenseInserted, incomeInserted }
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['recurring'] })

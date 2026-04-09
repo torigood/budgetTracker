@@ -19,6 +19,29 @@ export function formatCurrency(amount: number, currency = 'CAD'): string {
   }).format(amount)
 }
 
+export function formatCompactAmount(amount: number, currency = 'CAD'): string {
+  const locale = CURRENCY_LOCALE_MAP[currency] ?? 'en-CA'
+  return new Intl.NumberFormat(locale, {
+    notation: 'compact',
+    compactDisplay: 'short',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(amount)
+}
+
+export function formatCompactCurrency(amount: number, currency = 'CAD'): string {
+  const locale = CURRENCY_LOCALE_MAP[currency] ?? 'en-CA'
+  const noDecimals = currency === 'KRW' || currency === 'JPY'
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    notation: 'compact',
+    compactDisplay: 'short',
+    minimumFractionDigits: noDecimals ? 0 : 1,
+    maximumFractionDigits: noDecimals ? 0 : 1,
+  }).format(amount)
+}
+
 export function formatDate(date: string): string {
   const d = new Date(date + 'T00:00:00')
   return new Intl.DateTimeFormat('ko-KR', {

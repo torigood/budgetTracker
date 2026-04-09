@@ -11,10 +11,11 @@ import { translations } from '@/lib/i18n'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { CategoryBadge } from '@/components/ui/Badge'
-import { PAYMENT_METHODS } from '@/types/app'
 import { formatCurrency } from '@/utils/format'
 import { useT } from '@/lib/hooks/useT'
 import type { RecurringItem } from '@/types/app'
+
+type AutoPaymentMethod = '자동지출' | '자동입금'
 
 function createSchema() {
   return z.object({
@@ -22,7 +23,7 @@ function createSchema() {
     description: z.string().min(1, 'Please enter a description'),
     amount: z.coerce.number().positive('Please enter an amount'),
     currency: z.string().min(1),
-    payment_method: z.string().min(1),
+    payment_method: z.enum(['자동지출', '자동입금']),
     day_of_month: z.coerce.number().int().min(1).max(31),
   })
 }
@@ -49,16 +50,25 @@ export default function Recurring() {
   const [todayKey, setTodayKey] = useState(() => new Date().toISOString().slice(0, 10))
   const recurringItems = items as RecurringWithCategory[] | undefined
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
-    defaultValues: { payment_method: '자동지출', day_of_month: 1 },
+    defaultValues: { payment_method: '자동지출', day_of_month: 1, currency: defaultCurrency },
   })
 
   const currentDay = useMemo(() => Number(todayKey.slice(8, 10)), [todayKey])
-  const totalMonthly = recurringItems
-    ?.filter((i) => i.is_active && i.day_of_month <= currentDay)
+  const expenseItems = recurringItems?.filter((i) => (i.payment_method === '자동입금' ? '자동입금' : '자동지출') === '자동지출') ?? []
+  const incomeItems = recurringItems?.filter((i) => (i.payment_method === '자동입금' ? '자동입금' : '자동지출') === '자동입금') ?? []
+
+  const totalExpenseMonthly = expenseItems
+    .filter((i) => i.is_active && i.day_of_month <= currentDay)
     .reduce((sum, i) => sum + i.amount, 0) ?? 0
+
+  const totalIncomeMonthly = incomeItems
+    .filter((i) => i.is_active && i.day_of_month <= currentDay)
+    .reduce((sum, i) => sum + i.amount, 0) ?? 0
+
+  const selectedMethod = watch('payment_method') as AutoPaymentMethod
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -85,9 +95,9 @@ export default function Recurring() {
     return () => document.body.classList.remove('sheet-open')
   }, [showForm])
 
-  function openCreate() {
+  function openCreate(method: AutoPaymentMethod) {
     setEditItem(null)
-    reset({ payment_method: '자동지출', day_of_month: 1, currency: defaultCurrency })
+    reset({ payment_method: method, day_of_month: 1, currency: defaultCurrency })
     setShowForm(true)
   }
 
@@ -98,7 +108,7 @@ export default function Recurring() {
       description: item.description,
       amount: item.amount,
       currency: item.currency ?? defaultCurrency,
-      payment_method: item.payment_method,
+      payment_method: (item.payment_method === '자동입금' ? '자동입금' : '자동지출'),
       day_of_month: item.day_of_month,
     })
     setShowForm(true)
@@ -111,7 +121,7 @@ export default function Recurring() {
         toast.success(t('recurring_updated'))
       } else {
         await createMutation.mutateAsync({ ...values, is_active: true })
-        toast.success(t('recurring_added'))
+        toast.success(values.payment_method === '자동입금' ? t('recurring_added_income') : t('recurring_added_expense'))
       }
       setShowForm(false)
     } catch {
@@ -140,101 +150,122 @@ export default function Recurring() {
       await refetch()
 
       if (result.total === 0) {
-        toast.message('오늘 실행 대상 자동지출이 없습니다')
+        toast.message(t('recurring_refresh_none'))
         return
       }
 
       if (result.failed > 0) {
-        toast.error(`자동지출 점검 완료: 생성 ${result.inserted}건, 중복 건너뜀 ${result.skipped}건, 실패 ${result.failed}건`)
+        toast.error(tr.recurring_refresh_partial(result.inserted, result.skipped, result.failed, result.expenseInserted, result.incomeInserted))
         return
       }
 
-      toast.success(`자동지출 점검 완료: 생성 ${result.inserted}건, 중복 건너뜀 ${result.skipped}건`)
+      toast.success(tr.recurring_refresh_success(result.inserted, result.skipped, result.expenseInserted, result.incomeInserted))
     } catch {
-      toast.error('자동지출 점검 실패. 다시 시도해주세요')
+      toast.error(t('recurring_refresh_fail'))
     }
+  }
+
+  function renderSection(method: AutoPaymentMethod, sectionItems: RecurringWithCategory[], tone: 'expense' | 'income') {
+    const isExpense = tone === 'expense'
+    const sectionTitle = isExpense ? t('recurring_section_expense') : t('recurring_section_income')
+    const totalLabel = isExpense ? t('recurring_total_expense') : t('recurring_total_income')
+    const emptyLabel = isExpense ? t('recurring_empty_expense') : t('recurring_empty_income')
+    const sectionTotal = isExpense ? totalExpenseMonthly : totalIncomeMonthly
+    const amountClass = isExpense ? 'text-rose-500' : 'text-emerald-500'
+
+    return (
+      <div className="mx-4 mt-4">
+        <div className={`mb-3 flex items-center justify-between rounded-3xl border border-white/70 px-4 py-4 shadow-sm dark:border-slate-800/70 ${
+          isExpense
+            ? 'bg-gradient-to-br from-rose-50 via-white to-white dark:from-rose-950/30 dark:via-slate-900 dark:to-slate-900/60'
+            : 'bg-gradient-to-br from-emerald-50 via-white to-white dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-900/60'
+        }`}>
+          <div>
+            <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${isExpense ? 'text-rose-400' : 'text-emerald-400'}`}>{totalLabel}</p>
+            <p className={`mt-1 text-[clamp(1.15rem,4vw,1.7rem)] font-bold tracking-tight tabular-nums ${isExpense ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+              {formatCurrency(sectionTotal, defaultCurrency)}
+            </p>
+            <p className="mt-0.5 text-xs text-slate-500">{sectionTitle}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => void handleRefresh()}
+              disabled={isFetching || runRecurringNow.isPending}
+              className={`tap-target inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 shadow-sm transition hover:bg-white dark:bg-slate-900/30 dark:hover:bg-slate-900/50 ${isExpense ? 'text-rose-500' : 'text-emerald-500'}`}
+              aria-label={t('recurring_refresh')}
+              title={t('recurring_refresh')}
+            >
+              <RefreshCw className={`h-4 w-4 ${(isFetching || runRecurringNow.isPending) ? 'animate-spin' : ''}`} />
+            </button>
+            <button
+              onClick={() => openCreate(method)}
+              className={`tap-target inline-flex h-11 w-11 items-center justify-center rounded-2xl text-white shadow-lg transition active:scale-95 ${
+                isExpense
+                  ? 'bg-gradient-to-br from-rose-500 to-orange-500 shadow-rose-500/20'
+                  : 'bg-gradient-to-br from-emerald-500 to-teal-500 shadow-emerald-500/20'
+              }`}
+              aria-label={t('recurring_add')}
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="card divide-y divide-slate-100/80 overflow-hidden rounded-3xl dark:divide-slate-800/70">
+          {isLoading ? (
+            <p className="py-8 text-center text-sm text-slate-400">{t('recurring_loading')}</p>
+          ) : !sectionItems.length ? (
+            <p className="py-8 text-center text-sm text-slate-400">{emptyLabel}</p>
+          ) : (
+            sectionItems.map((item) => (
+              <div key={item.id} className={`flex items-center gap-3 px-5 py-4 transition ${!item.is_active ? 'opacity-40' : ''}`}>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">{item.description}</span>
+                    {item.categories && (
+                      <CategoryBadge color={item.categories.color} label={item.categories.name} size="sm" />
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-400">{tr.recurring_day_label(item.day_of_month)} · {item.payment_method}</p>
+                </div>
+                <span className={`text-sm font-bold tabular-nums shrink-0 ${amountClass}`}>
+                  {formatCurrency(item.amount, item.currency ?? defaultCurrency)}
+                </span>
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <button
+                    onClick={() => toggleActive(item)}
+                    title={item.is_active ? t('recurring_deactivated') : t('recurring_activated')}
+                    className={`rounded-xl p-2 transition ${item.is_active ? 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                  >
+                    <Power className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => openEdit(item)}
+                    className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setDeleteId(item.id)}
+                    className="rounded-xl p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="pb-6">
-      <PageHeader
-        title={t('recurring_title')}
-        action={
-          <button
-            onClick={openCreate}
-            className="tap-target flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/20 transition active:scale-95"
-            aria-label={t('recurring_add')}
-          >
-            <Plus className="h-5 w-5" />
-          </button>
-        }
-      />
+      <PageHeader title={t('recurring_title')} />
 
-      {/* 이번 달 합계 배너 */}
-      <div className="mx-4 mt-4 flex items-center justify-between rounded-3xl border border-white/70 bg-gradient-to-br from-rose-50 via-white to-white px-4 py-4 shadow-sm dark:border-slate-800/70 dark:from-rose-950/30 dark:via-slate-900 dark:to-slate-900/60">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-rose-400">{t('recurring_total')}</p>
-          <p className="mt-1 text-[clamp(1.35rem,4vw,1.9rem)] font-bold tracking-tight text-rose-600 dark:text-rose-400 tabular-nums">
-            {formatCurrency(totalMonthly, defaultCurrency)}
-          </p>
-        </div>
-        <button
-          onClick={() => void handleRefresh()}
-          disabled={isFetching || runRecurringNow.isPending}
-          className="tap-target inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 text-rose-500 shadow-sm transition hover:bg-white dark:bg-slate-900/30 dark:hover:bg-slate-900/50"
-          aria-label={t('recurring_refresh')}
-          title={t('recurring_refresh')}
-        >
-          <RefreshCw className={`h-4 w-4 ${(isFetching || runRecurringNow.isPending) ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-
-      {/* 목록 */}
-      <div className="card mx-4 mt-4 divide-y divide-slate-100/80 overflow-hidden rounded-3xl dark:divide-slate-800/70">
-        {isLoading ? (
-          <p className="py-8 text-center text-sm text-slate-400">{t('recurring_loading')}</p>
-        ) : !recurringItems?.length ? (
-          <p className="py-8 text-center text-sm text-slate-400">{t('recurring_empty')}</p>
-        ) : (
-          recurringItems.map((item) => (
-            <div key={item.id} className={`flex items-center gap-3 px-5 py-4 transition ${!item.is_active ? 'opacity-40' : ''}`}>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-semibold text-slate-900 dark:text-white">{item.description}</span>
-                  {item.categories && (
-                    <CategoryBadge color={item.categories.color} label={item.categories.name} size="sm" />
-                  )}
-                </div>
-                <p className="mt-0.5 text-xs text-slate-400">{tr.recurring_day_label(item.day_of_month)} · {item.payment_method}</p>
-              </div>
-              <span className="text-sm font-bold text-rose-500 tabular-nums shrink-0">
-                {formatCurrency(item.amount, item.currency ?? defaultCurrency)}
-              </span>
-              <div className="flex items-center gap-0.5 shrink-0">
-                <button
-                  onClick={() => toggleActive(item)}
-                  title={item.is_active ? t('recurring_deactivated') : t('recurring_activated')}
-                  className={`rounded-xl p-2 transition ${item.is_active ? 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-                >
-                  <Power className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => openEdit(item)}
-                  className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setDeleteId(item.id)}
-                  className="rounded-xl p-2 text-slate-400 transition hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+      {renderSection('자동지출', expenseItems, 'expense')}
+      {renderSection('자동입금', incomeItems, 'income')}
 
       {/* Bottom sheet 폼 */}
       {showForm && (
@@ -248,10 +279,36 @@ export default function Recurring() {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="mb-5 text-base font-bold text-slate-900 dark:text-white">
-              {editItem ? t('recurring_form_title_edit') : t('recurring_form_title_add')}
+              {editItem
+                ? t('recurring_form_title_edit')
+                : (selectedMethod === '자동입금' ? t('recurring_form_title_add_income') : t('recurring_form_title_add_expense'))}
             </h3>
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-3.5">
+              {!editItem && (
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('recurring_payment')}</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => reset({ ...watch(), payment_method: '자동지출' })}
+                      className={`rounded-xl px-3 py-2.5 text-sm font-semibold transition ${selectedMethod === '자동지출' ? 'bg-rose-500 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300'}`}
+                    >
+                      {t('recurring_section_expense')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => reset({ ...watch(), payment_method: '자동입금' })}
+                      className={`rounded-xl px-3 py-2.5 text-sm font-semibold transition ${selectedMethod === '자동입금' ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300'}`}
+                    >
+                      {t('recurring_section_income')}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <input type="hidden" {...register('payment_method')} />
+
               <div>
                 <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('recurring_category')}</label>
                 <select
@@ -291,12 +348,7 @@ export default function Recurring() {
                   <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('recurring_day')}</label>
                   <input {...register('day_of_month')} type="number" min={1} max={31} placeholder="1" className={inputClass} />
                 </div>
-                <div className="flex-1">
-                  <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('recurring_payment')}</label>
-                  <select {...register('payment_method')} className={inputClass}>
-                    {PAYMENT_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </div>
+                <div className="flex-1" />
               </div>
 
               <div className="flex gap-3 pt-1">
