@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, List, Camera, BarChart2, Settings, RefreshCw, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
@@ -7,6 +7,7 @@ import { useUIStore } from '@/lib/stores/ui.store'
 
 export function SideNav() {
   const t = useT()
+  const navigate = useNavigate()
   const isDark = useUIStore((state) => state.isDark)
   const logoSrc = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
 
@@ -22,6 +23,7 @@ export function SideNav() {
   async function handleLogout() {
     const { error } = await supabase.auth.signOut()
     if (error) toast.error(error.message)
+    else navigate('/', { replace: true })
   }
 
   return (
