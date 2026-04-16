@@ -7,7 +7,7 @@ import { useUIStore } from '@/lib/stores/ui.store'
 export default function Landing() {
   const { user, loading } = useAuthStore()
   const { lang, setLang, isDark, toggleDark } = useUIStore()
-  const logoSrc = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
+  const logoSrc = `${isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'}?v=purple-1`
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -102,7 +102,7 @@ export default function Landing() {
     ? ['무료로 시작', '카드 불필요', '광고 없음']
     : ['Free to start', 'No credit card', 'No ads']
 
-  const featureCardTints = ['#12151f', '#0d1f3c', '#0f1a0f']
+  const featureCardTints = ['#12151f', '#1a1330', '#161126']
 
   return (
     <div className="min-h-svh flex flex-col bg-transparent text-[var(--color-text-primary)]">
@@ -196,7 +196,7 @@ export default function Landing() {
               {features.map(({ icon: Icon, title, desc }, index) => (
                 <article
                   key={title}
-                  className="landing-reveal landing-parallax rounded-[16px] border-[0.5px] border-[rgba(255,255,255,0.06)] p-7 transition-colors duration-200 hover:border-[#1a56db]"
+                  className="landing-reveal landing-parallax rounded-[16px] border-[0.5px] border-[rgba(255,255,255,0.06)] p-7 transition-colors duration-200 hover:border-[#863bff]"
                   data-parallax-speed={(0.05 + (index % 3) * 0.015).toFixed(3)}
                   style={{
                     backgroundColor: featureCardTints[index % featureCardTints.length],
