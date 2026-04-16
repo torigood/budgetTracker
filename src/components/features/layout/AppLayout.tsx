@@ -80,7 +80,7 @@ export function AppLayout() {
             <span className="text-sm font-semibold tracking-tight text-[var(--color-text-primary)]">Budget Tracker</span>
           </div>
         </div>
-        <main className="pt-2 pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pt-3 md:pb-0">
+        <main className="pt-2 pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pt-3 md:pb-0">
           <Outlet />
         </main>
       </div>
