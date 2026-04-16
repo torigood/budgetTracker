@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
+import { useUIStore } from '@/lib/stores/ui.store'
 import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute'
 import { AppLayout } from '@/components/features/layout/AppLayout'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
@@ -48,6 +49,8 @@ const router = createBrowserRouter([
 
 export default function App() {
   const { setSession, setLoading } = useAuthStore()
+  const lang = useUIStore((state) => state.lang)
+  const isDark = useUIStore((state) => state.isDark)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -62,6 +65,28 @@ export default function App() {
 
     return () => subscription.unsubscribe()
   }, [setSession, setLoading])
+
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
+
+  useEffect(() => {
+    const iconHref = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
+    const manifestHref = isDark ? '/manifest-dark.webmanifest' : '/manifest.webmanifest'
+    const themeColor = isDark ? '#08080f' : '#f4f5f8'
+
+    const favicon = document.getElementById('app-favicon') as HTMLLinkElement | null
+    if (favicon) favicon.href = iconHref
+
+    const appleTouchIcon = document.getElementById('app-apple-touch-icon') as HTMLLinkElement | null
+    if (appleTouchIcon) appleTouchIcon.href = iconHref
+
+    const manifest = document.getElementById('app-manifest') as HTMLLinkElement | null
+    if (manifest) manifest.href = manifestHref
+
+    const themeColorMeta = document.getElementById('app-theme-color') as HTMLMetaElement | null
+    if (themeColorMeta) themeColorMeta.setAttribute('content', themeColor)
+  }, [isDark])
 
   return (
     <>

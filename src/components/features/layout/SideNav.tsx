@@ -3,9 +3,12 @@ import { LayoutDashboard, List, Camera, BarChart2, Settings, RefreshCw, LogOut }
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useT } from '@/lib/hooks/useT'
+import { useUIStore } from '@/lib/stores/ui.store'
 
 export function SideNav() {
   const t = useT()
+  const isDark = useUIStore((state) => state.isDark)
+  const logoSrc = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
 
   const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
@@ -26,7 +29,7 @@ export function SideNav() {
       {/* Logo */}
       <div className="mx-3 mt-3 flex items-center gap-3 rounded-[1.5rem] bg-gradient-to-br from-indigo-500 via-indigo-500 to-cyan-500 px-4 py-4 text-white shadow-lg shadow-indigo-500/20">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur-sm">
-          <img src="/icons/logo512.png" alt="Budget Tracker" className="h-8 w-8 rounded-xl object-cover" />
+          <img src={logoSrc} alt="Budget Tracker" className="h-8 w-8 rounded-xl object-cover" />
         </div>
         <div>
           <span className="block text-base font-semibold tracking-tight">Budget Tracker</span>

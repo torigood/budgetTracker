@@ -48,5 +48,6 @@ export const useUIStore = create<UIState>((set, get) => ({
   setLang: (l) => {
     set({ lang: l })
     localStorage.setItem('lang', l)
+    document.documentElement.lang = l
   },
 }))

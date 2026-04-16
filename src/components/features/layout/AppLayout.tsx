@@ -2,12 +2,15 @@ import { useEffect } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { useUIStore } from '@/lib/stores/ui.store'
 import { BottomNav } from './BottomNav'
 import { SideNav } from './SideNav'
 
 export function AppLayout() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const isDark = useUIStore((state) => state.isDark)
+  const logoSrc = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
 
   function refreshVisibleQueries() {
     void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
@@ -63,15 +66,20 @@ export function AppLayout() {
   }, [navigate])
 
   return (
-    <div className="relative flex min-h-svh overflow-x-hidden bg-slate-50 dark:bg-slate-950">
-      <div className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-indigo-400/10 blur-3xl dark:bg-indigo-500/10" />
-      <div className="pointer-events-none absolute -right-24 top-24 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl dark:bg-cyan-500/10" />
+    <div className="relative flex min-h-svh overflow-x-hidden bg-transparent">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/10" />
 
       {/* Desktop sidebar */}
       <SideNav />
 
       {/* Main content */}
       <div className="relative z-10 flex-1 md:ml-64">
+        <div className="sticky top-0 z-30 border-b border-white/10 bg-white/85 backdrop-blur-sm dark:bg-[rgba(8,8,15,0.82)] md:hidden">
+          <div className="flex items-center gap-2.5 px-4 pb-2 pt-[calc(0.6rem+env(safe-area-inset-top))]">
+            <img src={logoSrc} alt="Budget Tracker" className="h-8 w-8 rounded-lg border border-white/10 object-cover" />
+            <span className="text-sm font-semibold tracking-tight text-[var(--color-text-primary)]">Budget Tracker</span>
+          </div>
+        </div>
         <main className="pt-2 pb-[calc(5.75rem+env(safe-area-inset-bottom))] md:pt-3 md:pb-0">
           <Outlet />
         </main>

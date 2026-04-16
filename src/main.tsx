@@ -20,6 +20,25 @@ const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
 const isDark = savedTheme ? savedTheme === 'dark' : prefersDark
 document.documentElement.classList.toggle('dark', isDark)
 
+const iconHref = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
+const manifestHref = isDark ? '/manifest-dark.webmanifest' : '/manifest.webmanifest'
+const themeColor = isDark ? '#08080f' : '#f4f5f8'
+
+const favicon = document.getElementById('app-favicon') as HTMLLinkElement | null
+if (favicon) favicon.href = iconHref
+
+const appleTouchIcon = document.getElementById('app-apple-touch-icon') as HTMLLinkElement | null
+if (appleTouchIcon) appleTouchIcon.href = iconHref
+
+const manifest = document.getElementById('app-manifest') as HTMLLinkElement | null
+if (manifest) manifest.href = manifestHref
+
+const themeColorMeta = document.getElementById('app-theme-color') as HTMLMetaElement | null
+if (themeColorMeta) themeColorMeta.setAttribute('content', themeColor)
+
+const savedLang = (localStorage.getItem('lang') as 'ko' | 'en' | null) ?? 'ko'
+document.documentElement.lang = savedLang
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

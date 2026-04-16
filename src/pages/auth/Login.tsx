@@ -12,7 +12,8 @@ type Mode = 'signin' | 'signup' | 'forgot'
 
 export default function Login() {
   const { user, loading } = useAuthStore()
-  const { lang, setLang } = useUIStore()
+  const { lang, setLang, isDark } = useUIStore()
+  const logoSrc = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
   const t = useT()
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
@@ -90,38 +91,39 @@ export default function Login() {
     : ['Category expense analytics', 'AI receipt auto-scan', 'Auto-log recurring expenses', 'Real-time multi-device sync']
 
   return (
-    <div className="flex min-h-svh bg-slate-50 dark:bg-slate-950">
+    <div className="flex min-h-svh bg-transparent text-[var(--color-text-primary)]">
       {/* Left panel — branding (desktop only) */}
-      <div className="relative hidden overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-500 to-cyan-500 p-12 lg:flex lg:w-[52%] lg:flex-col lg:justify-between">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-20 -right-20 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute bottom-0 -left-10 h-64 w-64 rounded-full bg-purple-400/20 blur-3xl" />
+      <div className="relative hidden overflow-hidden border-r border-white/10 bg-white p-12 lg:flex lg:w-[52%] lg:flex-col lg:justify-between dark:bg-[rgba(15,15,26,0.86)]">
+        <div className="pointer-events-none absolute inset-0 opacity-60">
+          <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
+          <div className="absolute right-16 top-20 h-40 w-40 rounded-full border border-white/10" />
+          <div className="absolute -bottom-12 left-8 h-72 w-72 rounded-full border border-white/8" />
         </div>
 
         <div className="relative flex items-center gap-3">
-          <img src="/icons/logo512.png" alt="Budget Tracker" className="h-10 w-10 rounded-xl object-cover" />
-          <span className="text-lg font-bold text-white">Budget Tracker</span>
+          <img src={logoSrc} alt="Budget Tracker" className="h-10 w-10 rounded-xl object-cover border border-white/10" />
+          <span className="text-lg font-semibold text-[var(--color-text-primary)]">Budget Tracker</span>
         </div>
 
-        <div className="relative">
-          <h2 className="text-4xl font-extrabold text-white leading-tight whitespace-pre-line">
+        <div className="relative max-w-xl">
+          <h2 className="text-5xl leading-tight whitespace-pre-line font-display">
             {t('login_hero_title')}
           </h2>
-          <p className="mt-4 text-indigo-200 text-sm leading-relaxed max-w-sm">
+          <p className="mt-5 text-sm leading-8 max-w-md text-[var(--color-text-secondary)]">
             {t('login_hero_desc')}
           </p>
 
-          <div className="mt-8 space-y-3">
+          <div className="mt-10 space-y-3 border-t border-white/10 pt-6">
             {heroItems.map((item) => (
-              <div key={item} className="flex items-center gap-2.5 text-sm text-white/90">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs">✓</span>
+              <div key={item} className="flex items-center gap-2.5 text-sm text-[var(--color-text-primary)]">
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center border border-white/10 text-[10px] text-[var(--color-primary)]">✓</span>
                 {item}
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative text-xs text-indigo-300">
+        <p className="relative text-xs text-[var(--color-text-muted)]">
           © {new Date().getFullYear()} Budget Tracker
         </p>
       </div>
@@ -132,14 +134,14 @@ export default function Login() {
         <div className="mb-8 w-full max-w-sm flex items-center justify-between">
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             {t('login_back')}
           </Link>
           <button
             onClick={() => setLang(lang === 'ko' ? 'en' : 'ko')}
-            className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-500 transition hover:border-indigo-400 hover:text-indigo-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400"
+            className="flex items-center gap-1.5 border border-white/10 bg-transparent px-3 py-2 text-xs font-semibold text-[var(--color-text-secondary)] transition-colors hover:border-white/20 hover:text-[var(--color-text-primary)]"
           >
             <Languages className="h-3.5 w-3.5" />
             {lang === 'ko' ? 'English' : '한국어'}
@@ -149,19 +151,19 @@ export default function Login() {
         <div className="w-full max-w-sm">
           {/* Mobile logo */}
           <div className="mb-8 lg:hidden text-center">
-            <img src="/icons/logo512.png" alt="Budget Tracker" className="mx-auto mb-3 h-14 w-14 rounded-2xl object-cover shadow-lg" />
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">Budget Tracker</h1>
+            <img src={logoSrc} alt="Budget Tracker" className="mx-auto mb-3 h-14 w-14 rounded-2xl object-cover border border-white/10" />
+            <h1 className="text-xl font-semibold text-[var(--color-text-primary)]">Budget Tracker</h1>
           </div>
 
           {/* ── Forgot password mode ── */}
           {mode === 'forgot' ? (
             <>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t('login_forgot_title')}</h2>
-              <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">{t('login_forgot_subtitle')}</p>
+              <h2 className="text-2xl font-display">{t('login_forgot_title')}</h2>
+              <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">{t('login_forgot_subtitle')}</p>
 
               <form onSubmit={handleForgot} className="mt-6 space-y-3">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]">
                     {t('login_email')}
                   </label>
                   <input
@@ -170,7 +172,7 @@ export default function Login() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     required
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full border border-white/10 bg-[rgba(255,255,255,0.02)] px-4 py-3 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary)]/10"
                   />
                 </div>
                 <button
@@ -186,7 +188,7 @@ export default function Login() {
               <p className="mt-5 text-center text-sm">
                 <button
                   onClick={() => setMode('signin')}
-                  className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-colors"
+                  className="font-semibold text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]"
                 >
                   ← {t('login_forgot_back')}
                 </button>
@@ -195,10 +197,10 @@ export default function Login() {
           ) : (
             /* ── Sign in / Sign up mode ── */
             <>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+              <h2 className="text-2xl font-display">
                 {mode === 'signup' ? t('login_title_signup') : t('login_title_signin')}
               </h2>
-              <p className="mt-1.5 text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-1.5 text-sm text-[var(--color-text-secondary)]">
                 {mode === 'signup' ? t('login_subtitle_signup') : t('login_subtitle_signin')}
               </p>
 
@@ -206,7 +208,7 @@ export default function Login() {
               <button
                 onClick={handleGoogle}
                 disabled={submitting}
-                className="mt-6 flex w-full items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                className="mt-6 flex w-full items-center justify-center gap-3 border border-white/10 bg-transparent py-3 text-sm font-medium text-[var(--color-text-primary)] transition-colors hover:border-white/20 hover:bg-white/5 disabled:opacity-60"
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -220,17 +222,17 @@ export default function Login() {
               {/* Divider */}
               <div className="relative my-5">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-200 dark:border-slate-700" />
+                  <div className="w-full border-t border-white/10" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-slate-50 px-3 text-xs text-slate-400 dark:bg-slate-950">{t('login_or')}</span>
+                  <span className="bg-[var(--color-surface-raised)] px-3 text-xs text-[var(--color-text-muted)]">{t('login_or')}</span>
                 </div>
               </div>
 
               {/* Email / Password */}
               <form onSubmit={handleEmailAuth} className="space-y-3">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-slate-700 dark:text-slate-300">
+                  <label className="mb-1.5 block text-xs font-medium text-[var(--color-text-secondary)]">
                     {t('login_email')}
                   </label>
                   <input
@@ -239,20 +241,20 @@ export default function Login() {
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     required
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 placeholder-slate-400 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    className="w-full border border-white/10 bg-[rgba(255,255,255,0.02)] px-4 py-3 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary)]/10"
                   />
                 </div>
 
                 <div>
                   <div className="mb-1.5 flex items-center justify-between">
-                    <label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    <label className="text-xs font-medium text-[var(--color-text-secondary)]">
                       {t('login_password')}
                     </label>
                     {mode === 'signin' && (
                       <button
                         type="button"
                         onClick={() => setMode('forgot')}
-                        className="text-xs text-indigo-500 hover:text-indigo-700 transition-colors"
+                        className="text-xs text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]"
                       >
                         {t('login_forgot')}
                       </button>
@@ -266,12 +268,12 @@ export default function Login() {
                       placeholder={t('login_password_hint')}
                       required
                       minLength={6}
-                      className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 pr-11 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition"
+                      className="w-full border border-white/10 bg-[rgba(255,255,255,0.02)] px-4 py-3 pr-11 text-base text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] outline-none transition focus:border-[var(--color-primary)] focus:ring-4 focus:ring-[var(--color-primary)]/10"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text-primary)]"
                       tabIndex={-1}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -289,11 +291,11 @@ export default function Login() {
                 </button>
               </form>
 
-              <p className="mt-5 text-center text-sm text-slate-500 dark:text-slate-400">
+              <p className="mt-5 text-center text-sm text-[var(--color-text-secondary)]">
                 {mode === 'signup' ? t('login_has_account') : t('login_no_account')}{' '}
                 <button
                   onClick={() => setMode(mode === 'signup' ? 'signin' : 'signup')}
-                  className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 transition-colors"
+                  className="font-semibold text-[var(--color-primary)] transition-colors hover:text-[var(--color-primary-dark)]"
                 >
                   {mode === 'signup' ? t('login_go_signin') : t('login_go_signup')}
                 </button>

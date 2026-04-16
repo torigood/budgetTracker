@@ -13,17 +13,17 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      includeAssets: ['icons/logo512.png'],
+      includeAssets: ['icons/logo_light_512.png', 'icons/logo_dark_512.png'],
       manifest: {
         name: 'Budget Tracker',
         short_name: 'Budget',
         description: '개인 가계부 앱',
-        theme_color: '#6366f1',
-        background_color: '#6366f1',
+        theme_color: '#f4f5f8',
+        background_color: '#f4f5f8',
         display: 'standalone',
         start_url: '/',
         icons: [
-          { src: 'icons/logo512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: 'icons/logo_light_512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       injectManifest: {
