@@ -187,7 +187,7 @@ export default function SettingsBudget() {
                 placeholder="0"
                 value={monthlyAmount}
                 onChange={(e) => setMonthlyAmount(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900 outline-none transition focus:border-[#0d8a7a] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-base text-slate-900 outline-none transition focus:border-[#0d8a7a] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
               <div className="flex flex-wrap gap-1.5">
                 {SUPPORTED_CURRENCIES.map((c) => (

@@ -19,11 +19,11 @@ export function BottomNav() {
 
   return (
     <nav
-      className="mobile-bottom-nav absolute inset-x-0 bottom-0 z-50 transition-all duration-200"
+      className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-50 transition-all duration-200 md:absolute"
       onTouchStart={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
     >
-      <div className="w-full border-t border-slate-200/80 bg-white/95 px-2 pt-2 shadow-[0_-8px_22px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/93"
+      <div className="mx-auto w-full max-w-[430px] border-t border-slate-200/80 bg-white/95 px-2 pt-2 shadow-[0_-8px_22px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/93 md:max-w-none"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.15rem)' }}
       >
         <div className="relative grid grid-cols-5 items-center gap-0">
