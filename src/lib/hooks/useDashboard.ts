@@ -7,6 +7,16 @@ export function useDashboard(month: string) {
     queryKey: ['dashboard', month],
     queryFn: async () => {
       const { start, end } = getMonthRange(month)
+      const [year, monthNum] = month.split('-').map(Number)
+      const now = new Date()
+      const isCurrentMonth = now.getFullYear() === year && now.getMonth() + 1 === monthNum
+      const samePointDay = isCurrentMonth ? now.getDate() : new Date(year, monthNum, 0).getDate()
+      const prevMonthDate = new Date(year, monthNum - 2, 1)
+      const prevMonthStart = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}-01`
+      const prevMonthLastDay = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1, 0).getDate()
+      const prevMonthPointDay = Math.min(samePointDay, prevMonthLastDay)
+      const prevMonthEnd = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}-${String(prevMonthPointDay).padStart(2, '0')}`
+
       const { data, error } = await supabase
         .from('transactions')
         .select('*, categories(id, name, color, icon)')
@@ -41,6 +51,18 @@ export function useDashboard(month: string) {
       const totalIncome = primaryTotals.income
       const netBalance = totalIncome - totalExpense
 
+      const { data: prevRows, error: prevError } = await supabase
+        .from('transactions')
+        .select('type, amount, currency')
+        .gte('date', prevMonthStart)
+        .lte('date', prevMonthEnd)
+
+      if (prevError) throw prevError
+
+      const prevExpenseSamePoint = (prevRows ?? [])
+        .filter((t) => t.type === '지출' && (t.currency ?? 'CAD') === primaryCurrency)
+        .reduce((sum, t) => sum + t.amount, 0)
+
       const categoryMap: Record<string, { name: string; color: string; icon: string; amount: number }> = {}
       transactions
         .filter((t) => t.type === '지출')
@@ -59,7 +81,16 @@ export function useDashboard(month: string) {
 
       const recentTransactions = transactions.slice(0, 5)
 
-      return { totalExpense, totalIncome, netBalance, categoryBreakdown, recentTransactions, byCurrency, primaryCurrency }
+      return {
+        totalExpense,
+        totalIncome,
+        netBalance,
+        prevExpenseSamePoint,
+        categoryBreakdown,
+        recentTransactions,
+        byCurrency,
+        primaryCurrency,
+      }
     },
   })
 }

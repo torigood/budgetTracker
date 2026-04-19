@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Plus, X, Edit2, CalendarDays } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, X, Edit2, CalendarDays, Settings } from 'lucide-react'
 import { useCalendar, type CalendarTransaction } from '@/lib/hooks/useCalendar'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
@@ -96,7 +96,7 @@ export default function Calendar() {
             className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${
               isCurrentMonth
                 ? 'text-slate-300 dark:text-slate-600 cursor-default'
-              : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 active:scale-95'
+              : 'text-[#0d8a7a] hover:bg-[#dbefeb] dark:hover:bg-[#0d8a7a]/20 active:scale-95'
             }`}
           >
             <CalendarDays className="h-4 w-4" />
@@ -121,12 +121,21 @@ export default function Calendar() {
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-        <button
-          onClick={() => navigate('/transactions/new')}
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-sm shadow-indigo-500/25 hover:bg-indigo-600 transition active:scale-95"
-        >
-          <Plus className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => navigate('/settings')}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-slate-400 transition hover:bg-slate-100 hover:text-[#0d8a7a] dark:bg-slate-900 dark:hover:bg-slate-800"
+            aria-label="설정"
+          >
+            <Settings className="h-4.5 w-4.5" />
+          </button>
+          <button
+            onClick={() => navigate('/transactions/new')}
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0d8a7a] text-white shadow-sm shadow-[#0d8a7a]/25 hover:bg-[#0a7568] transition active:scale-95"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       {showPicker && (
@@ -144,7 +153,7 @@ export default function Calendar() {
           <div
             key={wd}
             className={`py-2 text-center text-xs font-semibold ${
-              i === 0 ? 'text-rose-400' : i === 6 ? 'text-indigo-400' : 'text-slate-400'
+              i === 0 ? 'text-rose-400' : i === 6 ? 'text-[#0d8a7a]' : 'text-slate-400'
             }`}
           >
             {wd}
@@ -168,17 +177,17 @@ export default function Calendar() {
                 disabled={isLoading}
                 className={`relative flex flex-col items-center pt-1.5 pb-1 min-h-[72px] transition ${
                   !isCurrentMonth ? 'opacity-30' : ''
-                } ${isSelected ? 'bg-indigo-50 dark:bg-indigo-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
+                } ${isSelected ? 'bg-[#dbefeb] dark:bg-[#0d8a7a]/20' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'}`}
               >
                 {/* Day number */}
                 <span
                   className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold mb-1 ${
                     isToday
-                      ? 'bg-indigo-500 text-white'
+                      ? 'bg-[#0d8a7a] text-white'
                       : colIdx === 0
                       ? 'text-rose-400'
                       : colIdx === 6
-                      ? 'text-indigo-400'
+                      ? 'text-[#0d8a7a]'
                       : 'text-slate-700 dark:text-slate-300'
                   }`}
                 >
@@ -203,7 +212,7 @@ export default function Calendar() {
 
                 {/* Transaction count dot */}
                 {summary && summary.transactions.length > 0 && (
-                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-indigo-400" />
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-[#0d8a7a]" />
                 )}
               </button>
             )
@@ -249,7 +258,7 @@ export default function Calendar() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => navigate(`/transactions/new`)}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500 text-white hover:bg-indigo-600 transition"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0d8a7a] text-white hover:bg-[#0a7568] transition"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -269,7 +278,7 @@ export default function Calendar() {
                   <p className="text-sm text-slate-400">이 날의 거래가 없습니다</p>
                   <button
                     onClick={() => navigate('/transactions/new')}
-                    className="mt-2 text-xs font-medium text-indigo-500"
+                    className="mt-2 text-xs font-medium text-[#0d8a7a]"
                   >
                     거래 추가하기 →
                   </button>
@@ -287,14 +296,17 @@ export default function Calendar() {
                         color: tx.categories?.color ?? '#94a3b8',
                       }}
                     >
-                      {tx.categories?.name?.[0] ?? '?'}
+                      {(() => {
+                        const rawIcon = tx.categories?.icon?.trim() ?? ''
+                        return rawIcon && !/^[a-z0-9_-]+$/i.test(rawIcon) ? rawIcon : (tx.categories?.name?.[0] ?? '?')
+                      })()}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm font-medium text-slate-900 dark:text-white">{tx.description}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-xs text-slate-400">{tx.payment_method}</span>
                         {tx.categories && (
-                          <CategoryBadge color={tx.categories.color} label={tx.categories.name} size="sm" />
+                          <CategoryBadge color={tx.categories.color} label={tx.categories.name} icon={tx.categories.icon} size="sm" />
                         )}
                       </div>
                     </div>

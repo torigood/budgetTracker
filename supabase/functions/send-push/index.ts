@@ -61,7 +61,7 @@ serve(async (req) => {
           JSON.stringify({
             title: '오늘 지출 기록하셨나요?',
             body: '가계부를 업데이트하고 지출 습관을 확인해보세요!',
-            icon: '/icons/logo_light_512.png',
+            icon: '/icons/logo_512.png',
           })
         )
         sent++
@@ -91,7 +91,7 @@ serve(async (req) => {
     (subs ?? []).map((sub) =>
       webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify({ title: payload.title, body: payload.body, icon: payload.icon ?? '/icons/logo_light_512.png' })
+        JSON.stringify({ title: payload.title, body: payload.body, icon: payload.icon ?? '/icons/logo_512.png' })
       )
     )
   )

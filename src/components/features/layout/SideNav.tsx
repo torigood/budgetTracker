@@ -1,23 +1,21 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, List, Camera, BarChart2, Settings, RefreshCw, LogOut } from 'lucide-react'
+import { LayoutDashboard, List, Camera, BarChart2, Target, RefreshCw, LogOut } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { toast } from 'sonner'
 import { useT } from '@/lib/hooks/useT'
-import { useUIStore } from '@/lib/stores/ui.store'
 
 export function SideNav() {
   const t = useT()
   const navigate = useNavigate()
-  const isDark = useUIStore((state) => state.isDark)
-  const logoSrc = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
+  const logoSrc = '/icons/logo_512.png'
 
   const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: t('nav_dashboard') },
     { to: '/transactions', icon: List, label: t('nav_transactions') },
     { to: '/receipt', icon: Camera, label: t('nav_receipt') },
+    { to: '/settings/budget', icon: Target, label: t('nav_budget') },
     { to: '/analytics', icon: BarChart2, label: t('nav_analytics') },
     { to: '/recurring', icon: RefreshCw, label: t('nav_recurring') },
-    { to: '/settings', icon: Settings, label: t('nav_settings') },
   ]
 
   async function handleLogout() {
@@ -29,7 +27,7 @@ export function SideNav() {
   return (
     <aside className="fixed left-0 top-0 hidden h-full w-64 flex-col border-r border-white/70 bg-white/75 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-950/70 md:flex">
       {/* Logo */}
-      <div className="mx-3 mt-3 flex items-center gap-3 rounded-[1.5rem] bg-gradient-to-br from-indigo-500 via-indigo-500 to-cyan-500 px-4 py-4 text-white shadow-lg shadow-indigo-500/20">
+      <div className="mx-3 mt-3 flex items-center gap-3 rounded-[1.5rem] bg-gradient-to-br from-[#0d8a7a] via-[#0d8a7a] to-[#0a7568] px-4 py-4 text-white shadow-lg shadow-emerald-900/20">
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/20 backdrop-blur-sm">
           <img src={logoSrc} alt="Budget Tracker" className="h-8 w-8 rounded-xl object-cover" />
         </div>
@@ -49,7 +47,7 @@ export function SideNav() {
             className={({ isActive }) =>
               `group flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold transition-all duration-200 active:scale-[0.98] ${
                 isActive
-                  ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                  ? 'bg-[#0d8a7a] text-white shadow-lg shadow-emerald-900/25'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/80 dark:hover:text-white'
               }`
             }

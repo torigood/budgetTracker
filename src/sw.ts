@@ -18,8 +18,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,
-      icon: data.icon ?? '/icons/logo_light_512.png',
-      badge: '/icons/logo_light_512.png',
+      icon: data.icon ?? '/icons/logo_512.png',
+      badge: '/icons/logo_512.png',
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vibrate: [100, 50, 100],
     } as NotificationOptions & Record<string, any>)

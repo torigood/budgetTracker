@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
-import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Settings } from 'lucide-react'
 import { useAnalytics } from '@/lib/hooks/useDashboard'
 import { useAnnualReport } from '@/lib/hooks/useAnnualReport'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { useT } from '@/lib/hooks/useT'
 import { MonthSelector } from '@/components/ui/MonthSelector'
-import { PageHeader } from '@/components/ui/PageHeader'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { formatCompactAmount, formatCurrency, getMonthShortLabel } from '@/utils/format'
 import type { AnnualMonth } from '@/lib/hooks/useAnnualReport'
 import type { TranslationKey } from '@/lib/i18n'
 
 export default function Analytics() {
+  const navigate = useNavigate()
   const { selectedMonth, setSelectedMonth, lang, currency: fallbackCurrency } = useUIStore()
   const [tab, setTab] = useState<'monthly' | 'annual'>('monthly')
   const [annualYear, setAnnualYear] = useState(() => new Date().getFullYear())
@@ -65,6 +66,9 @@ export default function Analytics() {
   const expenseDiff = currentSeries && previousSeries && previousSeries.expense > 0
     ? ((currentSeries.expense - previousSeries.expense) / previousSeries.expense) * 100
     : null
+  const expenseDiffAmount = currentSeries && previousSeries
+    ? currentSeries.expense - previousSeries.expense
+    : null
 
   const categoryMap: Record<string, { name: string; color: string; amount: number }> = {}
   current?.rows
@@ -83,28 +87,74 @@ export default function Analytics() {
 
   const expenseKey = t('analytics_expense')
   const incomeKey = t('analytics_income')
+  const reportsTitle = lang === 'ko' ? '리포트' : 'Reports'
+  const monthLabel = (() => {
+    const [y, m] = selectedMonth.split('-').map(Number)
+    const date = new Date(y, m - 1, 1)
+    return date.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
+  })()
 
   return (
     <div className="pb-6" {...(tab === 'monthly' ? swipe : {})}>
-      <PageHeader
-        title={t('analytics_title')}
-        action={tab === 'monthly' ? <MonthSelector value={selectedMonth} onChange={setSelectedMonth} /> : undefined}
-      />
+      <header className="px-5 pb-2 pt-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+              aria-label="홈으로"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{monthLabel}</p>
+              <h1 className="mt-1 text-[2.05rem] leading-[1.05] font-semibold tracking-tight text-slate-950 dark:text-white">
+                {reportsTitle}
+              </h1>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/settings')}
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-400 transition hover:bg-slate-100 hover:text-[#0d8a7a] dark:hover:bg-slate-800"
+            aria-label={t('nav_settings')}
+          >
+            <Settings className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="mt-2 flex justify-end">
+          {tab === 'monthly' && <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />}
+        </div>
+      </header>
 
       {/* Tab switcher */}
-      <div className="mx-4 mt-3 mb-1 flex gap-1 rounded-[1.5rem] border border-white/70 bg-white/80 p-1 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
+      <div className="mx-4 mt-2 mb-1 flex gap-1 rounded-[1.5rem] border border-slate-200/90 bg-white p-1 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
         <button
           onClick={() => setTab('monthly')}
-          className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'monthly' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 dark:text-slate-400'}`}
+          className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'monthly' ? 'bg-[#0d8a7a] text-white shadow-lg shadow-[#0d8a7a]/20' : 'text-slate-500 dark:text-slate-400'}`}
         >
           {t('analytics_tab_monthly')}
         </button>
         <button
           onClick={() => setTab('annual')}
-          className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'annual' ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-500 dark:text-slate-400'}`}
+          className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'annual' ? 'bg-[#0d8a7a] text-white shadow-lg shadow-[#0d8a7a]/20' : 'text-slate-500 dark:text-slate-400'}`}
         >
           {t('analytics_tab_annual')}
         </button>
+      </div>
+
+      <div className="mx-4 mt-2 grid grid-cols-2 gap-2.5">
+        <div className="rounded-2xl bg-rose-50 px-3 py-2.5 dark:bg-rose-900/20">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{expenseKey}</p>
+          <p className="mt-1 text-sm font-bold tabular-nums text-rose-600 dark:text-rose-400">
+            {formatCurrency(tab === 'annual' ? (annualData?.totalExpense ?? 0) : (currentSeries?.expense ?? 0), tab === 'annual' ? (annualData?.primaryCurrency ?? fallbackCurrency) : analyticsCurrency)}
+          </p>
+        </div>
+        <div className="rounded-2xl bg-emerald-50 px-3 py-2.5 dark:bg-emerald-900/20">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{incomeKey}</p>
+          <p className="mt-1 text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+            {formatCurrency(tab === 'annual' ? (annualData?.totalIncome ?? 0) : (currentSeries?.income ?? 0), tab === 'annual' ? (annualData?.primaryCurrency ?? fallbackCurrency) : analyticsCurrency)}
+          </p>
+        </div>
       </div>
 
       {tab === 'annual' ? (
@@ -132,7 +182,7 @@ export default function Analytics() {
                     onClick={() => setSelectedCurrency(cur)}
                     className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
                       cur === analyticsCurrency
-                        ? 'bg-indigo-500 text-white'
+                        ? 'bg-[#0d8a7a] text-white'
                         : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                     }`}
                   >
@@ -165,68 +215,15 @@ export default function Analytics() {
                   <span className="font-normal text-xs text-slate-400">
                     {expenseDiff >= 0 ? t('analytics_more') : t('analytics_less')}
                   </span>
+                  {expenseDiffAmount !== null && (
+                    <span className="ml-1.5 font-semibold tabular-nums">
+                      ({expenseDiffAmount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(expenseDiffAmount), analyticsCurrency)})
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
           )}
-
-          {/* 월별 지출 추이 바 차트 */}
-          <div className="card rounded-3xl p-4">
-            <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('analytics_trend')}</h2>
-            {isLoading ? (
-              <CardSkeleton />
-            ) : (
-              <div className="overflow-x-auto">
-                <ResponsiveContainer width="100%" height={200} minWidth={300}>
-                  <BarChart
-                    data={monthlySeries.map((m) => ({
-                      name: getMonthShortLabel(m.month, lang),
-                      [expenseKey]: m.expense,
-                      [incomeKey]: m.income,
-                    }))}
-                    barCategoryGap="30%"
-                    barGap={3}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 11, fill: '#94a3b8' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#94a3b8' }}
-                      tickFormatter={(v) => formatCompactAmount(v as number, analyticsCurrency)}
-                      axisLine={false}
-                      tickLine={false}
-                      width={48}
-                    />
-                    <Tooltip
-                      formatter={(v) => formatCurrency(v as number, analyticsCurrency)}
-                      contentStyle={{
-                        borderRadius: '16px',
-                        border: '1px solid rgb(226 232 240 / 0.9)',
-                        fontSize: '12px',
-                        boxShadow: '0 20px 45px -20px rgb(15 23 42 / 0.2)',
-                      }}
-                    />
-                    <Bar dataKey={expenseKey} fill="#f43f5e" radius={[4, 4, 0, 0]} animationDuration={350} />
-                    <Bar dataKey={incomeKey} fill="#10b981" radius={[4, 4, 0, 0]} animationDuration={350} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-            {!isLoading && (
-              <div className="mt-3 flex items-center gap-4 justify-center">
-                <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />{expenseKey}
-                </span>
-                <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />{incomeKey}
-                </span>
-              </div>
-            )}
-          </div>
 
           {/* 카테고리 파이 차트 */}
           {!isLoading && categoryBreakdown.length > 0 && (
@@ -288,6 +285,64 @@ export default function Analytics() {
               </div>
             </div>
           )}
+
+          {/* 월별 지출 추이 바 차트 */}
+          <div className="card rounded-3xl p-4">
+            <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('analytics_trend')}</h2>
+            {isLoading ? (
+              <CardSkeleton />
+            ) : (
+              <div className="overflow-x-auto">
+                <ResponsiveContainer width="100%" height={200} minWidth={300}>
+                  <BarChart
+                    data={monthlySeries.map((m) => ({
+                      name: getMonthShortLabel(m.month, lang),
+                      [expenseKey]: m.expense,
+                      [incomeKey]: m.income,
+                    }))}
+                    barCategoryGap="30%"
+                    barGap={3}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      tick={{ fontSize: 11, fill: '#94a3b8' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: '#94a3b8' }}
+                      tickFormatter={(v) => formatCompactAmount(v as number, analyticsCurrency)}
+                      axisLine={false}
+                      tickLine={false}
+                      width={48}
+                    />
+                    <Tooltip
+                      formatter={(v) => formatCurrency(v as number, analyticsCurrency)}
+                      contentStyle={{
+                        borderRadius: '16px',
+                        border: '1px solid rgb(226 232 240 / 0.9)',
+                        fontSize: '12px',
+                        boxShadow: '0 20px 45px -20px rgb(15 23 42 / 0.2)',
+                      }}
+                    />
+                    <Bar dataKey={expenseKey} fill="#bf5a5a" radius={[4, 4, 0, 0]} animationDuration={350} />
+                    <Bar dataKey={incomeKey} fill="#2f8f5a" radius={[4, 4, 0, 0]} animationDuration={350} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            {!isLoading && (
+              <div className="mt-3 flex items-center gap-4 justify-center">
+                <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#bf5a5a]" />{expenseKey}
+                </span>
+                <span className="flex items-center gap-1.5 text-xs text-slate-500">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#2f8f5a]" />{incomeKey}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -411,8 +466,8 @@ function AnnualReport({
                     boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.08)',
                   }}
                 />
-                <Bar dataKey={expenseKey} fill="#f43f5e" radius={[3, 3, 0, 0]} animationDuration={350} />
-                <Bar dataKey={incomeKey} fill="#10b981" radius={[3, 3, 0, 0]} animationDuration={350} />
+                <Bar dataKey={expenseKey} fill="#bf5a5a" radius={[3, 3, 0, 0]} animationDuration={350} />
+                <Bar dataKey={incomeKey} fill="#2f8f5a" radius={[3, 3, 0, 0]} animationDuration={350} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -420,10 +475,10 @@ function AnnualReport({
         {!isLoading && (
           <div className="mt-3 flex items-center gap-4 justify-center">
             <span className="flex items-center gap-1.5 text-xs text-slate-500">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-400" />{expenseKey}
+              <span className="h-2.5 w-2.5 rounded-full bg-[#bf5a5a]" />{expenseKey}
             </span>
             <span className="flex items-center gap-1.5 text-xs text-slate-500">
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />{incomeKey}
+              <span className="h-2.5 w-2.5 rounded-full bg-[#2f8f5a]" />{incomeKey}
             </span>
           </div>
         )}

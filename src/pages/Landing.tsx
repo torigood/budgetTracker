@@ -7,7 +7,7 @@ import { useUIStore } from '@/lib/stores/ui.store'
 export default function Landing() {
   const { user, loading } = useAuthStore()
   const { lang, setLang, isDark, toggleDark } = useUIStore()
-  const logoSrc = `${isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'}?v=purple-1`
+  const logoSrc = '/icons/logo_512.png?v=purple-1'
   const navigate = useNavigate()
 
   useEffect(() => {

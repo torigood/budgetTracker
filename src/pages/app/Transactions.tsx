@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, SlidersHorizontal, List, Edit2, Trash2, ArrowUpDown } from 'lucide-react'
+import { Search, SlidersHorizontal, List, Edit2, Trash2, ArrowUpDown, ChevronLeft, Plus, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery } from '@tanstack/react-query'
 import { useTransactions, useDeleteTransaction } from '@/lib/hooks/useTransactions'
 import { useCategories } from '@/lib/hooks/useCategories'
 import { useFilterStore } from '@/lib/stores/filter.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
-import { PageHeader } from '@/components/ui/PageHeader'
 import { TransactionSkeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -67,6 +66,7 @@ export default function Transactions() {
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [searchAll, setSearchAll] = useState(false)
+  const [activeActionId, setActiveActionId] = useState<string | null>(null)
   const loaderRef = useRef<HTMLDivElement>(null)
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useTransactions(filters, searchAll && !!filters.search)
@@ -113,21 +113,41 @@ export default function Transactions() {
 
   return (
     <div className="flex min-h-full flex-col pb-6" {...swipe}>
-      <PageHeader
-        title={t('tx_title')}
-        action={
-          <button
-            onClick={() => navigate('/transactions/new')}
-            className="tap-target flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-lg shadow-indigo-500/20 transition active:scale-95"
-            aria-label={t('dashboard_add_prompt')}
-          >
-            <Plus className="h-5 w-5" />
-          </button>
-        }
-      />
+      <header className="px-5 pb-2 pt-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+              aria-label="홈으로"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <h1 className="text-[2.05rem] leading-[1.05] font-semibold tracking-tight text-slate-950 dark:text-white">
+              {t('tx_title')}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/transactions/new')}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0d8a7a] text-white shadow-sm transition hover:bg-[#0a7568]"
+              aria-label="거래 추가"
+            >
+              <Plus className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => navigate('/settings')}
+              className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-400 transition hover:bg-slate-100 hover:text-[#0d8a7a] dark:hover:bg-slate-800"
+              aria-label={t('nav_settings')}
+            >
+              <Settings className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+      </header>
 
       {/* Search + filter bar */}
-      <div className="mx-4 mt-3 rounded-[1.75rem] border border-white/70 bg-white/80 px-4 pt-4 pb-3 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
+      <div className="mx-4 mt-2 rounded-[1.75rem] border border-slate-200/90 bg-white px-4 pt-4 pb-3 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
         <div className="flex items-center gap-2 mb-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -135,14 +155,14 @@ export default function Transactions() {
               value={filters.search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('tx_search')}
-              className="w-full rounded-2xl border border-transparent bg-slate-100/90 pl-9 pr-4 py-3 text-base text-slate-900 outline-none transition placeholder-slate-400 focus:border-indigo-200 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 dark:bg-slate-800/80 dark:text-white dark:focus:bg-slate-800"
+              className="w-full rounded-2xl border border-slate-200 bg-white pl-9 pr-4 py-3 text-base text-slate-900 outline-none transition placeholder-slate-400 focus:border-[#0d8a7a]/40 focus:bg-white focus:ring-4 focus:ring-[#0d8a7a]/10 dark:bg-slate-800/80 dark:text-white dark:focus:bg-slate-800"
             />
           </div>
           <button
             onClick={() => setShowFilters(!showFilters)}
           className={`tap-target flex h-12 w-12 items-center justify-center rounded-2xl transition active:scale-95 ${
             showFilters || hasActiveFilter
-              ? 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+              ? 'bg-[#0d8a7a] text-white shadow-lg shadow-[#0d8a7a]/20'
               : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-400'
           }`}
           aria-label={t('tx_filter_reset')}
@@ -150,13 +170,39 @@ export default function Transactions() {
           <SlidersHorizontal className="h-4 w-4" />
         </button>
         </div>
+        <div className="flex gap-2 pb-2">
+          <button
+            onClick={() => setType(null)}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+              !filters.type ? 'bg-[#0d8a7a] text-white' : 'bg-[#dbefeb] text-[#0d8a7a]'
+            }`}
+          >
+            All
+          </button>
+          <button
+            onClick={() => setType('수입')}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+              filters.type === '수입' ? 'bg-[#0d8a7a] text-white' : 'bg-[#dbefeb] text-[#0d8a7a]'
+            }`}
+          >
+            {t('form_income')}
+          </button>
+          <button
+            onClick={() => setType('지출')}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
+              filters.type === '지출' ? 'bg-[#0d8a7a] text-white' : 'bg-[#dbefeb] text-[#0d8a7a]'
+            }`}
+          >
+            {t('form_expense')}
+          </button>
+        </div>
         {/* 전체 기간 검색 토글 — 검색어 있을 때만 표시 */}
         {filters.search && (
           <div className="flex items-center gap-2 pb-2">
             <button
               onClick={() => setSearchAll(false)}
               className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                !searchAll ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                !searchAll ? 'bg-[#0d8a7a] text-white shadow-sm' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
               }`}
             >
               {t('tx_search_month')}
@@ -164,7 +210,7 @@ export default function Transactions() {
             <button
               onClick={() => setSearchAll(true)}
               className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                searchAll ? 'bg-indigo-500 text-white shadow-sm' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                searchAll ? 'bg-[#0d8a7a] text-white shadow-sm' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
               }`}
             >
               {t('tx_search_all')}
@@ -174,14 +220,14 @@ export default function Transactions() {
       </div>
 
       {/* Month + sort + active filters */}
-      <div className="mx-4 mt-3 rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-3 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
+      <div className="mx-4 mt-3 rounded-[1.75rem] border border-slate-200/90 bg-white px-4 py-3 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
         <div className="flex items-center justify-between gap-3">
           <MonthSelector value={filters.month} onChange={setMonth} />
           <button
             onClick={toggleSortOrder}
             className={`shrink-0 whitespace-nowrap flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold transition ${
               filters.sortOrder === 'asc'
-                ? 'bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300'
+                ? 'bg-[#dbefeb] text-[#0d8a7a]'
                 : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
             }`}
             title={filters.sortOrder === 'desc' ? t('tx_sort_recent') : t('tx_sort_oldest')}
@@ -195,7 +241,7 @@ export default function Transactions() {
           <div className="mt-2 flex justify-end">
             <button
               onClick={resetFilters}
-              className="whitespace-nowrap rounded-full bg-indigo-50 px-2.5 py-1.5 text-[11px] font-semibold leading-none text-indigo-500 transition hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-300"
+              className="whitespace-nowrap rounded-full bg-[#dbefeb] px-2.5 py-1.5 text-[11px] font-semibold leading-none text-[#0d8a7a] transition"
             >
               {t('tx_filter_reset')}
             </button>
@@ -205,7 +251,7 @@ export default function Transactions() {
         {showFilters && (
           <div className="mt-3 space-y-3">
             {/* Type filter */}
-            <div className="flex gap-2">
+            <div className="hidden gap-2">
               {(['지출', '수입'] as TransactionType[]).map((type) => (
                 <button
                   key={type}
@@ -279,8 +325,16 @@ export default function Transactions() {
                     <TransactionRow
                       key={tx.id}
                       tx={tx}
-                      onEdit={() => navigate(`/transactions/${tx.id}/edit`)}
-                      onDelete={() => setDeleteId(tx.id)}
+                      showActions={activeActionId === tx.id}
+                      onToggleActions={() => setActiveActionId((prev) => (prev === tx.id ? null : tx.id))}
+                      onEdit={() => {
+                        setActiveActionId(null)
+                        navigate(`/transactions/${tx.id}/edit`)
+                      }}
+                      onDelete={() => {
+                        setActiveActionId(null)
+                        setDeleteId(tx.id)
+                      }}
                     />
                   ))}
                 </div>
@@ -311,20 +365,23 @@ export default function Transactions() {
 
 function TransactionRow({
   tx,
+  showActions,
+  onToggleActions,
   onEdit,
   onDelete,
 }: {
   tx: TxWithCategory
+  showActions: boolean
+  onToggleActions: () => void
   onEdit: () => void
   onDelete: () => void
 }) {
-  const [showActions, setShowActions] = useState(false)
   const t = useT()
 
   return (
     <div
       className="relative flex cursor-pointer items-center gap-3 px-5 py-4 transition-colors active:bg-slate-100/70 dark:active:bg-slate-800/50"
-      onClick={() => setShowActions((v) => !v)}
+      onClick={onToggleActions}
     >
       {/* Category avatar */}
       <div
@@ -334,7 +391,10 @@ function TransactionRow({
           color: tx.categories?.color ?? '#94a3b8',
         }}
       >
-        {tx.categories?.name?.[0] ?? '?'}
+        {(() => {
+          const rawIcon = tx.categories?.icon?.trim() ?? ''
+          return rawIcon && !/^[a-z0-9_-]+$/i.test(rawIcon) ? rawIcon : (tx.categories?.name?.[0] ?? '?')
+        })()}
       </div>
 
       <div className="flex-1 min-w-0">
@@ -343,7 +403,7 @@ function TransactionRow({
             {tx.description}
           </span>
           {tx.categories && (
-            <CategoryBadge color={tx.categories.color} label={tx.categories.name} size="sm" />
+            <CategoryBadge color={tx.categories.color} label={tx.categories.name} icon={tx.categories.icon} size="sm" />
           )}
         </div>
         <p className="text-xs text-slate-400 mt-0.5">{tx.payment_method}</p>
@@ -366,7 +426,7 @@ function TransactionRow({
       >
         <button
           onClick={onEdit}
-          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-50 dark:text-indigo-300 dark:hover:bg-indigo-900/30"
+          className="flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold text-[#0d8a7a] transition hover:bg-[#dbefeb]"
         >
           <Edit2 className="h-3.5 w-3.5" />
           {t('tx_edit')}

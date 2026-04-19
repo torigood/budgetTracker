@@ -12,8 +12,8 @@ type Mode = 'signin' | 'signup' | 'forgot'
 
 export default function Login() {
   const { user, loading } = useAuthStore()
-  const { lang, setLang, isDark } = useUIStore()
-  const logoSrc = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
+  const { lang, setLang } = useUIStore()
+  const logoSrc = '/icons/logo_512.png'
   const t = useT()
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')

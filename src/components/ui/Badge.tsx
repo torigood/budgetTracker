@@ -5,7 +5,9 @@ interface BadgeProps {
   size?: 'sm' | 'md'
 }
 
-export function CategoryBadge({ color, label, size = 'md' }: BadgeProps) {
+export function CategoryBadge({ color, label, icon, size = 'md' }: BadgeProps) {
+  const raw = icon?.trim() ?? ''
+  const emoji = raw && !/^[a-z0-9_-]+$/i.test(raw) ? raw : ''
   return (
     <span
       className={`inline-flex shrink-0 whitespace-nowrap items-center gap-1.5 rounded-full border font-semibold shadow-sm backdrop-blur-sm ${
@@ -13,10 +15,14 @@ export function CategoryBadge({ color, label, size = 'md' }: BadgeProps) {
       }`}
       style={{ backgroundColor: `${color}14`, color, borderColor: `${color}24` }}
     >
-      <span
-        className="inline-block h-2 w-2 rounded-full"
-        style={{ backgroundColor: color }}
-      />
+      {emoji ? (
+        <span className="text-[1em] leading-none">{emoji}</span>
+      ) : (
+        <span
+          className="inline-block h-2 w-2 rounded-full"
+          style={{ backgroundColor: color }}
+        />
+      )}
       {label}
     </span>
   )

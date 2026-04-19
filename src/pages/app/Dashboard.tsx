@@ -1,56 +1,213 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp, TrendingDown, Minus, ArrowRight, Plus, CalendarDays } from 'lucide-react'
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
+import { Plus, CalendarDays, Camera, RefreshCw, Settings } from 'lucide-react'
 import { useDashboard } from '@/lib/hooks/useDashboard'
-import { useWidgetStats } from '@/lib/hooks/useWidgetStats'
 import { useReminderCheck } from '@/lib/hooks/useNotifications'
-import { useMonthlyBudget } from '@/lib/hooks/useMonthlyBudget'
 import { useUIStore } from '@/lib/stores/ui.store'
-import { useFilterStore } from '@/lib/stores/filter.store'
+import { useAuthStore } from '@/lib/stores/auth.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { useT } from '@/lib/hooks/useT'
 import { translations } from '@/lib/i18n'
+import { useBudgetGoals } from '@/lib/hooks/useBudgetGoals'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton, TransactionSkeleton } from '@/components/ui/Skeleton'
-import { CategoryBadge } from '@/components/ui/Badge'
-import { formatCompactCurrency, formatCurrency, formatDateShort } from '@/utils/format'
-import type { CurrencyRow } from '@/lib/hooks/useWidgetStats'
+import { formatCurrency } from '@/utils/format'
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { selectedMonth, setSelectedMonth, lang } = useUIStore()
-  const { setMonth: setFilterMonth } = useFilterStore()
+  const user = useAuthStore((s) => s.user)
+  const { goals } = useBudgetGoals()
   useReminderCheck()
   const { data, isLoading } = useDashboard(selectedMonth)
-  const { budget } = useMonthlyBudget()
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const t = useT()
   const tr = translations[lang]
 
+  const primaryCurrency = data?.primaryCurrency ?? 'CAD'
+  const totalIncome = data?.totalIncome ?? 0
+  const totalExpense = data?.totalExpense ?? 0
+  const prevExpenseSamePoint = data?.prevExpenseSamePoint ?? 0
+  const netBalance = data?.netBalance ?? 0
+  const hasPrevComparison = prevExpenseSamePoint > 0
+  const monthDeltaPct = prevExpenseSamePoint > 0
+    ? Math.round(((prevExpenseSamePoint - totalExpense) / prevExpenseSamePoint) * 100)
+    : 0
+  const isSpendingLess = hasPrevComparison && monthDeltaPct > 0
+  const isSpendingMore = hasPrevComparison && monthDeltaPct < 0
+  const deltaClass = isSpendingLess ? 'text-emerald-300' : isSpendingMore ? 'text-rose-300' : 'text-slate-300'
+  const deltaDisplay = hasPrevComparison ? `${monthDeltaPct > 0 ? '+' : ''}${monthDeltaPct}%` : '-'
+  const deltaLabel = useMemo(() => {
+    const absPct = Math.abs(monthDeltaPct)
+    if (prevExpenseSamePoint <= 0) return t('dashboard_vs_last_month_no_data')
+    if (monthDeltaPct === 0) return t('dashboard_vs_last_month_same')
+    return isSpendingLess ? tr.dashboard_vs_last_month_less(absPct) : tr.dashboard_vs_last_month_more(absPct)
+  }, [isSpendingLess, monthDeltaPct, prevExpenseSamePoint, t, tr])
+
+  const quickActions = [
+    {
+      key: 'add',
+      icon: <Plus className="h-[22px] w-[22px]" />,
+      label: t('dashboard_action_add'),
+      to: '/transactions/new',
+      className: 'text-[#0d8a7a]',
+    },
+    {
+      key: 'receipt',
+      icon: <Camera className="h-[22px] w-[22px]" />,
+      label: t('dashboard_action_scan'),
+      to: '/receipt',
+      className: 'text-[#0d8a7a]',
+    },
+    {
+      key: 'calendar',
+      icon: <CalendarDays className="h-[22px] w-[22px]" />,
+      label: t('dashboard_action_calendar'),
+      to: '/calendar',
+      className: 'text-[#0d8a7a]',
+    },
+    {
+      key: 'recurring',
+      icon: <RefreshCw className="h-[22px] w-[22px]" />,
+      label: t('dashboard_action_recurring'),
+      to: '/recurring',
+      className: 'text-[#0d8a7a]',
+    },
+  ] as const
+
+  const summaryItems = [
+    {
+      label: t('dashboard_income'),
+      display: formatCurrency(totalIncome, primaryCurrency),
+      className: 'text-emerald-300',
+    },
+    {
+      label: t('dashboard_expense'),
+      display: formatCurrency(totalExpense, primaryCurrency),
+      className: 'text-rose-300',
+    },
+    {
+      label: t('dashboard_saved'),
+      display: deltaDisplay,
+      className: deltaClass,
+    },
+  ]
+
+  const monthLabel = (() => {
+    const [y, m] = selectedMonth.split('-').map(Number)
+    const date = new Date(y, m - 1, 1)
+    return date.toLocaleString(lang === 'ko' ? 'en-US' : 'en-US', { month: 'long', year: 'numeric' }).toUpperCase()
+  })()
+
+  const userName = (() => {
+    const fallback = 'there'
+    const raw = user?.user_metadata?.name as string | undefined
+    if (raw && raw.trim()) return raw.trim()
+    if (user?.email) return user.email.split('@')[0]
+    return fallback
+  })()
+
+  const greetingText = (() => {
+    const hour = new Date().getHours()
+
+    if (lang === 'ko') {
+      if (hour >= 5 && hour < 11) return `좋은 아침, ${userName}`
+      if (hour >= 11 && hour < 15) return `좋은 점심, ${userName}`
+      if (hour >= 15 && hour < 21) return `좋은 저녁, ${userName}`
+      if (hour >= 21 && hour < 24) return `늦은 밤이네요, ${userName}`
+      return `새벽에도 반가워요, ${userName}`
+    }
+
+    if (hour >= 5 && hour < 11) return `Good morning, ${userName}`
+    if (hour >= 11 && hour < 15) return `Good lunch time, ${userName}`
+    if (hour >= 15 && hour < 21) return `Good evening, ${userName}`
+    if (hour >= 21 && hour < 24) return `Late night, ${userName}`
+    return `Early dawn, ${userName}`
+  })()
+
+  const budgetGoalRows = (data?.categoryBreakdown ?? [])
+    .map((cat) => {
+      const goal = goals[cat.id]
+      if (!goal) return null
+      const spent = cat.amount
+      const pct = Math.min(Math.round((spent / goal.amount) * 100), 100)
+      const left = Math.max(goal.amount - spent, 0)
+      return {
+        ...cat,
+        goal,
+        spent,
+        pct,
+        left,
+      }
+    })
+    .filter((row): row is NonNullable<typeof row> => !!row)
+
+  const firstSymbol = (text?: string | null) => {
+    if (!text) return '?'
+    const s = text.trim()
+    if (!s) return '?'
+    return Array.from(s)[0] ?? '?'
+  }
+
   return (
-    <div className="pb-10 pt-4" {...swipe}>
-      {/* Header */}
-      <header className="sticky top-3 z-10 mx-4 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{t('dashboard_subtitle')}</p>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">{t('dashboard_title')}</h1>
+    <div className="pb-8 pt-1.5" {...swipe}>
+      <header className="mx-4 rounded-[1.6rem] px-1 pb-1 pt-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{monthLabel}</p>
+            <h1 className="mt-1 text-[1.82rem] leading-[1.08] font-semibold tracking-tight text-slate-950 dark:text-white">
+              {greetingText}
+            </h1>
+          </div>
+          <button
+            onClick={() => navigate('/settings')}
+            className="flex h-13 w-13 items-center justify-center rounded-3xl border border-slate-200/90 bg-white text-slate-500 shadow-sm transition hover:text-[#0d8a7a] dark:border-slate-700/80 dark:bg-slate-800/90 dark:text-slate-300 dark:hover:bg-slate-700/90"
+            aria-label={t('nav_settings')}
+          >
+            <Settings className="h-5 w-5" />
+          </button>
         </div>
-        <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
+        <div className="mt-2 flex justify-end">
+          <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
+        </div>
       </header>
 
-      <div className="space-y-4 px-4 py-4">
-        {/* 요약 카드 */}
+      <div className="space-y-3.5 px-4 py-4">
+        {/* Balance hero */}
         {isLoading ? (
-          <div className="grid grid-cols-3 gap-3">
-            {Array.from({ length: 3 }).map((_, i) => <CardSkeleton key={i} />)}
+          <CardSkeleton />
+        ) : (
+          <div className="relative overflow-hidden rounded-[1.8rem] bg-[#031113] px-4.5 py-4.5 text-white shadow-[0_20px_56px_rgba(0,0,0,0.18)] ring-1 ring-black/5 dark:bg-[linear-gradient(140deg,#0b141d_0%,#050a10_100%)] dark:ring-white/10 dark:shadow-[0_18px_45px_rgba(0,0,0,0.5)]">
+            <div className="absolute right-[-1rem] top-[-1rem] h-24 w-24 rounded-full bg-white/6 blur-[1px] dark:bg-cyan-300/10" />
+            <div className="relative">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-white/55">{t('dashboard_total_balance')}</p>
+              <p className="mt-1.5 text-[clamp(1.9rem,6.3vw,3rem)] font-semibold leading-none tracking-tight tabular-nums">
+                {formatCurrency(Math.abs(netBalance), primaryCurrency)}
+              </p>
+              <div className="mt-5 grid grid-cols-3 gap-2.5 border-t border-white/15 pt-3.5">
+                {summaryItems.map((item) => (
+                  <div key={item.label} className="min-w-0">
+                    <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-white/55">{item.label}</p>
+                    <p className={`mt-1 text-[0.92rem] font-semibold tabular-nums ${item.className}`}>
+                      {item.display}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex items-center justify-between text-xs text-white/70">
+                <span>{t('dashboard_vs_last_month')}</span>
+                <span className={deltaClass}>{deltaLabel}</span>
+              </div>
+            </div>
           </div>
-        ) : (data?.byCurrency ?? []).length > 1 ? (
-          // Multi-currency: show one row per currency
+        )}
+
+        {/* Multi-currency rows stay available beneath the hero when needed */}
+        {!isLoading && (data?.byCurrency ?? []).length > 1 && (
           <div className="space-y-3">
             {(data?.byCurrency ?? []).map((row) => (
-              <div key={row.currency} className="card grid grid-cols-4 items-center gap-2 rounded-3xl bg-white/90 px-4 py-4 shadow-sm">
-                <span className="text-xs font-bold tracking-[0.18em] text-indigo-500">{row.currency}</span>
+              <div key={row.currency} className="card grid grid-cols-4 items-center gap-2 rounded-[1.65rem] bg-white/92 px-4 py-4 shadow-sm">
+                <span className="text-xs font-bold tracking-[0.18em] text-[#0f6f73]">{row.currency}</span>
                 <div className="text-center">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('dashboard_expense')}</p>
                   <p className="mt-1 text-sm font-bold tabular-nums text-rose-500">{formatCurrency(row.expense, row.currency)}</p>
@@ -68,184 +225,143 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-3">
-            <SummaryCard
-              label={t('dashboard_expense')}
-              amount={data?.totalExpense ?? 0}
-              type="expense"
-              icon={<TrendingDown className="h-4 w-4" />}
-              currency={data?.primaryCurrency ?? 'CAD'}
-            />
-            <SummaryCard
-              label={t('dashboard_income')}
-              amount={data?.totalIncome ?? 0}
-              type="income"
-              icon={<TrendingUp className="h-4 w-4" />}
-              currency={data?.primaryCurrency ?? 'CAD'}
-            />
-            <SummaryCard
-              label={t('dashboard_net')}
-              amount={data?.netBalance ?? 0}
-              type={(data?.netBalance ?? 0) >= 0 ? 'income' : 'expense'}
-              icon={<Minus className="h-4 w-4" />}
-              currency={data?.primaryCurrency ?? 'CAD'}
-            />
-          </div>
         )}
 
-        {/* 월 전체 예산 진행 바 */}
-        {!isLoading && budget && (() => {
-          // Find expense for the budget currency; fallback to primaryCurrency total
-          const budgetRow = data?.byCurrency?.find(r => r.currency === budget.currency)
-          const spent = budgetRow?.expense ?? (budget.currency === data?.primaryCurrency ? data?.totalExpense ?? 0 : 0)
-          const pct = Math.min(Math.round((spent / budget.amount) * 100), 100)
-          const isOver = spent > budget.amount
-          return (
-            <div className="card rounded-3xl bg-gradient-to-br from-white to-slate-50 p-4 shadow-sm dark:from-slate-900 dark:to-slate-900/60">
-              <div className="mb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('monthly_budget_title')}</p>
-                <p className={`text-xs font-semibold tabular-nums ${isOver ? 'text-rose-500' : 'text-slate-400'}`}>
-                  {isOver ? t('monthly_budget_over') : tr.monthly_budget_used(pct)}
-                </p>
-              </div>
-              <div className="mb-3 h-2.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                <div
-                  className={`h-full rounded-full transition-all duration-500 ${isOver ? 'bg-rose-500' : pct > 80 ? 'bg-amber-400' : 'bg-indigo-500'}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="tabular-nums">{formatCurrency(spent, budget.currency)}</span>
-                <span className="tabular-nums">{formatCurrency(budget.amount, budget.currency)}</span>
-              </div>
-              {!isOver && (
-                <p className="mt-1 text-xs text-slate-400">{tr.monthly_budget_remaining(formatCurrency(budget.amount - spent, budget.currency))}</p>
-              )}
-            </div>
-          )
-        })()}
+        {/* Quick action buttons */}
+        <div className="grid grid-cols-4 gap-2.5">
+          {quickActions.map((action) => (
+            <button
+              key={action.key}
+              onClick={() => navigate(action.to)}
+              className="flex min-h-[82px] flex-col items-center justify-center rounded-3xl border border-slate-200/95 bg-slate-50 px-2 py-2.5 shadow-[0_2px_8px_rgba(15,23,42,0.06)] transition-all active:scale-95 dark:border-slate-700 dark:bg-slate-800/70"
+            >
+              <span className={`mb-1.5 flex items-center justify-center ${action.className}`}>
+                {action.icon}
+              </span>
+              <span className="text-center text-[11px] font-semibold tracking-[0.01em] text-slate-700 dark:text-slate-200">
+                {action.label}
+              </span>
+            </button>
+          ))}
+        </div>
 
-        {/* 위젯 배너 */}
-        <WidgetBanner />
-
-        {/* 빠른 추가 버튼 */}
-        <button
-          onClick={() => navigate('/transactions/new')}
-          className="flex min-h-[64px] w-full items-center justify-between rounded-3xl bg-gradient-to-r from-indigo-500 via-indigo-500 to-violet-500 px-5 py-4 text-white shadow-lg shadow-indigo-500/25 transition-all active:scale-95"
-        >
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-100">{t('dashboard_add_prompt')}</p>
-            <p className="text-base font-semibold tracking-tight">{t('dashboard_add_desc')}</p>
+        {/* Budget goals by category */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1 pt-0.5">
+            <h2 className="text-[1.08rem] leading-none font-semibold tracking-tight text-slate-800 dark:text-slate-200">{t('monthly_budget_title')}</h2>
+            <button
+              onClick={() => navigate('/settings/budget')}
+              className="text-[12px] font-semibold text-[#0d8a7a] transition-colors hover:text-[#0a7568]"
+            >
+              {t('dashboard_view_all')}
+            </button>
           </div>
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20">
-            <Plus className="h-5 w-5" />
-          </span>
-        </button>
 
-        {/* 카테고리 도넛 차트 */}
-        {!isLoading && data && data.categoryBreakdown.length > 0 && (
-          <div className="card rounded-3xl p-4 shadow-sm">
-            <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('dashboard_category_chart')}</h2>
-            <div className="flex items-center gap-5">
-              <div className="relative shrink-0">
-                <ResponsiveContainer width={110} height={110}>
-                  <PieChart>
-                    <Pie
-                      data={data.categoryBreakdown}
-                      dataKey="amount"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={33}
-                      outerRadius={52}
-                      strokeWidth={2}
-                      stroke="transparent"
-                      animationDuration={350}
+          {!budgetGoalRows.length ? (
+            <div className="card rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center">
+              <p className="text-sm font-semibold text-slate-700">{t('dashboard_budget_set_prompt')}</p>
+              <p className="mt-1 text-xs text-slate-400">{t('dashboard_budget_set_desc')}</p>
+              <button
+                onClick={() => navigate('/settings/budget')}
+                className="mt-3 rounded-full bg-[#dbefeb] px-3 py-1.5 text-xs font-semibold text-[#0d8a7a]"
+              >
+                {t('dashboard_budget_set_cta')}
+              </button>
+            </div>
+          ) : (
+            <div className="card overflow-hidden rounded-3xl border border-slate-200/90">
+              {budgetGoalRows.map((row) => (
+                <div key={row.id} className="border-b border-slate-100 px-4 py-2.5 last:border-b-0">
+                  <div className="flex items-center gap-3">
+                    <span
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold"
+                      style={{ backgroundColor: `${row.color}20`, color: row.color }}
                     >
-                      {data.categoryBreakdown.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(v) => formatCurrency(v as number, data?.primaryCurrency ?? 'CAD')}
-                      contentStyle={{
-                        borderRadius: '16px',
-                        border: '1px solid rgb(226 232 240 / 0.9)',
-                        fontSize: '12px',
-                        boxShadow: '0 20px 45px -20px rgb(15 23 42 / 0.2)',
-                      }}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="min-w-0 flex-1 space-y-2">
-                {data.categoryBreakdown.slice(0, 5).map((cat) => (
-                  <div key={cat.id} className="flex items-center justify-between gap-2">
-                    <CategoryBadge color={cat.color} label={cat.name} size="sm" />
-                    <span className="shrink-0 text-xs font-semibold tabular-nums text-slate-700 dark:text-slate-300">
-                      {formatCurrency(cat.amount, data?.primaryCurrency ?? 'CAD')}
+                      {(() => {
+                        const rawIcon = row.icon?.trim() ?? ''
+                        return rawIcon && !/^[a-z0-9_-]+$/i.test(rawIcon) ? rawIcon : firstSymbol(row.name)
+                      })()}
                     </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-[0.9rem] font-semibold text-slate-900">{row.name}</p>
+                        <p className="text-[0.9rem] font-semibold text-slate-500 tabular-nums">
+                          {formatCurrency(row.spent, row.goal.currency)} / {formatCurrency(row.goal.amount, row.goal.currency)}
+                        </p>
+                      </div>
+                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${row.pct}%`, backgroundColor: row.color }}
+                        />
+                      </div>
+                    </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* 최근 거래 */}
-        <div className="card overflow-hidden rounded-3xl">
-          <div className="flex items-center justify-between border-b border-slate-100/80 px-5 py-4 dark:border-slate-800/60">
-            <h2 className="text-sm font-semibold tracking-tight text-slate-700 dark:text-slate-300">{t('dashboard_recent')}</h2>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between px-1 pt-0.5">
+            <h2 className="text-[1.08rem] leading-none font-semibold tracking-tight text-slate-800 dark:text-slate-200">{t('dashboard_recent')}</h2>
             <button
-              onClick={() => navigate('/calendar')}
-              className="flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-500 transition-colors hover:bg-indigo-100 hover:text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300 dark:hover:bg-indigo-900/30"
+              onClick={() => navigate('/transactions')}
+              className="text-[12px] font-semibold text-[#0d8a7a] transition-colors hover:text-[#0a7568]"
             >
-              <CalendarDays className="h-3.5 w-3.5" /> {t('dashboard_view_calendar')}
+              {t('dashboard_view_all')}
             </button>
           </div>
 
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => <TransactionSkeleton key={i} />)
           ) : !data?.recentTransactions.length ? (
-            <div className="px-4 py-12 text-center">
+            <div className="card rounded-3xl px-4 py-12 text-center">
               <p className="text-sm text-slate-400">{t('dashboard_empty')}</p>
               <button
                 onClick={() => navigate('/transactions/new')}
-                className="mt-3 inline-flex min-h-[48px] items-center justify-center rounded-full bg-indigo-50 px-4 text-xs font-semibold text-indigo-500 transition-colors hover:bg-indigo-100 hover:text-indigo-600 dark:bg-indigo-900/20 dark:text-indigo-300 dark:hover:bg-indigo-900/30"
+                className="mt-3 inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#dbefeb] px-4 text-xs font-semibold text-[#0d8a7a] transition-colors hover:bg-[#cde8e2] hover:text-[#0a7568]"
               >
                 {t('dashboard_add_first')}
               </button>
             </div>
           ) : (
-            data.recentTransactions.map((tx) => {
-              const cat = tx.categories as { name: string; color: string } | null
-              return (
-                <div
-                  key={tx.id}
-                  onClick={() => navigate(`/transactions/${tx.id}/edit`)}
-                  className="flex cursor-pointer items-center gap-3 border-b border-slate-50/80 px-5 py-4 transition-colors last:border-0 hover:bg-slate-50/70 active:bg-slate-100/70 dark:border-slate-800/60 dark:hover:bg-slate-800/30 dark:active:bg-slate-800/50"
-                >
+            <div className="card overflow-hidden rounded-3xl border border-slate-200/90">
+              {data.recentTransactions.map((tx) => {
+                const cat = tx.categories as { name: string; color: string; icon?: string | null } | null
+                return (
                   <div
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold shadow-sm"
-                    style={{
-                      backgroundColor: `${cat?.color ?? '#6b7280'}18`,
-                      color: cat?.color ?? '#6b7280',
-                    }}
+                    key={tx.id}
+                    onClick={() => navigate(`/transactions/${tx.id}/edit`)}
+                    className="flex cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-3 last:border-b-0 transition-colors hover:bg-slate-50/70 active:bg-slate-100/70 dark:hover:bg-slate-800/30 dark:active:bg-slate-800/50"
                   >
-                    {cat?.name?.[0] ?? '?'}
+                    <div
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold"
+                      style={{
+                        backgroundColor: `${cat?.color ?? '#6b7280'}18`,
+                        color: cat?.color ?? '#6b7280',
+                      }}
+                    >
+                      {(() => {
+                        const rawIcon = cat?.icon?.trim() ?? ''
+                        return rawIcon && !/^[a-z0-9_-]+$/i.test(rawIcon) ? rawIcon : firstSymbol(cat?.name)
+                      })()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[0.82rem] font-semibold text-slate-900 dark:text-white">{tx.description}</p>
+                      <p className="text-[0.72rem] text-slate-400">{cat?.name ?? '-'}</p>
+                    </div>
+                    <span className={`text-[0.95rem] font-semibold tabular-nums ${
+                      tx.type === '지출' ? 'text-slate-900 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'
+                    }`}>
+                      {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
+                    </span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{tx.description}</p>
-                    <p className="text-xs text-slate-400">{formatDateShort(tx.date)}</p>
-                  </div>
-                  <span className={`text-sm font-semibold tabular-nums ${
-                    tx.type === '지출' ? 'text-rose-500' : 'text-emerald-500'
-                  }`}>
-                    {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
-                  </span>
-                </div>
-              )
-            })
+                )
+              })}
+            </div>
           )}
         </div>
       </div>
@@ -253,191 +369,3 @@ export default function Dashboard() {
   )
 }
 
-// ─── Widget Banner ────────────────────────────────────────────────────────────
-
-function CurrencyList({ rows, emptyLabel }: { rows: CurrencyRow[]; emptyLabel: string }) {
-  if (!rows.length) return <p className="text-sm text-slate-400">{emptyLabel}</p>
-  return (
-    <div className="space-y-0.5">
-      {rows.map((r) => (
-        <p key={r.currency} className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
-          {formatCurrency(r.amount, r.currency)}
-        </p>
-      ))}
-    </div>
-  )
-}
-
-function WidgetBanner() {
-  const t = useT()
-  const { lang } = useUIStore()
-  const tr = translations[lang]
-  const { data, isLoading } = useWidgetStats()
-  const [slide, setSlide] = useState(0)
-  const TOTAL = 3
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const touchStartX = useRef<number | null>(null)
-
-  function resetTimer(nextSlide?: number) {
-    if (timerRef.current) clearInterval(timerRef.current)
-    timerRef.current = setInterval(() => setSlide((s) => (s + 1) % TOTAL), 4000)
-    if (nextSlide !== undefined) setSlide(nextSlide)
-  }
-
-  useEffect(() => {
-    timerRef.current = setInterval(() => setSlide((s) => (s + 1) % TOTAL), 4000)
-    return () => { if (timerRef.current) clearInterval(timerRef.current) }
-  }, [])
-
-  function goTo(idx: number) { resetTimer(idx) }
-
-  function onTouchStart(e: React.TouchEvent) {
-    e.stopPropagation()
-    touchStartX.current = e.touches[0].clientX
-  }
-  function onTouchEnd(e: React.TouchEvent) {
-    e.stopPropagation()
-    if (touchStartX.current === null) return
-    const diff = touchStartX.current - e.changedTouches[0].clientX
-    if (Math.abs(diff) > 40) resetTimer((slide + (diff > 0 ? 1 : -1) + TOTAL) % TOTAL)
-    touchStartX.current = null
-  }
-
-  if (isLoading) return <div className="h-24 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
-
-  const slides = [
-    // Slide 0: 이번 주 지출
-    {
-      title: t('widget_week'),
-      subtitle: tr.widget_week_range(data?.weekDays ?? 0),
-      content: (
-        <CurrencyList rows={data?.weekExpense ?? []} emptyLabel={t('widget_no_expense')} />
-      ),
-      accent: 'from-indigo-500/10 to-violet-500/10',
-      dot: 'bg-indigo-500',
-    },
-    // Slide 1: 오늘 vs 어제
-    {
-      title: t('widget_today_vs_yesterday'),
-      subtitle: '',
-      content: (
-        <div className="flex items-start gap-5">
-          <div>
-            <p className="text-[10px] text-slate-400 mb-1">{t('widget_today')}</p>
-            <CurrencyList rows={data?.todayExpense ?? []} emptyLabel={t('widget_no_expense')} />
-          </div>
-          <div className="w-px self-stretch bg-slate-200 dark:bg-slate-700" />
-          <div>
-            <p className="text-[10px] text-slate-400 mb-1">{t('widget_yesterday')}</p>
-            <CurrencyList rows={data?.yesterdayExpense ?? []} emptyLabel={t('widget_no_expense')} />
-          </div>
-        </div>
-      ),
-      accent: 'from-rose-500/10 to-orange-500/10',
-      dot: 'bg-rose-500',
-    },
-    // Slide 2: 일평균 비교
-    {
-      title: t('widget_daily_avg'),
-      subtitle: '',
-      content: (
-        <div className="flex items-start gap-5">
-          <div>
-            <p className="text-[10px] text-slate-400 mb-1">{t('widget_this_month')}</p>
-            <CurrencyList rows={(data?.monthDailyAvg ?? []).map(r => ({ ...r, amount: Math.round(r.amount) }))} emptyLabel={t('widget_no_expense')} />
-          </div>
-          <div className="w-px self-stretch bg-slate-200 dark:bg-slate-700" />
-          <div>
-            <p className="text-[10px] text-slate-400 mb-1">{t('widget_last_month')}</p>
-            <CurrencyList rows={(data?.prevMonthDailyAvg ?? []).map(r => ({ ...r, amount: Math.round(r.amount) }))} emptyLabel={t('widget_no_expense')} />
-          </div>
-        </div>
-      ),
-      accent: 'from-emerald-500/10 to-teal-500/10',
-      dot: 'bg-emerald-500',
-    },
-  ]
-
-  const current = slides[slide]
-
-  return (
-    <div
-      className={`relative select-none overflow-hidden rounded-3xl border border-white/70 bg-gradient-to-br ${current.accent} p-4 shadow-sm backdrop-blur-xl dark:border-slate-800/70`}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
-    >
-      {/* Title row */}
-      <div className="mb-3 flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold tracking-tight text-slate-700 dark:text-slate-200">{current.title}</p>
-          {current.subtitle && <p className="mt-0.5 text-[10px] text-slate-400">{current.subtitle}</p>}
-        </div>
-        {/* Dot indicators */}
-        <div className="flex items-center gap-1.5">
-          {slides.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => goTo(i)}
-              className={`rounded-full transition-all ${i === slide ? `w-4 h-2 ${s.dot}` : 'w-2 h-2 bg-slate-300 dark:bg-slate-600'}`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="min-h-[32px]">{current.content}</div>
-    </div>
-  )
-}
-
-type SummaryType = 'income' | 'expense' | 'neutral'
-
-function SummaryCard({
-  label,
-  amount,
-  type,
-  icon,
-  currency,
-}: {
-  label: string
-  amount: number
-  type: SummaryType
-  icon: React.ReactNode
-  currency: string
-}) {
-  const styles: Record<SummaryType, { bg: string; icon: string; amount: string }> = {
-    expense: {
-      bg: 'bg-gradient-to-br from-rose-50 via-white to-white dark:from-rose-950/30 dark:via-slate-900 dark:to-slate-900/50',
-      icon: 'text-white bg-rose-500 shadow-lg shadow-rose-500/20',
-      amount: 'text-rose-600 dark:text-rose-400',
-    },
-    income: {
-      bg: 'bg-gradient-to-br from-emerald-50 via-white to-white dark:from-emerald-950/30 dark:via-slate-900 dark:to-slate-900/50',
-      icon: 'text-white bg-emerald-500 shadow-lg shadow-emerald-500/20',
-      amount: 'text-emerald-600 dark:text-emerald-400',
-    },
-    neutral: {
-      bg: 'bg-gradient-to-br from-slate-50 via-white to-white dark:from-slate-800/80 dark:via-slate-900 dark:to-slate-900/60',
-      icon: 'text-white bg-slate-500 shadow-lg shadow-slate-500/20',
-      amount: 'text-slate-700 dark:text-slate-300',
-    },
-  }
-
-  const s = styles[type]
-  const absAmount = Math.abs(amount)
-  const displayAmount = absAmount >= 1_000_000
-    ? formatCompactCurrency(absAmount, currency)
-    : formatCurrency(absAmount, currency)
-
-  return (
-    <div className={`card rounded-3xl p-4 ${s.bg}`}>
-      <div className={`mb-4 inline-flex h-9 w-9 items-center justify-center rounded-2xl ${s.icon}`}>
-        {icon}
-      </div>
-      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">{label}</p>
-      <p className={`text-[clamp(1.15rem,4vw,1.8rem)] font-bold tracking-tight tabular-nums leading-none ${s.amount}`}>
-        {displayAmount}
-      </p>
-    </div>
-  )
-}

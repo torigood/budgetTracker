@@ -71,9 +71,9 @@ export default function App() {
   }, [lang])
 
   useEffect(() => {
-    const iconHref = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
-    const manifestHref = isDark ? '/manifest-dark.webmanifest' : '/manifest.webmanifest'
-    const themeColor = isDark ? '#08080f' : '#f4f5f8'
+    const iconHref = '/icons/logo_512.png'
+    const manifestHref = '/manifest.webmanifest'
+    const themeColor = isDark ? '#0d0d0d' : '#f4f5f8'
 
     const favicon = document.getElementById('app-favicon') as HTMLLinkElement | null
     if (favicon) favicon.href = iconHref

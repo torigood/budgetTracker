@@ -1,16 +1,14 @@
-import { useEffect } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
-import { useUIStore } from '@/lib/stores/ui.store'
 import { BottomNav } from './BottomNav'
-import { SideNav } from './SideNav'
 
 export function AppLayout() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
-  const isDark = useUIStore((state) => state.isDark)
-  const logoSrc = isDark ? '/icons/logo_dark_512.png' : '/icons/logo_light_512.png'
+  const location = useLocation()
+  const mainRef = useRef<HTMLElement | null>(null)
 
   function refreshVisibleQueries() {
     void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
@@ -65,28 +63,24 @@ export function AppLayout() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [navigate])
 
+  // Always start at the top when entering a route.
+  useEffect(() => {
+    mainRef.current?.scrollTo({ top: 0, behavior: 'auto' })
+    window.scrollTo({ top: 0, behavior: 'auto' })
+    document.documentElement.scrollTop = 0
+    document.body.scrollTop = 0
+  }, [location.pathname])
+
   return (
-    <div className="relative flex min-h-svh overflow-x-hidden bg-transparent">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/10" />
-
-      {/* Desktop sidebar */}
-      <SideNav />
-
-      {/* Main content */}
-      <div className="relative z-10 flex-1 md:ml-64">
-        <div className="sticky top-0 z-30 border-b border-white/10 bg-white/85 backdrop-blur-sm dark:bg-[rgba(8,8,15,0.82)] md:hidden">
-          <div className="flex items-center gap-2.5 px-4 pb-2 pt-[calc(0.6rem+env(safe-area-inset-top))]">
-            <img src={logoSrc} alt="Budget Tracker" className="h-8 w-8 rounded-lg border border-white/10 object-cover" />
-            <span className="text-sm font-semibold tracking-tight text-[var(--color-text-primary)]">Budget Tracker</span>
-          </div>
-        </div>
-        <main className="pt-2 pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pt-3 md:pb-0">
+    <div className="flex min-h-svh justify-center bg-[#0d0d0d] px-0 md:px-4 md:py-4">
+      <div className="relative flex min-h-svh w-full max-w-[430px] flex-col overflow-hidden bg-[#f4f5f8] text-[var(--color-text-primary)] md:min-h-[calc(100svh-2rem)] md:rounded-[2.5rem] md:border md:border-white/10 md:shadow-[0_30px_90px_rgba(0,0,0,0.45)] dark:bg-[#101114]">
+        <main ref={mainRef} className="flex-1 overflow-y-auto pt-[calc(0.9rem+env(safe-area-inset-top))] pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
           <Outlet />
         </main>
-      </div>
 
-      {/* Mobile bottom nav */}
-      <BottomNav />
+        {/* Bottom nav lives inside the app canvas, matching the reference mockup */}
+        <BottomNav />
+      </div>
     </div>
   )
 }

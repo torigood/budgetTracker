@@ -1,20 +1,17 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Moon, Sun, Download, Upload, LogOut, Tag, User, Coins, Languages, Target, Bell, BellOff } from 'lucide-react'
+import { ChevronRight, Moon, Sun, Download, Upload, LogOut, User, Languages, Target, Bell, BellOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
-import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
+import { useUIStore } from '@/lib/stores/ui.store'
 import { useT } from '@/lib/hooks/useT'
 import { translations } from '@/lib/i18n'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { getCurrentMonth } from '@/utils/format'
 import { getNotifySettings, saveNotifySetting, requestPermission, getPermission, subscribeToPush } from '@/lib/hooks/useNotifications'
-import { useMonthlyBudget } from '@/lib/hooks/useMonthlyBudget'
-import { formatCurrency } from '@/utils/format'
 import type { Lang } from '@/lib/i18n'
 import type { NotifySettings } from '@/lib/hooks/useNotifications'
-import type { CurrencyCode } from '@/lib/stores/ui.store'
 
 const LANGUAGES: { code: Lang; label: string; native: string }[] = [
   { code: 'ko', label: '한국어', native: 'Korean' },
@@ -88,7 +85,7 @@ function NotifyToggleRow({
         onClick={() => !disabled && onToggle(!enabled)}
         className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
           disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-        } ${enabled && !disabled ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+        } ${enabled && !disabled ? 'bg-[#0d8a7a]' : 'bg-slate-200 dark:bg-slate-700'}`}
         role="switch"
         aria-checked={enabled}
       >
@@ -104,16 +101,12 @@ function NotifyToggleRow({
 export default function Settings() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { isDark, toggleDark, currency, setCurrency, lang, setLang } = useUIStore()
+  const { isDark, toggleDark, lang, setLang } = useUIStore()
   const t = useT()
   const tr = translations[lang]
   const [exportFrom, setExportFrom] = useState(getCurrentMonth())
   const [exportTo, setExportTo] = useState(getCurrentMonth())
   const [notifySettings, setNotifySettings] = useState<NotifySettings>(getNotifySettings)
-  const { budget: monthlyBudget, setBudget: setMonthlyBudget } = useMonthlyBudget()
-  const [editingMonthlyBudget, setEditingMonthlyBudget] = useState(false)
-  const [mbAmount, setMbAmount] = useState('')
-  const [mbCurrency, setMbCurrency] = useState<CurrencyCode>(currency)
   const [permission, setPermission] = useState<ReturnType<typeof getPermission>>(getPermission)
 
   const updateNotify = useCallback(<K extends keyof NotifySettings>(key: K, value: NotifySettings[K]) => {
@@ -192,11 +185,9 @@ export default function Settings() {
     toast.success(tr.settings_export_success_n(data.length))
   }
 
-  const selectedCurrencyInfo = SUPPORTED_CURRENCIES.find(c => c.code === currency)
-
   return (
     <div className="pb-6">
-      <PageHeader title={t('settings_title')} />
+      <PageHeader title={t('settings_title')} back backTo="/dashboard" />
 
       <div className="space-y-4 px-4 py-4">
         {/* 계정 정보 */}
@@ -223,7 +214,7 @@ export default function Settings() {
               right={
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleDark() }}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${isDark ? 'bg-indigo-500' : 'bg-slate-200 dark:bg-slate-700'}`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d8a7a] ${isDark ? 'bg-[#0d8a7a]' : 'bg-slate-200 dark:bg-slate-700'}`}
                   role="switch"
                   aria-checked={isDark}
                 >
@@ -233,15 +224,6 @@ export default function Settings() {
                   />
                 </button>
               }
-            />
-
-            {/* 카테고리 관리 */}
-            <SettingRow
-              icon={<Tag className="h-4 w-4" />}
-              label={t('settings_categories')}
-              description={t('settings_categories_desc')}
-              onClick={() => navigate('/settings/categories')}
-              right={<ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 shrink-0" />}
             />
           </div>
         </div>
@@ -261,56 +243,14 @@ export default function Settings() {
                   onClick={() => setLang(l.code)}
                   className={`flex-1 rounded-2xl border px-4 py-3 text-center transition active:scale-[0.99] ${
                     lang === l.code
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300'
+                      ? 'border-[#0d8a7a] bg-[#dbefeb] text-[#0d8a7a] dark:bg-[#0d8a7a]/20 dark:text-[#9fe3d9]'
                       : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'
                   }`}
                 >
-                  <p className={`text-sm font-bold tracking-tight ${lang === l.code ? 'text-indigo-600 dark:text-indigo-300' : 'text-slate-900 dark:text-white'}`}>
+                  <p className={`text-sm font-bold tracking-tight ${lang === l.code ? 'text-[#0d8a7a] dark:text-[#9fe3d9]' : 'text-slate-900 dark:text-white'}`}>
                     {l.label}
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">{l.native}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* 통화 설정 */}
-        <div>
-          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_currency_title')}</p>
-          <div className="card rounded-3xl p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <Coins className="h-4 w-4 text-slate-400" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_currency_label')}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{t('settings_currency_desc')}</p>
-              </div>
-              <span className="text-xs font-semibold text-indigo-500">
-                {lang === 'ko' ? selectedCurrencyInfo?.label : selectedCurrencyInfo?.labelEn}
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {SUPPORTED_CURRENCIES.map((c) => (
-                <button
-                  key={c.code}
-                  onClick={() => setCurrency(c.code)}
-                  className={`rounded-2xl border px-3 py-3 text-left transition active:scale-[0.99] ${
-                    currency === c.code
-                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30'
-                      : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'
-                  }`}
-                >
-                  <p className={`text-sm font-semibold ${currency === c.code ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-white'}`}>
-                    {c.code}
-                  </p>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {(() => {
-                      const lbl = lang === 'ko' ? c.label : c.labelEn
-                      const name = lbl.split(' (')[0]
-                      const sym = lbl.match(/\((.+)\)/)?.[1]
-                      return `${name} ${sym ?? ''}`
-                    })()}
-                  </p>
                 </button>
               ))}
             </div>
@@ -344,7 +284,7 @@ export default function Settings() {
                     setExportFrom(e.target.value)
                     if (e.target.value > exportTo) setExportTo(e.target.value)
                   }}
-                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-base text-slate-900 outline-none transition focus:border-[#0d8a7a] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -354,7 +294,7 @@ export default function Settings() {
                   value={exportTo}
                   min={exportFrom}
                   onChange={(e) => setExportTo(e.target.value)}
-                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-base text-slate-900 outline-none transition focus:border-[#0d8a7a] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
             </div>
@@ -370,99 +310,6 @@ export default function Settings() {
               <Download className="h-4 w-4" />
               {t('settings_csv_export')}
             </button>
-          </div>
-        </div>
-
-        {/* 월 전체 예산 */}
-        <div>
-          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('monthly_budget_title')}</p>
-          <div className="card rounded-3xl p-4 space-y-3">
-            <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800">
-                <Target className="h-4 w-4" />
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-white">{t('monthly_budget_desc')}</p>
-                {monthlyBudget && !editingMonthlyBudget && (
-                  <p className="text-xs text-indigo-500 font-semibold mt-0.5">
-                    {formatCurrency(monthlyBudget.amount, monthlyBudget.currency)} / {lang === 'ko' ? '월' : 'mo'}
-                  </p>
-                )}
-                {!monthlyBudget && !editingMonthlyBudget && (
-                  <p className="text-xs text-slate-400 mt-0.5">{t('monthly_budget_no_limit')}</p>
-                )}
-              </div>
-              {!editingMonthlyBudget && (
-                <div className="flex items-center gap-1">
-                  {monthlyBudget && (
-                    <button
-                      onClick={() => { setMonthlyBudget(null); toast.success(t('monthly_budget_deleted')) }}
-                      className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-300 transition hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-900/20"
-                    >
-                      <span className="text-xs">✕</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => { setMbAmount(monthlyBudget ? String(monthlyBudget.amount) : ''); setMbCurrency(monthlyBudget?.currency ?? currency); setEditingMonthlyBudget(true) }}
-                    className="rounded-full bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-300"
-                  >
-                    {t('monthly_budget_set')}
-                  </button>
-                </div>
-              )}
-            </div>
-            {editingMonthlyBudget && (
-              <div className="space-y-2.5">
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="0"
-                  value={mbAmount}
-                  onChange={(e) => setMbAmount(e.target.value)}
-                  autoFocus
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                />
-                <div className="flex gap-1.5 flex-wrap">
-                  {SUPPORTED_CURRENCIES.map((c) => (
-                    <button key={c.code} type="button" onClick={() => setMbCurrency(c.code)}
-                      className={`rounded-full border px-2.5 py-1.5 text-xs font-semibold transition ${mbCurrency === c.code ? 'border-indigo-500 bg-indigo-50 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300' : 'border-slate-200 bg-white text-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400'}`}>
-                      {c.code}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => setEditingMonthlyBudget(false)}
-                    className="flex-1 rounded-2xl border border-slate-200 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
-                    {t('budget_cancel')}
-                  </button>
-                  <button
-                    onClick={() => {
-                      const n = parseFloat(mbAmount)
-                      if (isNaN(n) || n <= 0) return
-                      setMonthlyBudget({ amount: n, currency: mbCurrency })
-                      toast.success(t('monthly_budget_saved'))
-                      setEditingMonthlyBudget(false)
-                    }}
-                    className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 py-2.5 text-xs font-semibold text-white transition hover:from-indigo-600 hover:to-violet-600">
-                    {t('budget_save')}
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* 예산 목표 */}
-        <div>
-          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('budget_title')}</p>
-          <div className="card overflow-hidden rounded-3xl">
-            <SettingRow
-              icon={<Target className="h-4 w-4" />}
-              label={t('budget_title')}
-              description={t('budget_desc')}
-              onClick={() => navigate('/settings/budget')}
-              right={<ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 shrink-0" />}
-            />
           </div>
         </div>
 
@@ -485,7 +332,7 @@ export default function Settings() {
                 {permission !== 'denied' && (
                   <button
                     onClick={handleAllowNotifications}
-                    className="shrink-0 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 px-3 py-2 text-xs font-semibold text-white transition hover:from-indigo-600 hover:to-violet-600"
+                    className="shrink-0 rounded-full bg-[#0d8a7a] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0a7568]"
                   >
                     {t('notify_allow')}
                   </button>
@@ -501,15 +348,6 @@ export default function Settings() {
               enabled={notifySettings.budgetEnabled}
               disabled={permission !== 'granted'}
               onToggle={(v) => updateNotify('budgetEnabled', v)}
-            />
-
-            <NotifyToggleRow
-              icon={<Target className="h-4 w-4" />}
-              label={t('notify_monthly_budget_label')}
-              description={t('notify_monthly_budget_desc')}
-              enabled={notifySettings.monthlyBudgetEnabled}
-              disabled={permission !== 'granted'}
-              onToggle={(v) => updateNotify('monthlyBudgetEnabled', v)}
             />
 
             {/* B: Daily reminder */}
@@ -530,7 +368,7 @@ export default function Settings() {
                     type="time"
                     value={notifySettings.reminderTime}
                     onChange={(e) => updateNotify('reminderTime', e.target.value)}
-                    className="ml-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition"
+                    className="ml-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-[#0d8a7a] transition"
                   />
                 </div>
               )}

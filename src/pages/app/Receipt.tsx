@@ -159,7 +159,7 @@ export default function Receipt() {
             {...getRootProps()}
             className={`relative overflow-hidden rounded-[1.75rem] border-2 border-dashed transition ${
               isDragActive
-                ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-900/20'
+                ? 'border-[#0d8a7a] bg-[#dbefeb]/80 dark:bg-[#0d8a7a]/20'
                 : 'border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900'
             }`}
           >
@@ -183,7 +183,7 @@ export default function Receipt() {
           <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => cameraRef.current?.click()}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3 text-sm font-semibold text-white transition active:scale-[0.98] shadow-lg shadow-indigo-500/20"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-[#0d8a7a] py-3 text-sm font-semibold text-white transition active:scale-[0.98] shadow-lg shadow-[#0d8a7a]/20 hover:bg-[#0a7568]"
             >
               <Camera className="h-5 w-5" />
               {t('receipt_camera')}

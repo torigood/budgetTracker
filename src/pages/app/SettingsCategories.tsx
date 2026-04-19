@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, Trash2, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from '@/lib/hooks/useCategories'
@@ -14,8 +15,15 @@ interface CategoryFormData {
   icon: string
 }
 
+const CATEGORY_ICON_PRESETS = [
+  '⌂', '⌁', '☰', '☕︎', '✿', '✎', '✈︎', '✉︎',
+  '☎︎', '♨︎', '⚑', '⚙︎', '⚕︎', '⚖︎', '♿︎', '♻︎',
+  '♡', '♪', '⚽︎', '☘︎', '☀︎', '☾', '⌚︎', '⚡︎',
+] as const
+
 export default function SettingsCategories() {
   const t = useT()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { data: categories, isLoading } = useCategories()
   const createMutation = useCreateCategory()
   const updateMutation = useUpdateCategory()
@@ -24,31 +32,45 @@ export default function SettingsCategories() {
   const [editing, setEditing] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
-  const [form, setForm] = useState<CategoryFormData>({ name: '', color: CATEGORY_COLORS[0], icon: 'tag' })
+  const [form, setForm] = useState<CategoryFormData>({ name: '', color: CATEGORY_COLORS[0], icon: '' })
 
   function openCreate() {
     setEditing(null)
-    setForm({ name: '', color: CATEGORY_COLORS[0], icon: 'tag' })
+    setForm({ name: '', color: CATEGORY_COLORS[0], icon: '' })
     setShowForm(true)
   }
 
   function openEdit(id: string) {
     const cat = categories?.find((c) => c.id === id)
     if (!cat) return
+    const rawIcon = cat.icon?.trim() ?? ''
     setEditing(id)
-    setForm({ name: cat.name, color: cat.color, icon: cat.icon })
+    setForm({
+      name: cat.name,
+      color: cat.color,
+      icon: rawIcon && !/^[a-z0-9_-]+$/i.test(rawIcon) ? rawIcon : '',
+    })
     setShowForm(true)
   }
+
+  useEffect(() => {
+    if (searchParams.get('new') !== '1') return
+    openCreate()
+    const next = new URLSearchParams(searchParams)
+    next.delete('new')
+    setSearchParams(next, { replace: true })
+  }, [searchParams, setSearchParams])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name.trim()) return
+    const payload = { ...form, icon: form.icon.trim() }
     try {
       if (editing) {
-        await updateMutation.mutateAsync({ id: editing, data: form })
+        await updateMutation.mutateAsync({ id: editing, data: payload })
         toast.success(t('categories_updated'))
       } else {
-        await createMutation.mutateAsync({ ...form, sort_order: (categories?.length ?? 0) + 1 })
+        await createMutation.mutateAsync({ ...payload, sort_order: (categories?.length ?? 0) + 1 })
         toast.success(t('categories_added'))
       }
       setShowForm(false)
@@ -77,7 +99,7 @@ export default function SettingsCategories() {
         action={
           <button
             onClick={openCreate}
-            className="tap-target flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500 text-white shadow-sm shadow-indigo-500/25 hover:bg-indigo-600 transition active:scale-95"
+            className="tap-target flex h-11 w-11 items-center justify-center rounded-xl bg-[#0d8a7a] text-white shadow-sm shadow-[#0d8a7a]/25 hover:bg-[#0a7568] transition active:scale-95"
             aria-label={t('categories_add')}
           >
             <Plus className="h-5 w-5" />
@@ -95,7 +117,10 @@ export default function SettingsCategories() {
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
                 style={{ backgroundColor: cat.color }}
               >
-                {cat.name[0]}
+                {(() => {
+                  const rawIcon = cat.icon?.trim() ?? ''
+                  return rawIcon && !/^[a-z0-9_-]+$/i.test(rawIcon) ? rawIcon : (cat.name[0] || '?')
+                })()}
               </span>
               <span className="flex-1 text-sm font-medium text-slate-900 dark:text-slate-100">{cat.name}</span>
               {cat.is_default && (
@@ -103,7 +128,7 @@ export default function SettingsCategories() {
               )}
               <button
                 onClick={() => openEdit(cat.id)}
-                className="p-2 rounded-lg text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-500 transition"
+                className="p-2 rounded-lg text-slate-400 hover:bg-[#dbefeb] dark:hover:bg-[#0d8a7a]/20 hover:text-[#0d8a7a] transition"
               >
                 <Edit2 className="h-4 w-4" />
               </button>
@@ -135,11 +160,40 @@ export default function SettingsCategories() {
               {editing ? t('categories_edit_title') : t('categories_add_title')}
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <p className="mb-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">아이콘 선택</p>
+                <div className="grid grid-cols-8 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, icon: '' })}
+                    className={`rounded-xl border px-1 py-2 text-[11px] font-semibold transition ${
+                      !form.icon ? 'border-[#0d8a7a] bg-[#dbefeb] text-[#0d8a7a]' : 'border-slate-200 text-slate-500'
+                    }`}
+                  >
+                    없음
+                  </button>
+                  {CATEGORY_ICON_PRESETS.map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setForm({ ...form, icon: preset })}
+                      className={`flex h-9 items-center justify-center rounded-xl border text-lg transition ${
+                        form.icon === preset
+                          ? 'border-[#0d8a7a] bg-[#dbefeb]'
+                          : 'border-slate-200 bg-white hover:bg-slate-50'
+                      }`}
+                      aria-label={`icon-${preset}`}
+                    >
+                      {preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <input
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder={t('categories_name_placeholder')}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-base sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-base sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-[#0d8a7a] focus:ring-2 focus:ring-[#0d8a7a]/10 transition"
               />
               <div>
                 <p className="mb-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('categories_color')}</p>
@@ -149,7 +203,7 @@ export default function SettingsCategories() {
                       key={color}
                       type="button"
                       onClick={() => setForm({ ...form, color })}
-                      className={`h-7 w-7 rounded-full transition-transform ${form.color === color ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110' : 'hover:scale-105'}`}
+                      className={`h-7 w-7 rounded-full transition-transform ${form.color === color ? 'ring-2 ring-offset-2 ring-[#0d8a7a] scale-110' : 'hover:scale-105'}`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
@@ -165,7 +219,7 @@ export default function SettingsCategories() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 rounded-xl bg-indigo-500 py-3 text-sm font-semibold text-white hover:bg-indigo-600 transition"
+                  className="flex-1 rounded-xl bg-[#0d8a7a] py-3 text-sm font-semibold text-white hover:bg-[#0a7568] transition"
                 >
                   {t('save')}
                 </button>

@@ -31,7 +31,7 @@ export function MonthSelector({ value, onChange }: MonthSelectorProps) {
           className={`flex h-7 w-7 items-center justify-center rounded-lg transition ${
             isCurrentMonth
               ? 'text-slate-300 dark:text-slate-600 cursor-default'
-              : 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 active:scale-95'
+              : 'text-[#0d8a7a] hover:bg-[#dbefeb] dark:hover:bg-[#0d8a7a]/20 active:scale-95'
           }`}
           aria-label="현재 달로 이동"
         >

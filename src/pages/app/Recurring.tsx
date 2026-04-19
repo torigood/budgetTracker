@@ -31,7 +31,7 @@ function createSchema() {
 const schema = createSchema()
 type FormValues = z.infer<typeof schema>
 
-const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition'
+const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-[#0d8a7a] focus:ring-2 focus:ring-[#0d8a7a]/10 transition'
 
 export default function Recurring() {
   const t = useT()
@@ -223,7 +223,7 @@ export default function Recurring() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-slate-900 dark:text-white">{item.description}</span>
                     {item.categories && (
-                      <CategoryBadge color={item.categories.color} label={item.categories.name} size="sm" />
+                      <CategoryBadge color={item.categories.color} label={item.categories.name} icon={item.categories.icon} size="sm" />
                     )}
                   </div>
                   <p className="mt-0.5 text-xs text-slate-400">{tr.recurring_day_label(item.day_of_month)} · {item.payment_method}</p>
@@ -235,7 +235,7 @@ export default function Recurring() {
                   <button
                     onClick={() => toggleActive(item)}
                     title={item.is_active ? t('recurring_deactivated') : t('recurring_activated')}
-                    className={`rounded-xl p-2 transition ${item.is_active ? 'text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : 'text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                    className={`rounded-xl p-2 transition ${item.is_active ? 'text-[#0d8a7a] hover:bg-[#dbefeb] dark:hover:bg-[#0d8a7a]/20' : 'text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                   >
                     <Power className="h-4 w-4" />
                   </button>
@@ -262,7 +262,7 @@ export default function Recurring() {
 
   return (
     <div className="pb-6">
-      <PageHeader title={t('recurring_title')} />
+      <PageHeader title={t('recurring_title')} back backTo="/dashboard" />
 
       {renderSection('자동지출', expenseItems, 'expense')}
       {renderSection('자동입금', incomeItems, 'income')}
@@ -362,7 +362,7 @@ export default function Recurring() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex-1 rounded-2xl bg-gradient-to-r from-indigo-500 to-violet-500 py-3 text-sm font-semibold text-white transition hover:from-indigo-600 hover:to-violet-600 disabled:opacity-60"
+                  className="flex-1 rounded-2xl bg-[#0d8a7a] py-3 text-sm font-semibold text-white transition hover:bg-[#0a7568] disabled:opacity-60"
                 >
                   {t('recurring_save')}
                 </button>

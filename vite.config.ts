@@ -13,7 +13,7 @@ export default defineConfig({
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
-      includeAssets: ['icons/logo_light_512.png', 'icons/logo_dark_512.png'],
+      includeAssets: ['icons/logo_512.png'],
       manifest: {
         name: 'Budget Tracker',
         short_name: 'Budget',
@@ -23,7 +23,7 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/',
         icons: [
-          { src: 'icons/logo_light_512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
+          { src: 'icons/logo_512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
       injectManifest: {
