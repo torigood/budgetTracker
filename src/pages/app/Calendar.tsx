@@ -223,14 +223,14 @@ export default function Calendar() {
       {/* Day detail modal */}
       {selectedDate && (
         <div
-          className="fixed inset-0 z-40 flex items-center justify-center px-4"
+          className="fixed inset-0 z-40 flex items-center justify-center px-4 pt-8 pb-24 sm:pb-8"
           onClick={() => setSelectedDate(null)}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="absolute left-1/2 top-1/2 z-10 flex max-h-[75dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95"
+            className="relative z-10 flex max-h-full w-full max-w-lg flex-col rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Sheet header */}
