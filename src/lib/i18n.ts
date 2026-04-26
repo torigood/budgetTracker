@@ -61,7 +61,10 @@ export const translations = {
     tx_deleted: '거래가 삭제됐습니다',
     tx_delete_fail: '삭제 실패',
     tx_edit: '수정',
+    tx_view: '자세히 보기',
     tx_delete: '삭제',
+    tx_detail_title: '거래 상세',
+    tx_receipt_items: '영수증 품목 (메모)',
     tx_sort_recent: '최근순',
     tx_sort_oldest: '오래된순',
 
@@ -409,7 +412,10 @@ export const translations = {
     tx_deleted: 'Transaction deleted',
     tx_delete_fail: 'Delete failed',
     tx_edit: 'Edit',
+    tx_view: 'View details',
     tx_delete: 'Delete',
+    tx_detail_title: 'Transaction details',
+    tx_receipt_items: 'Receipt items (memo)',
     tx_sort_recent: 'Newest',
     tx_sort_oldest: 'Oldest',
 

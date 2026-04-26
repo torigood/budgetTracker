@@ -84,7 +84,7 @@ export default function Calendar() {
     <div
       className="flex min-h-full flex-col pb-6"
       {...swipe}
-      style={{ touchAction: 'none' }}
+      style={{ touchAction: selectedDate ? 'auto' : 'pan-y' }}
     >
       {/* Header */}
       <header className="mx-4 mt-3 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
@@ -230,7 +230,7 @@ export default function Calendar() {
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="relative z-10 flex max-h-[75vh] w-full max-w-lg flex-col rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95"
+            className="relative z-10 flex max-h-[75dvh] w-full max-w-lg flex-col rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Sheet header */}
@@ -272,7 +272,11 @@ export default function Calendar() {
             </div>
 
             {/* Transaction list */}
-            <div className="overflow-y-auto flex-1" style={{ touchAction: 'pan-y' }}>
+            <div
+              className="flex-1 overflow-y-auto overscroll-contain"
+              data-swipe-month-ignore="true"
+              style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}
+            >
               {!selectedDaySummary?.transactions.length ? (
                 <div className="py-10 text-center">
                   <p className="text-sm text-slate-400">이 날의 거래가 없습니다</p>
