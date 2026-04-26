@@ -230,7 +230,7 @@ export default function Calendar() {
         >
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
           <div
-            className="relative z-10 flex max-h-[75dvh] w-full max-w-lg -translate-y-3 flex-col rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95 sm:-translate-y-5"
+            className="absolute left-1/2 top-1/2 z-10 flex max-h-[75dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-[2rem] border border-white/70 bg-white/95 shadow-2xl shadow-slate-900/15 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/95"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Sheet header */}
