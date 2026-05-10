@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import type { CurrencyCode } from '@/lib/stores/ui.store'
 import type { ExchangeRates } from '@/lib/utils/currency'
+import { supabase } from '@/lib/supabase'
 
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6
 
@@ -30,47 +31,25 @@ function writeCache(base: string, payload: { base: string; rates: Record<string,
 }
 
 async function fetchExchangeRates(base: CurrencyCode) {
-  const apiKey = import.meta.env.VITE_EXCHANGERATES_API_KEY as string | undefined
-  if (!apiKey) {
-    throw new Error('Missing exchangerates API key')
-  }
+  const { data, error } = await supabase.functions.invoke('exchange-rates', {
+    body: { base },
+  })
 
-  const baseUrl = (import.meta.env.VITE_EXCHANGERATES_API_BASE_URL as string | undefined)
-    ?? 'https://api.exchangeratesapi.io/v1/latest'
-
-  const symbols = SUPPORTED_CURRENCIES.map((c) => c.code).join(',')
-  const url = new URL(baseUrl)
-  url.searchParams.set('access_key', apiKey)
-  url.searchParams.set('symbols', symbols)
-  url.searchParams.set('base', base)
-
-  const res = await fetch(url.toString())
-  const data = await res.json()
-
-  if (data?.success === false) {
-    throw new Error(data?.error?.info ?? 'Exchange rates request failed')
+  if (error) {
+    throw new Error(error.message)
   }
 
   if (!data?.rates) {
     throw new Error('Exchange rates response missing rates')
   }
 
-  const responseBase = data?.base ?? base
-  const fetchedAt = data?.timestamp ? data.timestamp * 1000 : Date.now()
-
-  return {
-    base: responseBase,
-    rates: data.rates as Record<string, number>,
-    fetchedAt,
-  }
+  return data as { base: string; rates: Record<string, number>; fetchedAt: number }
 }
 
 export function useExchangeRates(base: CurrencyCode) {
-  const apiKey = import.meta.env.VITE_EXCHANGERATES_API_KEY as string | undefined
-
   return useQuery<ExchangeRates & { fetchedAt: number }>({
     queryKey: ['exchange-rates', base],
-    enabled: Boolean(apiKey),
+    enabled: true,
     staleTime: CACHE_TTL_MS,
     queryFn: async () => {
       const cached = readCache(base)
