@@ -9,6 +9,7 @@ import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { useT } from '@/lib/hooks/useT'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton } from '@/components/ui/Skeleton'
+import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
 import { formatCompactAmount, formatCurrency, getMonthShortLabel } from '@/utils/format'
 import type { AnnualMonth } from '@/lib/hooks/useAnnualReport'
 import type { TranslationKey } from '@/lib/i18n'
@@ -88,6 +89,9 @@ export default function Analytics() {
   const expenseKey = t('analytics_expense')
   const incomeKey = t('analytics_income')
   const reportsTitle = lang === 'ko' ? '리포트' : 'Reports'
+  const summaryCurrency = tab === 'annual'
+    ? (annualData?.primaryCurrency ?? fallbackCurrency)
+    : analyticsCurrency
   const monthLabel = (() => {
     const [y, m] = selectedMonth.split('-').map(Number)
     const date = new Date(y, m - 1, 1)
@@ -146,14 +150,24 @@ export default function Analytics() {
         <div className="rounded-2xl bg-rose-50 px-3 py-2.5 dark:bg-rose-900/20">
           <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{expenseKey}</p>
           <p className="mt-1 text-sm font-bold tabular-nums text-rose-600 dark:text-rose-400">
-            {formatCurrency(tab === 'annual' ? (annualData?.totalExpense ?? 0) : (currentSeries?.expense ?? 0), tab === 'annual' ? (annualData?.primaryCurrency ?? fallbackCurrency) : analyticsCurrency)}
+            {formatCurrency(tab === 'annual' ? (annualData?.totalExpense ?? 0) : (currentSeries?.expense ?? 0), summaryCurrency)}
           </p>
+          <ConvertedAmount
+            amount={tab === 'annual' ? (annualData?.totalExpense ?? 0) : (currentSeries?.expense ?? 0)}
+            fromCurrency={summaryCurrency}
+            className="mt-0.5 block"
+          />
         </div>
         <div className="rounded-2xl bg-emerald-50 px-3 py-2.5 dark:bg-emerald-900/20">
           <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{incomeKey}</p>
           <p className="mt-1 text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-            {formatCurrency(tab === 'annual' ? (annualData?.totalIncome ?? 0) : (currentSeries?.income ?? 0), tab === 'annual' ? (annualData?.primaryCurrency ?? fallbackCurrency) : analyticsCurrency)}
+            {formatCurrency(tab === 'annual' ? (annualData?.totalIncome ?? 0) : (currentSeries?.income ?? 0), summaryCurrency)}
           </p>
+          <ConvertedAmount
+            amount={tab === 'annual' ? (annualData?.totalIncome ?? 0) : (currentSeries?.income ?? 0)}
+            fromCurrency={summaryCurrency}
+            className="mt-0.5 block"
+          />
         </div>
       </div>
 
@@ -218,6 +232,7 @@ export default function Analytics() {
                   {expenseDiffAmount !== null && (
                     <span className="ml-1.5 font-semibold tabular-nums">
                       ({expenseDiffAmount >= 0 ? '+' : '-'}{formatCurrency(Math.abs(expenseDiffAmount), analyticsCurrency)})
+                      <ConvertedAmount amount={Math.abs(expenseDiffAmount)} fromCurrency={analyticsCurrency} className="ml-1" />
                     </span>
                   )}
                 </p>

@@ -4,7 +4,7 @@ import { ChevronRight, Moon, Sun, Download, Upload, LogOut, User, Languages, Tar
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
-import { useUIStore } from '@/lib/stores/ui.store'
+import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useT } from '@/lib/hooks/useT'
 import { translations } from '@/lib/i18n'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -101,7 +101,7 @@ function NotifyToggleRow({
 export default function Settings() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
-  const { isDark, toggleDark, lang, setLang } = useUIStore()
+  const { isDark, toggleDark, lang, setLang, currency, setCurrency } = useUIStore()
   const t = useT()
   const tr = translations[lang]
   const [exportFrom, setExportFrom] = useState(getCurrentMonth())
@@ -225,6 +225,38 @@ export default function Settings() {
                 </button>
               }
             />
+          </div>
+        </div>
+
+        {/* 기본 통화 */}
+        <div>
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_currency_title')}</p>
+          <div className="card rounded-3xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Target className="h-4 w-4 text-slate-400" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_currency_label')}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{t('settings_currency_desc')}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+              {SUPPORTED_CURRENCIES.map((c) => (
+                <button
+                  key={c.code}
+                  onClick={() => setCurrency(c.code)}
+                  className={`h-full min-h-[68px] rounded-2xl border px-3 py-2 text-left transition active:scale-[0.99] ${
+                    currency === c.code
+                      ? 'border-[#0d8a7a] bg-[#dbefeb] text-[#0d8a7a] dark:bg-[#0d8a7a]/20 dark:text-[#9fe3d9]'
+                      : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'
+                  }`}
+                >
+                  <p className={`text-sm font-bold tracking-tight ${currency === c.code ? 'text-[#0d8a7a] dark:text-[#9fe3d9]' : 'text-slate-900 dark:text-white'}`}>
+                    {c.code}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">{lang === 'ko' ? c.label : c.labelEn}</p>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

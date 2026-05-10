@@ -11,15 +11,19 @@ import { translations } from '@/lib/i18n'
 import { useBudgetGoals } from '@/lib/hooks/useBudgetGoals'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton, TransactionSkeleton } from '@/components/ui/Skeleton'
+import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
+import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
+import { convertAmount } from '@/lib/utils/currency'
 import { formatCurrency } from '@/utils/format'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { selectedMonth, setSelectedMonth, lang } = useUIStore()
+  const { selectedMonth, setSelectedMonth, lang, currency: defaultCurrency } = useUIStore()
   const user = useAuthStore((s) => s.user)
   const { goals } = useBudgetGoals()
   useReminderCheck()
   const { data, isLoading } = useDashboard(selectedMonth)
+  const { data: ratesData } = useExchangeRates(defaultCurrency)
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const t = useT()
   const tr = translations[lang]
@@ -29,9 +33,24 @@ export default function Dashboard() {
   const totalExpense = data?.totalExpense ?? 0
   const prevExpenseSamePoint = data?.prevExpenseSamePoint ?? 0
   const netBalance = data?.netBalance ?? 0
-  const hasPrevComparison = prevExpenseSamePoint > 0
-  const monthDeltaPct = prevExpenseSamePoint > 0
-    ? Math.round(((prevExpenseSamePoint - totalExpense) / prevExpenseSamePoint) * 100)
+  const prevExpenseConverted = useMemo(() => {
+    if (!ratesData?.rates || !data?.prevExpenseRows) return null
+    return data.prevExpenseRows.reduce((sum, row) => {
+      const converted = convertAmount(row.amount, row.currency, defaultCurrency, ratesData.rates, ratesData.base)
+      return sum + (converted ?? 0)
+    }, 0)
+  }, [data?.prevExpenseRows, defaultCurrency, ratesData?.base, ratesData?.rates])
+
+  const currentExpenseConverted = useMemo(() => {
+    if (!ratesData?.rates) return null
+    return convertAmount(totalExpense, primaryCurrency, defaultCurrency, ratesData.rates, ratesData.base)
+  }, [defaultCurrency, primaryCurrency, ratesData?.base, ratesData?.rates, totalExpense])
+
+  const prevExpenseForComparison = prevExpenseConverted ?? prevExpenseSamePoint
+  const currentExpenseForComparison = currentExpenseConverted ?? totalExpense
+  const hasPrevComparison = prevExpenseForComparison > 0
+  const monthDeltaPct = prevExpenseForComparison > 0
+    ? Math.round(((prevExpenseForComparison - currentExpenseForComparison) / prevExpenseForComparison) * 100)
     : 0
   const isSpendingLess = hasPrevComparison && monthDeltaPct > 0
   const isSpendingMore = hasPrevComparison && monthDeltaPct < 0
@@ -80,11 +99,15 @@ export default function Dashboard() {
       label: t('dashboard_income'),
       display: formatCurrency(totalIncome, primaryCurrency),
       className: 'text-emerald-300',
+      amount: totalIncome,
+      currency: primaryCurrency,
     },
     {
       label: t('dashboard_expense'),
       display: formatCurrency(totalExpense, primaryCurrency),
       className: 'text-rose-300',
+      amount: totalExpense,
+      currency: primaryCurrency,
     },
     {
       label: t('dashboard_saved'),
@@ -149,6 +172,13 @@ export default function Dashboard() {
     return Array.from(s)[0] ?? '?'
   }
 
+  const getConvertedLabel = (amount: number, currency: string) => {
+    if (currency === defaultCurrency) return null
+    const converted = convertAmount(amount, currency, defaultCurrency, ratesData?.rates, ratesData?.base)
+    if (converted === null) return null
+    return formatCurrency(converted, defaultCurrency)
+  }
+
   return (
     <div className="pb-8 pt-1.5" {...swipe}>
       <header className="mx-4 rounded-[1.6rem] px-1 pb-1 pt-3">
@@ -184,6 +214,11 @@ export default function Dashboard() {
               <p className="mt-1.5 text-[clamp(1.9rem,6.3vw,3rem)] font-semibold leading-none tracking-tight tabular-nums">
                 {formatCurrency(Math.abs(netBalance), primaryCurrency)}
               </p>
+              <ConvertedAmount
+                amount={Math.abs(netBalance)}
+                fromCurrency={primaryCurrency}
+                className="mt-1 block text-[11px] text-white/55"
+              />
               <div className="mt-5 grid grid-cols-3 gap-2.5 border-t border-white/15 pt-3.5">
                 {summaryItems.map((item) => (
                   <div key={item.label} className="min-w-0">
@@ -191,6 +226,13 @@ export default function Dashboard() {
                     <p className={`mt-1 text-[0.92rem] font-semibold tabular-nums ${item.className}`}>
                       {item.display}
                     </p>
+                    {item.amount !== undefined && item.currency && (
+                      <ConvertedAmount
+                        amount={item.amount}
+                        fromCurrency={item.currency}
+                        className="mt-0.5 block text-[10px] text-white/55"
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -211,16 +253,19 @@ export default function Dashboard() {
                 <div className="text-center">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('dashboard_expense')}</p>
                   <p className="mt-1 text-sm font-bold tabular-nums text-rose-500">{formatCurrency(row.expense, row.currency)}</p>
+                  <ConvertedAmount amount={row.expense} fromCurrency={row.currency} className="mt-0.5 block" />
                 </div>
                 <div className="text-center">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('dashboard_income')}</p>
                   <p className="mt-1 text-sm font-bold tabular-nums text-emerald-500">{formatCurrency(row.income, row.currency)}</p>
+                  <ConvertedAmount amount={row.income} fromCurrency={row.currency} className="mt-0.5 block" />
                 </div>
                 <div className="text-center">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('dashboard_net')}</p>
                   <p className={`mt-1 text-sm font-bold tabular-nums ${row.net >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                     {formatCurrency(Math.abs(row.net), row.currency)}
                   </p>
+                  <ConvertedAmount amount={Math.abs(row.net)} fromCurrency={row.currency} className="mt-0.5 block" />
                 </div>
               </div>
             ))}
@@ -283,11 +328,17 @@ export default function Dashboard() {
                       })()}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-start justify-between gap-2">
                         <p className="truncate text-[0.9rem] font-semibold text-slate-900">{row.name}</p>
-                        <p className="text-[0.9rem] font-semibold text-slate-500 tabular-nums">
-                          {formatCurrency(row.spent, row.goal.currency)} / {formatCurrency(row.goal.amount, row.goal.currency)}
-                        </p>
+                        <div className="shrink-0 max-w-[52%] text-right text-[0.8rem] font-semibold text-slate-500 tabular-nums leading-tight">
+                          <span className="block break-all">{formatCurrency(row.spent, row.goal.currency)}</span>
+                          <span className="block break-all text-slate-400">/ {formatCurrency(row.goal.amount, row.goal.currency)}</span>
+                          {getConvertedLabel(row.spent, row.goal.currency) && getConvertedLabel(row.goal.amount, row.goal.currency) && (
+                            <span className="mt-0.5 block break-all text-[0.7rem] text-slate-400">
+                              {getConvertedLabel(row.spent, row.goal.currency)} / {getConvertedLabel(row.goal.amount, row.goal.currency)}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
                         <div
@@ -353,11 +404,14 @@ export default function Dashboard() {
                       <p className="truncate text-[0.82rem] font-semibold text-slate-900 dark:text-white">{tx.description}</p>
                       <p className="text-[0.72rem] text-slate-400">{cat?.name ?? '-'}</p>
                     </div>
-                    <span className={`text-[0.95rem] font-semibold tabular-nums ${
-                      tx.type === '지출' ? 'text-slate-900 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'
-                    }`}>
-                      {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
-                    </span>
+                    <div className="shrink-0 text-right">
+                      <span className={`block text-[0.95rem] font-semibold tabular-nums ${
+                        tx.type === '지출' ? 'text-slate-900 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'
+                      }`}>
+                        {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
+                      </span>
+                      <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} className="mt-0.5 block" />
+                    </div>
                   </div>
                 )
               })}

@@ -7,8 +7,11 @@ import { useBudgetGoals } from '@/lib/hooks/useBudgetGoals'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useMonthlyBudget } from '@/lib/hooks/useMonthlyBudget'
 import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
+import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
+import { convertAmount } from '@/lib/utils/currency'
 import { formatCurrency } from '@/utils/format'
 import { useT } from '@/lib/hooks/useT'
+import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
 import type { CurrencyCode } from '@/lib/stores/ui.store'
 
 export default function SettingsBudget() {
@@ -19,6 +22,7 @@ export default function SettingsBudget() {
   const { currency: defaultCurrency, selectedMonth, lang } = useUIStore()
   const { data: dashData } = useDashboard(selectedMonth)
   const { budget: monthlyBudget, setBudget: setMonthlyBudget } = useMonthlyBudget()
+  const { data: ratesData } = useExchangeRates(defaultCurrency)
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState('')
@@ -87,8 +91,24 @@ export default function SettingsBudget() {
 
   const spentByCategory = new Map((dashData?.categoryBreakdown ?? []).map((c) => [c.id, c.amount]))
   const goalEntries = categories?.filter((cat) => goals[cat.id]) ?? []
-  const totalBudget = goalEntries.reduce((sum, cat) => sum + (goals[cat.id]?.amount ?? 0), 0)
-  const totalSpent = goalEntries.reduce((sum, cat) => sum + (spentByCategory.get(cat.id) ?? 0), 0)
+  const toDefault = (amount: number, currency: string) => {
+    if (currency === defaultCurrency) return amount
+    const converted = convertAmount(amount, currency, defaultCurrency, ratesData?.rates, ratesData?.base)
+    return converted ?? amount
+  }
+
+  const totalBudget = goalEntries.reduce((sum, cat) => {
+    const goal = goals[cat.id]
+    if (!goal) return sum
+    return sum + toDefault(goal.amount, goal.currency)
+  }, 0)
+
+  const totalSpent = goalEntries.reduce((sum, cat) => {
+    const goal = goals[cat.id]
+    if (!goal) return sum
+    const spent = spentByCategory.get(cat.id) ?? 0
+    return sum + toDefault(spent, goal.currency)
+  }, 0)
   const remaining = Math.max(totalBudget - totalSpent, 0)
   const usedPct = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0
   const monthLabel = (() => {
@@ -102,6 +122,13 @@ export default function SettingsBudget() {
     const s = text.trim()
     if (!s) return '?'
     return Array.from(s)[0] ?? '?'
+  }
+
+  const getConvertedLabel = (amount: number, currency: string) => {
+    if (currency === defaultCurrency) return null
+    const converted = convertAmount(amount, currency, defaultCurrency, ratesData?.rates, ratesData?.base)
+    if (converted === null) return null
+    return formatCurrency(converted, defaultCurrency)
   }
 
   return (
@@ -178,6 +205,9 @@ export default function SettingsBudget() {
                   ? formatCurrency(monthlyBudget.amount, monthlyBudget.currency)
                   : t('monthly_budget_no_limit')}
               </p>
+              {monthlyBudget && (
+                <ConvertedAmount amount={monthlyBudget.amount} fromCurrency={monthlyBudget.currency} className="mt-0.5 block" />
+              )}
             </button>
           ) : (
             <div className="space-y-2.5">
@@ -285,13 +315,23 @@ export default function SettingsBudget() {
                           {cat.name}
                         </p>
                         {goal && !isEditing && (
-                          <div className="shrink-0 flex items-center gap-2 pl-2 text-[0.86rem] font-semibold tabular-nums">
-                            <span className="text-slate-500">
+                          <div className="shrink-0 max-w-[52%] pl-2 text-right text-[0.8rem] font-semibold tabular-nums leading-tight">
+                            <span className="block break-all text-slate-500">
                               {formatCurrency(spent, goal.currency)} / {formatCurrency(goal.amount, goal.currency)}
                             </span>
-                            <span className="text-slate-400">
+                            <span className="mt-0.5 block break-all text-[0.75rem] text-slate-400">
                               {formatCurrency(left, goal.currency)} {lang === 'ko' ? '남음' : 'left'}
                             </span>
+                            {getConvertedLabel(spent, goal.currency) && getConvertedLabel(goal.amount, goal.currency) && (
+                              <span className="mt-0.5 block break-all text-[0.7rem] text-slate-400">
+                                {getConvertedLabel(spent, goal.currency)} / {getConvertedLabel(goal.amount, goal.currency)}
+                              </span>
+                            )}
+                            {getConvertedLabel(left, goal.currency) && (
+                              <span className="mt-0.5 block break-all text-[0.7rem] text-slate-400">
+                                {getConvertedLabel(left, goal.currency)} {lang === 'ko' ? '남음' : 'left'}
+                              </span>
+                            )}
                           </div>
                         )}
                       </div>

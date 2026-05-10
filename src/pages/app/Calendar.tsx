@@ -6,6 +6,7 @@ import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { MonthPickerModal } from '@/components/ui/MonthPickerModal'
 import { CategoryBadge } from '@/components/ui/Badge'
+import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
 import { formatCurrency, formatDateShort, getCurrentMonth, getMonthLabelLocale } from '@/utils/format'
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -245,11 +246,13 @@ export default function Calendar() {
                     {selectedDaySummary.expenseByCurrency.map(({ currency: c, amount }) => (
                       <span key={c} className="text-xs font-semibold text-rose-500">
                         지출 {formatCurrency(amount, c)}
+                        <ConvertedAmount amount={amount} fromCurrency={c} className="ml-1" />
                       </span>
                     ))}
                     {selectedDaySummary.incomeByCurrency.map(({ currency: c, amount }) => (
                       <span key={c} className="text-xs font-semibold text-emerald-500">
                         수입 {formatCurrency(amount, c)}
+                        <ConvertedAmount amount={amount} fromCurrency={c} className="ml-1" />
                       </span>
                     ))}
                   </div>
@@ -315,9 +318,12 @@ export default function Calendar() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-sm font-bold tabular-nums ${tx.type === '지출' ? 'text-rose-500' : 'text-emerald-500'}`}>
-                        {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
-                      </span>
+                      <div className="text-right">
+                        <span className={`block text-sm font-bold tabular-nums ${tx.type === '지출' ? 'text-rose-500' : 'text-emerald-500'}`}>
+                          {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
+                        </span>
+                        <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} className="mt-0.5 block" />
+                      </div>
                       <button
                         onClick={() => navigate(`/transactions/${tx.id}/edit`)}
                         className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition"

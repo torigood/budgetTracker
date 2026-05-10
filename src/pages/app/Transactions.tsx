@@ -17,6 +17,9 @@ import { formatCurrency, formatDateShort, getRelativeDate, getMonthRange } from 
 import { supabase } from '@/lib/supabase'
 import { useT } from '@/lib/hooks/useT'
 import { useUIStore } from '@/lib/stores/ui.store'
+import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
+import { convertAmount } from '@/lib/utils/currency'
+import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
 import { translations } from '@/lib/i18n'
 import type { TransactionType } from '@/types/app'
 
@@ -61,7 +64,7 @@ function usePrevMonthSummary(currentMonth: string, enabled: boolean) {
 export default function Transactions() {
   const navigate = useNavigate()
   const t = useT()
-  const { lang } = useUIStore()
+  const { lang, currency: defaultCurrency } = useUIStore()
   const tr = translations[lang]
   const { filters, setMonth, setCategoryId, setType, setSearch, toggleSortOrder, resetFilters } = useFilterStore()
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -75,6 +78,7 @@ export default function Transactions() {
   const { data: categories } = useCategories()
   const deleteMutation = useDeleteTransaction()
   const swipe = useSwipeMonth(filters.month, setMonth)
+  const { data: ratesData } = useExchangeRates(defaultCurrency)
 
   const hasActiveFilter = !!(filters.categoryId || filters.type)
   const allTransactions = data?.pages.flat() as TxWithCategory[] | undefined
@@ -311,14 +315,23 @@ export default function Transactions() {
         ) : (
           Object.entries(grouped).map(([dateLabel, txs]) => {
             const dayExpense = txs.filter(t => t.type === '지출').reduce((s, t) => s + t.amount, 0)
+            const dayExpenseConverted = ratesData?.rates
+              ? txs
+                .filter(t => t.type === '지출')
+                .reduce((sum, t) => {
+                  const converted = convertAmount(t.amount, t.currency, defaultCurrency, ratesData.rates, ratesData.base)
+                  return sum + (converted ?? 0)
+                }, 0)
+              : null
+            const dayExpenseDisplay = dayExpenseConverted ?? dayExpense
             return (
               <div key={dateLabel} className="mt-3 overflow-hidden rounded-[1.75rem] border border-white/70 bg-white/80 shadow-sm backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
                 {/* Date group header */}
                 <div className="flex items-center justify-between px-5 py-3">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{dateLabel}</span>
-                  {dayExpense > 0 && (
+                  {dayExpenseDisplay > 0 && (
                     <span className="text-xs font-semibold text-rose-400 tabular-nums">
-                      -{formatCurrency(dayExpense)}
+                      -{formatCurrency(dayExpenseDisplay, defaultCurrency)}
                     </span>
                   )}
                 </div>
@@ -421,13 +434,16 @@ function TransactionRow({
         <p className="text-xs text-slate-400 mt-0.5">{tx.payment_method}</p>
       </div>
 
-      <span
-        className={`text-sm font-semibold tabular-nums shrink-0 ${
-          tx.type === '지출' ? 'text-rose-500' : 'text-emerald-500'
-        }`}
-      >
-        {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
-      </span>
+      <div className="shrink-0 text-right">
+        <span
+          className={`block text-sm font-semibold tabular-nums ${
+            tx.type === '지출' ? 'text-rose-500' : 'text-emerald-500'
+          }`}
+        >
+          {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
+        </span>
+        <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} className="mt-0.5 block" />
+      </div>
 
       {/* Inline action buttons — appear on tap, positioned to the right */}
       <div
@@ -500,6 +516,7 @@ function TransactionDetailModal({
               {tx.type === '지출' ? '-' : '+'}
               {formatCurrency(tx.amount, tx.currency)}
             </p>
+            <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} className="mt-1 block" />
           </div>
 
           <div className="grid grid-cols-1 gap-3">

@@ -59,8 +59,12 @@ export function useDashboard(month: string) {
 
       if (prevError) throw prevError
 
-      const prevExpenseSamePoint = (prevRows ?? [])
-        .filter((t) => t.type === '지출' && (t.currency ?? 'CAD') === primaryCurrency)
+      const prevExpenseRows = (prevRows ?? [])
+        .filter((t) => t.type === '지출')
+        .map((t) => ({ amount: t.amount, currency: t.currency ?? 'CAD' }))
+
+      const prevExpenseSamePoint = prevExpenseRows
+        .filter((t) => t.currency === primaryCurrency)
         .reduce((sum, t) => sum + t.amount, 0)
 
       const categoryMap: Record<string, { name: string; color: string; icon: string; amount: number }> = {}
@@ -86,6 +90,7 @@ export function useDashboard(month: string) {
         totalIncome,
         netBalance,
         prevExpenseSamePoint,
+        prevExpenseRows,
         categoryBreakdown,
         recentTransactions,
         byCurrency,
