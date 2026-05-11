@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { todayISO, formatCurrency } from '@/utils/format'
-import { loadBudgetGoals } from './useBudgetGoals'
-import { loadMonthlyBudget } from './useMonthlyBudget'
+import { fetchBudgetGoalsForMonth } from './useBudgetGoals'
+import { fetchMonthlyBudgetForMonth } from './useMonthlyBudget'
 
 // ─── Push subscription ────────────────────────────────────────────────────────
 
@@ -119,9 +119,22 @@ export async function checkBudgetAlert(categoryId: string, categoryName: string)
   const { budgetEnabled } = getNotifySettings()
   if (!budgetEnabled) return
 
-  const goals = loadBudgetGoals()
+  const { data: userData } = await supabase.auth.getUser()
+  const userId = userData.user?.id
+  if (!userId) return
+
+  const goals = await fetchBudgetGoalsForMonth(userId, monthKeyNow())
   const goal = goals[categoryId]
   if (!goal) return
+
+  let goalAmount = goal.amount
+  let goalCurrency = goal.currency
+  if (goal.type === 'percent') {
+    const budget = await fetchMonthlyBudgetForMonth(userId, monthKeyNow())
+    if (!budget || budget.amount <= 0) return
+    goalAmount = (budget.amount * (goal.percent ?? 0)) / 100
+    goalCurrency = budget.currency
+  }
 
   const now = new Date()
   const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
@@ -132,22 +145,22 @@ export async function checkBudgetAlert(categoryId: string, categoryName: string)
     .select('amount')
     .eq('category_id', categoryId)
     .eq('type', '지출')
-    .eq('currency', goal.currency)
+    .eq('currency', goalCurrency)
     .gte('date', monthStart)
     .lte('date', today)
 
   const total = (data ?? []).reduce((s: number, r: { amount: number }) => s + r.amount, 0)
-  const pct = Math.round((total / goal.amount) * 100)
+  const pct = goalAmount > 0 ? Math.round((total / goalAmount) * 100) : 0
 
   if (pct >= 100) {
     fire(
       `${categoryName} 예산 초과!`,
-      `${formatCurrency(total, goal.currency)} / ${formatCurrency(goal.amount, goal.currency)} (${pct}%)`
+      `${formatCurrency(total, goalCurrency)} / ${formatCurrency(goalAmount, goalCurrency)} (${pct}%)`
     )
   } else if (pct >= 80) {
     fire(
       `${categoryName} 예산 ${pct}% 달성`,
-      `${formatCurrency(total, goal.currency)} / ${formatCurrency(goal.amount, goal.currency)}`
+      `${formatCurrency(total, goalCurrency)} / ${formatCurrency(goalAmount, goalCurrency)}`
     )
   }
 }
@@ -156,7 +169,11 @@ export async function checkMonthlyBudgetAlert() {
   const { monthlyBudgetEnabled } = getNotifySettings()
   if (!monthlyBudgetEnabled) return
 
-  const budget = loadMonthlyBudget()
+  const { data: userData } = await supabase.auth.getUser()
+  const userId = userData.user?.id
+  if (!userId) return
+
+  const budget = await fetchMonthlyBudgetForMonth(userId, monthKeyNow())
   if (!budget || budget.amount <= 0) return
 
   const monthKey = monthKeyNow()

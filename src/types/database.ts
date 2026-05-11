@@ -205,6 +205,9 @@ export interface Database {
           category_id: string
           month: string
           limit_amount: number
+          currency: string
+          limit_percent: number | null
+          limit_type: string
           created_at: string
         }
         Insert: {
@@ -213,6 +216,9 @@ export interface Database {
           category_id: string
           month: string
           limit_amount: number
+          currency: string
+          limit_percent?: number | null
+          limit_type?: string
           created_at?: string
         }
         Update: {
@@ -221,6 +227,35 @@ export interface Database {
           category_id?: string
           month?: string
           limit_amount?: number
+          currency?: string
+          limit_percent?: number | null
+          limit_type?: string
+          created_at?: string
+        }
+      }
+      monthly_budgets: {
+        Row: {
+          id: string
+          user_id: string
+          month: string
+          amount: number
+          currency: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          month: string
+          amount: number
+          currency: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          month?: string
+          amount?: number
+          currency?: string
           created_at?: string
         }
       }

@@ -8,7 +8,7 @@ import { useAuthStore } from '@/lib/stores/auth.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { useT } from '@/lib/hooks/useT'
 import { translations } from '@/lib/i18n'
-import { useBudgetGoals } from '@/lib/hooks/useBudgetGoals'
+import { useMonthlyBudget } from '@/lib/hooks/useMonthlyBudget'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton, TransactionSkeleton } from '@/components/ui/Skeleton'
 import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
@@ -20,7 +20,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const { selectedMonth, setSelectedMonth, lang, currency: defaultCurrency } = useUIStore()
   const user = useAuthStore((s) => s.user)
-  const { goals } = useBudgetGoals()
+  const { budget: monthlyBudget } = useMonthlyBudget(selectedMonth)
   useReminderCheck()
   const { data, isLoading } = useDashboard(selectedMonth)
   const { data: ratesData } = useExchangeRates(defaultCurrency)
@@ -144,36 +144,31 @@ export default function Dashboard() {
     return `Early dawn, ${userName}`
   })()
 
-  const budgetGoalRows = (data?.categoryBreakdown ?? [])
-    .map((cat) => {
-      const goal = goals[cat.id]
-      if (!goal) return null
-      const spent = cat.amount
-      const pct = Math.min(Math.round((spent / goal.amount) * 100), 100)
-      const left = Math.max(goal.amount - spent, 0)
-      return {
-        ...cat,
-        goal,
-        spent,
-        pct,
-        left,
-      }
-    })
-    .filter((row): row is NonNullable<typeof row> => !!row)
+  const expenseTransactions = useMemo(() => {
+    return (data?.transactions ?? []).filter((tx) => tx.type === '지출')
+  }, [data?.transactions])
 
-  const firstSymbol = (text?: string | null) => {
-    if (!text) return '?'
-    const s = text.trim()
-    if (!s) return '?'
-    return Array.from(s)[0] ?? '?'
-  }
+  const totalSpentPrimary = expenseTransactions.reduce((sum, tx) => {
+    const converted = convertAmount(tx.amount, tx.currency, primaryCurrency, ratesData?.rates, ratesData?.base)
+    if (converted === null && tx.currency === primaryCurrency) return sum + tx.amount
+    return sum + (converted ?? 0)
+  }, 0)
 
-  const getConvertedLabel = (amount: number, currency: string) => {
-    if (currency === defaultCurrency) return null
-    const converted = convertAmount(amount, currency, defaultCurrency, ratesData?.rates, ratesData?.base)
-    if (converted === null) return null
-    return formatCurrency(converted, defaultCurrency)
-  }
+  const displayCurrency = monthlyBudget ? monthlyBudget.currency : primaryCurrency
+
+  const monthlyBudgetAmountDisplay = monthlyBudget
+    ? (convertAmount(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
+        ?? (monthlyBudget.currency === displayCurrency ? monthlyBudget.amount : 0))
+    : 0
+
+  const totalSpentDisplay = displayCurrency === primaryCurrency
+    ? totalSpentPrimary
+    : (convertAmount(totalSpentPrimary, primaryCurrency, displayCurrency, ratesData?.rates, ratesData?.base) ?? 0)
+
+  const budgetRemaining = Math.max(monthlyBudgetAmountDisplay - totalSpentDisplay, 0)
+  const budgetUsedPct = monthlyBudgetAmountDisplay > 0
+    ? Math.min(Math.round((totalSpentDisplay / monthlyBudgetAmountDisplay) * 100), 100)
+    : 0
 
   return (
     <div className="pb-8 pt-1.5" {...swipe}>
@@ -298,56 +293,38 @@ export default function Dashboard() {
             </button>
           </div>
 
-          {!budgetGoalRows.length ? (
-            <div className="card rounded-3xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-center">
-              <p className="text-sm font-semibold text-slate-700">{t('dashboard_budget_set_prompt')}</p>
-              <p className="mt-1 text-xs text-slate-400">{t('dashboard_budget_set_desc')}</p>
-              <button
-                onClick={() => navigate('/settings/budget')}
-                className="mt-3 rounded-full bg-[#dbefeb] px-3 py-1.5 text-xs font-semibold text-[#0d8a7a]"
-              >
-                {t('dashboard_budget_set_cta')}
-              </button>
+          <div className="card rounded-3xl border border-slate-200/90 bg-white px-4 py-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{t('monthly_budget_title')}</p>
+                <p className="mt-1 text-[1.1rem] font-semibold tracking-tight text-slate-900 tabular-nums">
+                  {formatCurrency(totalSpentDisplay, displayCurrency)}
+                </p>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  {t('monthly_budget_used')(budgetUsedPct)}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">{lang === 'ko' ? '예산' : 'Budget'}</p>
+                <p className="mt-1 text-[1.05rem] font-semibold text-[#0d8a7a] tabular-nums">
+                  {monthlyBudgetAmountDisplay > 0
+                    ? formatCurrency(monthlyBudgetAmountDisplay, displayCurrency)
+                    : t('monthly_budget_no_limit')}
+                </p>
+                <p className="mt-1 text-[11px] font-semibold text-[#0d8a7a]">
+                  {monthlyBudgetAmountDisplay > 0
+                    ? t('monthly_budget_remaining')(formatCurrency(budgetRemaining, displayCurrency))
+                    : t('monthly_budget_no_limit')}
+                </p>
+              </div>
             </div>
-          ) : (
-            <div className="card overflow-hidden rounded-3xl border border-slate-200/90">
-              {budgetGoalRows.map((row) => (
-                <div key={row.id} className="border-b border-slate-100 px-4 py-2.5 last:border-b-0">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-sm font-bold"
-                      style={{ backgroundColor: `${row.color}20`, color: row.color }}
-                    >
-                      {(() => {
-                        const rawIcon = row.icon?.trim() ?? ''
-                        return rawIcon && !/^[a-z0-9_-]+$/i.test(rawIcon) ? rawIcon : firstSymbol(row.name)
-                      })()}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="truncate text-[0.9rem] font-semibold text-slate-900">{row.name}</p>
-                        <div className="shrink-0 max-w-[52%] text-right text-[0.8rem] font-semibold text-slate-500 tabular-nums leading-tight">
-                          <span className="block break-all">{formatCurrency(row.spent, row.goal.currency)}</span>
-                          <span className="block break-all text-slate-400">/ {formatCurrency(row.goal.amount, row.goal.currency)}</span>
-                          {getConvertedLabel(row.spent, row.goal.currency) && getConvertedLabel(row.goal.amount, row.goal.currency) && (
-                            <span className="mt-0.5 block break-all text-[0.7rem] text-slate-400">
-                              {getConvertedLabel(row.spent, row.goal.currency)} / {getConvertedLabel(row.goal.amount, row.goal.currency)}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                        <div
-                          className="h-full rounded-full"
-                          style={{ width: `${row.pct}%`, backgroundColor: row.color }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+              <div
+                className="h-full rounded-full bg-[#0d8a7a]"
+                style={{ width: `${budgetUsedPct}%` }}
+              />
             </div>
-          )}
+          </div>
         </div>
 
         {/* 최근 거래 */}

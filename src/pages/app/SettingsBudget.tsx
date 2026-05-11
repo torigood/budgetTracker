@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ChevronLeft, Target, Check, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -11,35 +11,51 @@ import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
 import { convertAmount } from '@/lib/utils/currency'
 import { formatCurrency } from '@/utils/format'
 import { useT } from '@/lib/hooks/useT'
-import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
 import type { CurrencyCode } from '@/lib/stores/ui.store'
 
 export default function SettingsBudget() {
   const navigate = useNavigate()
   const t = useT()
   const { data: categories, isLoading } = useCategories()
-  const { goals, setGoal } = useBudgetGoals()
   const { currency: defaultCurrency, selectedMonth, lang } = useUIStore()
+  const { goals, setGoal, setAllCurrencies } = useBudgetGoals(selectedMonth)
   const { data: dashData } = useDashboard(selectedMonth)
-  const { budget: monthlyBudget, setBudget: setMonthlyBudget } = useMonthlyBudget()
+  const { budget: monthlyBudget, setBudget: setMonthlyBudget } = useMonthlyBudget(selectedMonth)
   const { data: ratesData } = useExchangeRates(defaultCurrency)
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editAmount, setEditAmount] = useState('')
-  const [editCurrency, setEditCurrency] = useState<CurrencyCode>(defaultCurrency)
   const [isMonthlyEditorOpen, setIsMonthlyEditorOpen] = useState(false)
-  const [monthlyAmount, setMonthlyAmount] = useState(() =>
-    monthlyBudget?.amount ? String(monthlyBudget.amount) : ''
-  )
-  const [monthlyCurrency, setMonthlyCurrency] = useState<CurrencyCode>(
-    monthlyBudget?.currency ?? defaultCurrency
-  )
+  const [monthlyAmount, setMonthlyAmount] = useState('')
+  const [monthlyCurrency, setMonthlyCurrency] = useState<CurrencyCode>(defaultCurrency)
+  const [budgetInputMode, setBudgetInputMode] = useState<'percent' | 'amount'>('percent')
+
+  const primaryCurrency = (dashData?.primaryCurrency ?? defaultCurrency) as CurrencyCode
 
   function openEdit(categoryId: string) {
     const existing = goals[categoryId]
-    setEditAmount(existing ? String(existing.amount) : '')
-    setEditCurrency(existing?.currency ?? defaultCurrency)
+    if (budgetInputMode === 'percent') {
+      if (existing?.type === 'percent' && existing.percent !== null) {
+        setEditAmount(String(existing.percent))
+      } else if (existing && monthlyBudget?.amount) {
+        const pct = Math.round((existing.amount / monthlyBudget.amount) * 1000) / 10
+        setEditAmount(String(pct))
+      } else {
+        setEditAmount('')
+      }
+    } else {
+      setEditAmount(existing ? String(existing.amount) : '')
+    }
     setEditingId(categoryId)
+  }
+
+  function toggleEdit(categoryId: string) {
+    if (editingId === categoryId) {
+      setEditingId(null)
+      setEditAmount('')
+      return
+    }
+    openEdit(categoryId)
   }
 
   function cancelEdit() {
@@ -47,13 +63,43 @@ export default function SettingsBudget() {
     setEditAmount('')
   }
 
-  function saveEdit(categoryId: string) {
+  async function saveEdit(categoryId: string) {
     const amount = parseFloat(editAmount)
     if (isNaN(amount) || amount <= 0) {
       toast.error('올바른 금액을 입력해주세요')
       return
     }
-    setGoal(categoryId, { amount, currency: editCurrency })
+    if (budgetInputMode === 'percent') {
+      if (!monthlyBudget || monthlyBudget.amount <= 0) {
+        toast.error('월 전체 예산을 먼저 설정해주세요')
+        return
+      }
+      if (amount > 100) {
+        toast.error('비율은 100%를 넘을 수 없습니다')
+        return
+      }
+      const otherTotal = Object.entries(goals)
+        .filter(([id]) => id !== categoryId)
+        .reduce((sum, [, goal]) => sum + (goal.type === 'percent' ? (goal.percent ?? 0) : 0), 0)
+      if (otherTotal + amount > 100) {
+        toast.error('전체 비율이 100%를 넘을 수 없습니다')
+        return
+      }
+      const computedAmount = (monthlyBudget.amount * amount) / 100
+      await setGoal(categoryId, {
+        amount: computedAmount,
+        currency: monthlyBudget.currency,
+        percent: amount,
+        type: 'percent',
+      })
+      toast.success(t('budget_saved'))
+      setEditingId(null)
+      setEditAmount('')
+      return
+    }
+    const targetCurrency = monthlyBudget?.currency ?? primaryCurrency
+    await setAllCurrencies(targetCurrency)
+    await setGoal(categoryId, { amount, currency: targetCurrency, percent: null, type: 'amount' })
     toast.success(t('budget_saved'))
     setEditingId(null)
     setEditAmount('')
@@ -62,15 +108,20 @@ export default function SettingsBudget() {
   function deleteGoal(categoryId: string) {
     setGoal(categoryId, null)
     toast.success(t('budget_deleted'))
+    setEditingId(null)
+    setEditAmount('')
   }
 
-  function saveMonthlyBudget() {
+  async function saveMonthlyBudget() {
     const amount = parseFloat(monthlyAmount)
     if (isNaN(amount) || amount <= 0) {
       toast.error('올바른 금액을 입력해주세요')
       return
     }
-    setMonthlyBudget({ amount, currency: monthlyCurrency })
+    if (budgetInputMode === 'amount') {
+      await setAllCurrencies(monthlyCurrency)
+    }
+    await setMonthlyBudget({ amount, currency: monthlyCurrency })
     toast.success(t('monthly_budget_saved'))
     setIsMonthlyEditorOpen(false)
   }
@@ -78,39 +129,77 @@ export default function SettingsBudget() {
   function clearMonthlyBudget() {
     setMonthlyBudget(null)
     setMonthlyAmount('')
-    setMonthlyCurrency(defaultCurrency)
+    setMonthlyCurrency(primaryCurrency)
     toast.success(t('monthly_budget_deleted'))
     setIsMonthlyEditorOpen(false)
   }
 
   function openMonthlyEditor() {
     setMonthlyAmount(monthlyBudget?.amount ? String(monthlyBudget.amount) : '')
-    setMonthlyCurrency(monthlyBudget?.currency ?? defaultCurrency)
+    if (!monthlyBudget) {
+      setMonthlyCurrency(primaryCurrency)
+      return
+    }
+    setMonthlyCurrency(monthlyBudget.currency)
     setIsMonthlyEditorOpen(true)
   }
 
-  const spentByCategory = new Map((dashData?.categoryBreakdown ?? []).map((c) => [c.id, c.amount]))
-  const goalEntries = categories?.filter((cat) => goals[cat.id]) ?? []
-  const toDefault = (amount: number, currency: string) => {
-    if (currency === defaultCurrency) return amount
-    const converted = convertAmount(amount, currency, defaultCurrency, ratesData?.rates, ratesData?.base)
-    return converted ?? amount
+  useEffect(() => {
+    if (monthlyBudget) {
+      setMonthlyAmount(String(monthlyBudget.amount))
+      setMonthlyCurrency(monthlyBudget.currency)
+      return
+    }
+    setMonthlyAmount('')
+    setMonthlyCurrency(primaryCurrency)
+  }, [monthlyBudget, primaryCurrency, selectedMonth])
+  const expenseTransactions = useMemo(() => {
+    return (dashData?.transactions ?? []).filter((tx) => tx.type === '지출')
+  }, [dashData?.transactions])
+
+  const toPrimary = (amount: number, currency: string) => {
+    if (currency === primaryCurrency) return amount
+    const converted = convertAmount(amount, currency, primaryCurrency, ratesData?.rates, ratesData?.base)
+    if (converted === null && currency === primaryCurrency) return amount
+    return converted ?? 0
   }
 
-  const totalBudget = goalEntries.reduce((sum, cat) => {
-    const goal = goals[cat.id]
-    if (!goal) return sum
-    return sum + toDefault(goal.amount, goal.currency)
+  const totalSpentPrimary = expenseTransactions.reduce((sum, tx) => {
+    return sum + toPrimary(tx.amount, tx.currency)
   }, 0)
 
-  const totalSpent = goalEntries.reduce((sum, cat) => {
-    const goal = goals[cat.id]
-    if (!goal) return sum
-    const spent = spentByCategory.get(cat.id) ?? 0
-    return sum + toDefault(spent, goal.currency)
-  }, 0)
-  const remaining = Math.max(totalBudget - totalSpent, 0)
-  const usedPct = totalBudget > 0 ? Math.min(Math.round((totalSpent / totalBudget) * 100), 100) : 0
+  const displayCurrency = monthlyBudget ? monthlyBudget.currency : primaryCurrency
+
+  const monthlyBudgetAmountDisplay = monthlyBudget
+    ? (convertAmount(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
+        ?? (monthlyBudget.currency === displayCurrency ? monthlyBudget.amount : 0))
+    : 0
+
+  const totalSpentDisplay = displayCurrency === primaryCurrency
+    ? totalSpentPrimary
+    : (convertAmount(totalSpentPrimary, primaryCurrency, displayCurrency, ratesData?.rates, ratesData?.base) ?? 0)
+
+  const remaining = Math.max(monthlyBudgetAmountDisplay - totalSpentDisplay, 0)
+  const usedPct = monthlyBudgetAmountDisplay > 0
+    ? Math.min(Math.round((totalSpentDisplay / monthlyBudgetAmountDisplay) * 100), 100)
+    : 0
+
+  const spentByCategory = useMemo(() => {
+    const map = new Map<string, number>()
+    expenseTransactions.forEach((tx) => {
+      if (!tx.category_id) return
+      const goal = goals[tx.category_id]
+      if (!goal) return
+      const goalCurrency = goal.type === 'percent'
+        ? (monthlyBudget?.currency ?? primaryCurrency)
+        : goal.currency
+      const converted = convertAmount(tx.amount, tx.currency, goalCurrency, ratesData?.rates, ratesData?.base)
+      if (converted === null && tx.currency !== goalCurrency) return
+      const next = (map.get(tx.category_id) ?? 0) + (converted ?? tx.amount)
+      map.set(tx.category_id, next)
+    })
+    return map
+  }, [expenseTransactions, goals, monthlyBudget?.currency, primaryCurrency, ratesData?.base, ratesData?.rates])
   const monthLabel = (() => {
     const [y, m] = selectedMonth.split('-').map(Number)
     const date = new Date(y, m - 1, 1)
@@ -170,46 +259,87 @@ export default function SettingsBudget() {
           </button>
         </div>
 
-        <div className="card rounded-[1.2rem] border border-slate-200/75 bg-white px-3 py-3 shadow-sm dark:border-slate-800/80">
-          <div className="mb-3 flex items-center justify-between">
-            <div>
-              <h2 className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">{t('monthly_budget_title')}</h2>
-              <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">{t('monthly_budget_desc')}</p>
-            </div>
+        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2">
+          <span className="text-[11px] font-semibold text-slate-500">입력 방식</span>
+          <div className="flex gap-1">
             <button
               type="button"
-              onClick={() => {
-                if (isMonthlyEditorOpen) {
-                  setIsMonthlyEditorOpen(false)
-                  return
-                }
-                openMonthlyEditor()
-              }}
-              className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              onClick={() => setBudgetInputMode('percent')}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                budgetInputMode === 'percent'
+                  ? 'bg-[#0d8a7a] text-white'
+                  : 'border border-slate-200 text-slate-500'
+              }`}
             >
-              {isMonthlyEditorOpen ? t('budget_cancel') : monthlyBudget ? t('tx_edit') : t('monthly_budget_set')}
+              퍼센트
+            </button>
+            <button
+              type="button"
+              onClick={() => setBudgetInputMode('amount')}
+              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                budgetInputMode === 'amount'
+                  ? 'bg-[#0d8a7a] text-white'
+                  : 'border border-slate-200 text-slate-500'
+              }`}
+            >
+              금액
             </button>
           </div>
+        </div>
 
-          {!isMonthlyEditorOpen ? (
-            <button
-              type="button"
-              onClick={openMonthlyEditor}
-              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-left transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800/60 dark:hover:bg-slate-800"
-            >
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                {t('monthly_budget_title')}
-              </p>
-              <p className="mt-1 text-[0.9rem] font-semibold text-slate-900 tabular-nums dark:text-white">
-                {monthlyBudget
-                  ? formatCurrency(monthlyBudget.amount, monthlyBudget.currency)
+        <button
+          type="button"
+          onClick={() => {
+            if (isMonthlyEditorOpen) {
+              setIsMonthlyEditorOpen(false)
+              return
+            }
+            openMonthlyEditor()
+          }}
+          className="w-full rounded-[1.3rem] border border-[#8de0d4]/80 bg-[#c4ece5] px-3 py-3 text-left transition hover:bg-[#b8e7de]"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0d8a7a]">{lang === 'ko' ? '이번 달 사용' : 'Spent this month'}</p>
+              <p className="mt-1 text-[1.4rem] font-semibold tracking-tight text-slate-950 tabular-nums">{formatCurrency(totalSpentDisplay, displayCurrency)}</p>
+            </div>
+            <div className="pt-1 text-right">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">{lang === 'ko' ? '예산' : 'Budget'}</p>
+              <p className="mt-1 text-[1.04rem] font-semibold tracking-tight text-[#0d8a7a] tabular-nums">
+                {monthlyBudgetAmountDisplay > 0
+                  ? formatCurrency(monthlyBudgetAmountDisplay, displayCurrency)
                   : t('monthly_budget_no_limit')}
               </p>
-              {monthlyBudget && (
-                <ConvertedAmount amount={monthlyBudget.amount} fromCurrency={monthlyBudget.currency} className="mt-0.5 block" />
-              )}
-            </button>
-          ) : (
+            </div>
+          </div>
+          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/65">
+            <div className="h-full rounded-full bg-[#0d8a7a]" style={{ width: `${usedPct}%` }} />
+          </div>
+          <div className="mt-1.5 flex items-center justify-between text-[11px]">
+            <p className="font-semibold text-slate-500">{t('monthly_budget_used')(usedPct)}</p>
+            <p className="font-semibold text-[#0d8a7a]">
+              {monthlyBudgetAmountDisplay > 0
+                ? t('monthly_budget_remaining')(formatCurrency(remaining, displayCurrency))
+                : t('monthly_budget_no_limit')}
+            </p>
+          </div>
+        </button>
+
+        {isMonthlyEditorOpen && (
+          <div className="card rounded-[1.2rem] border border-slate-200/75 bg-white px-3 py-3 shadow-sm dark:border-slate-800/80">
+            <div className="mb-2 flex items-center justify-between">
+              <div>
+                <h2 className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">{t('monthly_budget_title')}</h2>
+                <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">{t('monthly_budget_desc')}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsMonthlyEditorOpen(false)}
+                className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              >
+                {t('budget_cancel')}
+              </button>
+            </div>
             <div className="space-y-2.5">
               <input
                 type="number"
@@ -250,28 +380,8 @@ export default function SettingsBudget() {
                 </button>
               </div>
             </div>
-          )}
-        </div>
-
-        <div className="rounded-[1.3rem] border border-[#8de0d4]/80 bg-[#c4ece5] px-3 py-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0d8a7a]">{lang === 'ko' ? '이번 달 사용' : 'Spent this month'}</p>
-              <p className="mt-1 text-[1.4rem] font-semibold tracking-tight text-slate-950 tabular-nums">{formatCurrency(totalSpent, defaultCurrency)}</p>
-            </div>
-            <div className="pt-1 text-right">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">{lang === 'ko' ? '예산' : 'Budget'}</p>
-              <p className="mt-1 text-[1.04rem] font-semibold tracking-tight text-[#0d8a7a] tabular-nums">{formatCurrency(totalBudget, defaultCurrency)}</p>
-            </div>
           </div>
-          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/65">
-            <div className="h-full rounded-full bg-[#0d8a7a]" style={{ width: `${usedPct}%` }} />
-          </div>
-          <div className="mt-1.5 flex items-center justify-between text-[11px]">
-            <span className="text-slate-500">{usedPct}% {lang === 'ko' ? '사용' : 'used'}</span>
-            <span className="font-semibold text-[#1f8d56] tabular-nums">{formatCurrency(remaining, defaultCurrency)} {lang === 'ko' ? '남음' : 'remaining'}</span>
-          </div>
-        </div>
+        )}
 
         {isLoading ? (
           <div className="space-y-2">
@@ -285,14 +395,22 @@ export default function SettingsBudget() {
               const goal = goals[cat.id]
               const isEditing = editingId === cat.id
               const spent = spentByCategory.get(cat.id) ?? 0
-              const pct = goal ? Math.min(Math.round((spent / goal.amount) * 100), 100) : 0
-              const left = goal ? Math.max(goal.amount - spent, 0) : 0
+              const goalCurrency = goal?.type === 'percent'
+                ? (monthlyBudget?.currency ?? primaryCurrency)
+                : (goal?.currency ?? primaryCurrency)
+              const goalAmount = goal
+                ? (goal.type === 'percent'
+                  ? ((monthlyBudget?.amount ?? 0) * (goal.percent ?? 0)) / 100
+                  : goal.amount)
+                : 0
+              const pct = goalAmount > 0 ? Math.min(Math.round((spent / goalAmount) * 100), 100) : 0
+              const left = goalAmount > 0 ? Math.max(goalAmount - spent, 0) : 0
               const barColor = cat.color || '#0d8a7a'
 
               return (
                 <div
                   key={cat.id}
-                  onClick={!isEditing ? () => openEdit(cat.id) : undefined}
+                  onClick={() => toggleEdit(cat.id)}
                   className={`card rounded-[1.45rem] border border-slate-200/90 bg-white px-3.5 py-3.5 shadow-sm dark:border-slate-800 ${
                     !isEditing ? 'cursor-pointer transition hover:bg-slate-50/60 dark:hover:bg-slate-800/40' : ''
                   }`}
@@ -317,17 +435,26 @@ export default function SettingsBudget() {
                         {goal && !isEditing && (
                           <div className="shrink-0 max-w-[52%] pl-2 text-right text-[0.8rem] font-semibold tabular-nums leading-tight">
                             <span className="block break-all text-slate-500">
-                              {formatCurrency(spent, goal.currency)} / {formatCurrency(goal.amount, goal.currency)}
+                              {goalAmount > 0 && goalCurrency
+                                ? `${formatCurrency(spent, goalCurrency)} / ${formatCurrency(goalAmount, goalCurrency)}`
+                                : t('monthly_budget_no_limit')}
                             </span>
+                            {goal?.type === 'percent' && (
+                              <span className="mt-0.5 block break-all text-[0.75rem] text-slate-400">
+                                {goal.percent ?? 0}%
+                              </span>
+                            )}
                             <span className="mt-0.5 block break-all text-[0.75rem] text-slate-400">
-                              {formatCurrency(left, goal.currency)} {lang === 'ko' ? '남음' : 'left'}
+                              {goalAmount > 0 && goalCurrency
+                                ? `${formatCurrency(left, goalCurrency)} ${lang === 'ko' ? '남음' : 'left'}`
+                                : t('monthly_budget_no_limit')}
                             </span>
-                            {getConvertedLabel(spent, goal.currency) && getConvertedLabel(goal.amount, goal.currency) && (
+                            {goal?.type === 'amount' && getConvertedLabel(spent, goal.currency) && getConvertedLabel(goal.amount, goal.currency) && (
                               <span className="mt-0.5 block break-all text-[0.7rem] text-slate-400">
                                 {getConvertedLabel(spent, goal.currency)} / {getConvertedLabel(goal.amount, goal.currency)}
                               </span>
                             )}
-                            {getConvertedLabel(left, goal.currency) && (
+                            {goal?.type === 'amount' && getConvertedLabel(left, goal.currency) && (
                               <span className="mt-0.5 block break-all text-[0.7rem] text-slate-400">
                                 {getConvertedLabel(left, goal.currency)} {lang === 'ko' ? '남음' : 'left'}
                               </span>
@@ -357,8 +484,8 @@ export default function SettingsBudget() {
 
                   {/* Inline edit form */}
                   {isEditing && (
-                    <div className="mt-3 space-y-2.5">
-                      <div className="relative">
+                      <div className="mt-3 space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                        <div className="relative">
                         <input
                           type="number"
                           inputMode="decimal"
@@ -368,39 +495,17 @@ export default function SettingsBudget() {
                           autoFocus
                           className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-base text-slate-900 dark:text-white outline-none focus:border-[#0d8a7a] transition"
                         />
-                      </div>
-
-                      <div className="flex gap-1.5 flex-wrap">
-                        {SUPPORTED_CURRENCIES.map((c) => (
-                          <button
-                            key={c.code}
-                            type="button"
-                            onClick={() => setEditCurrency(c.code)}
-                            className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-                              editCurrency === c.code
-                                ? 'border-[#0d8a7a] bg-[#dbefeb] text-[#0d8a7a]'
-                                : 'border-slate-200 dark:border-slate-700 text-slate-500'
-                            }`}
-                          >
-                            {c.code}
-                          </button>
-                        ))}
+                        {budgetInputMode === 'percent' && (
+                          <p className="mt-1 text-[10px] text-slate-400">월 예산 기준 비율(%)</p>
+                        )}
                       </div>
 
                       <div className="flex gap-2">
-                        {goals[cat.id] && (
-                          <button
-                            onClick={() => deleteGoal(cat.id)}
-                            className="rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-500 transition hover:bg-rose-50 dark:border-rose-900/50 dark:hover:bg-rose-900/20"
-                          >
-                            {t('budget_delete')}
-                          </button>
-                        )}
                         <button
-                          onClick={cancelEdit}
-                          className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-50 dark:hover:bg-slate-800"
+                          onClick={() => deleteGoal(cat.id)}
+                          className="flex-1 rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-500 transition hover:bg-rose-50 dark:border-rose-900/50 dark:hover:bg-rose-900/20"
                         >
-                          {t('budget_cancel')}
+                          {t('budget_delete')}
                         </button>
                         <button
                           onClick={() => saveEdit(cat.id)}

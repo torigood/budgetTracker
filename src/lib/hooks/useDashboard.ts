@@ -93,6 +93,7 @@ export function useDashboard(month: string) {
         prevExpenseRows,
         categoryBreakdown,
         recentTransactions,
+        transactions,
         byCurrency,
         primaryCurrency,
       }
