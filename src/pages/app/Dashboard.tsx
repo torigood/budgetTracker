@@ -36,18 +36,13 @@ export default function Dashboard() {
   const prevExpenseConverted = useMemo(() => {
     if (!ratesData?.rates || !data?.prevExpenseRows) return null
     return data.prevExpenseRows.reduce((sum, row) => {
-      const converted = convertAmount(row.amount, row.currency, defaultCurrency, ratesData.rates, ratesData.base)
+      const converted = convertAmount(row.amount, row.currency, primaryCurrency, ratesData.rates, ratesData.base)
       return sum + (converted ?? 0)
     }, 0)
-  }, [data?.prevExpenseRows, defaultCurrency, ratesData?.base, ratesData?.rates])
-
-  const currentExpenseConverted = useMemo(() => {
-    if (!ratesData?.rates) return null
-    return convertAmount(totalExpense, primaryCurrency, defaultCurrency, ratesData.rates, ratesData.base)
-  }, [defaultCurrency, primaryCurrency, ratesData?.base, ratesData?.rates, totalExpense])
+  }, [data?.prevExpenseRows, primaryCurrency, ratesData?.base, ratesData?.rates])
 
   const prevExpenseForComparison = prevExpenseConverted ?? prevExpenseSamePoint
-  const currentExpenseForComparison = currentExpenseConverted ?? totalExpense
+  const currentExpenseForComparison = totalExpense
   const hasPrevComparison = prevExpenseForComparison > 0
   const monthDeltaPct = prevExpenseForComparison > 0
     ? Math.round(((prevExpenseForComparison - currentExpenseForComparison) / prevExpenseForComparison) * 100)
@@ -58,10 +53,10 @@ export default function Dashboard() {
   const deltaDisplay = hasPrevComparison ? `${monthDeltaPct > 0 ? '+' : ''}${monthDeltaPct}%` : '-'
   const deltaLabel = useMemo(() => {
     const absPct = Math.abs(monthDeltaPct)
-    if (prevExpenseSamePoint <= 0) return t('dashboard_vs_last_month_no_data')
+    if (prevExpenseForComparison <= 0) return t('dashboard_vs_last_month_no_data')
     if (monthDeltaPct === 0) return t('dashboard_vs_last_month_same')
     return isSpendingLess ? tr.dashboard_vs_last_month_less(absPct) : tr.dashboard_vs_last_month_more(absPct)
-  }, [isSpendingLess, monthDeltaPct, prevExpenseSamePoint, t, tr])
+  }, [isSpendingLess, monthDeltaPct, prevExpenseForComparison, t, tr])
 
   const quickActions = [
     {
