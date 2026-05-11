@@ -1,11 +1,13 @@
 import { useUIStore } from '@/lib/stores/ui.store'
-import { translations, type TranslationKey } from '@/lib/i18n'
+import { translations, type TranslationFn, type TranslationReturn } from '@/lib/i18n'
 
-type TranslationValue<K extends TranslationKey> = (typeof translations)['ko'][K]
-
-export function useT() {
+export function useT(): TranslationFn {
   const { lang } = useUIStore()
   const t = translations[lang]
 
-  return <K extends TranslationKey>(key: K): TranslationValue<K> => t[key] as TranslationValue<K>
+  return (<K extends keyof typeof t>(key: K) => {
+    const val = t[key]
+    if (typeof val === 'function') return val as unknown as TranslationReturn<K & keyof typeof t>
+    return String(val) as unknown as TranslationReturn<K & keyof typeof t>
+  }) as TranslationFn
 }

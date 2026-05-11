@@ -706,3 +706,8 @@ export const translations = {
 } as const
 
 export type TranslationKey = keyof typeof translations.ko
+export type TranslationValue<K extends TranslationKey> = (typeof translations)['ko'][K]
+export type TranslationReturn<K extends TranslationKey> = TranslationValue<K> extends (...args: infer A) => infer R
+  ? (...args: A) => R
+  : string
+export type TranslationFn = <K extends TranslationKey>(key: K) => TranslationReturn<K>

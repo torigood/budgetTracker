@@ -12,7 +12,7 @@ import { CardSkeleton } from '@/components/ui/Skeleton'
 import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
 import { formatCompactAmount, formatCurrency, getMonthShortLabel } from '@/utils/format'
 import type { AnnualMonth } from '@/lib/hooks/useAnnualReport'
-import type { TranslationKey } from '@/lib/i18n'
+import type { TranslationFn } from '@/lib/i18n'
 
 export default function Analytics() {
   const navigate = useNavigate()
@@ -381,7 +381,7 @@ function AnnualReport({
   data: { months: AnnualMonth[]; totalExpense: number; totalIncome: number; primaryCurrency: string } | undefined
   isLoading: boolean
   lang: string
-  t: (key: TranslationKey) => string
+  t: TranslationFn
   expenseKey: string
   incomeKey: string
 }) {
