@@ -41,10 +41,11 @@ export default function Dashboard() {
     }, 0)
   }, [data?.prevExpenseRows, primaryCurrency, ratesData?.base, ratesData?.rates])
 
+  const hasPrevRows = (data?.prevExpenseRows?.length ?? 0) > 0
   const prevExpenseForComparison = prevExpenseConverted ?? prevExpenseSamePoint
   const currentExpenseForComparison = totalExpense
-  const hasPrevComparison = prevExpenseForComparison > 0
-  const monthDeltaPct = prevExpenseForComparison > 0
+  const hasPrevComparison = hasPrevRows && prevExpenseForComparison > 0
+  const monthDeltaPct = hasPrevComparison
     ? Math.round(((prevExpenseForComparison - currentExpenseForComparison) / prevExpenseForComparison) * 100)
     : 0
   const isSpendingLess = hasPrevComparison && monthDeltaPct > 0
@@ -53,10 +54,10 @@ export default function Dashboard() {
   const deltaDisplay = hasPrevComparison ? `${monthDeltaPct > 0 ? '+' : ''}${monthDeltaPct}%` : '-'
   const deltaLabel = useMemo(() => {
     const absPct = Math.abs(monthDeltaPct)
-    if (prevExpenseForComparison <= 0) return t('dashboard_vs_last_month_no_data')
+    if (!hasPrevRows) return t('dashboard_vs_last_month_no_data')
     if (monthDeltaPct === 0) return t('dashboard_vs_last_month_same')
     return isSpendingLess ? tr.dashboard_vs_last_month_less(absPct) : tr.dashboard_vs_last_month_more(absPct)
-  }, [isSpendingLess, monthDeltaPct, prevExpenseForComparison, t, tr])
+  }, [hasPrevRows, isSpendingLess, monthDeltaPct, t, tr])
 
   const quickActions = [
     {
