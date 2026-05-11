@@ -90,6 +90,13 @@ export default function Dashboard() {
     },
   ] as const
 
+  const firstSymbol = (text?: string | null) => {
+    if (!text) return '?'
+    const s = text.trim()
+    if (!s) return '?'
+    return Array.from(s)[0] ?? '?'
+  }
+
   const summaryItems = [
     {
       label: t('dashboard_income'),
