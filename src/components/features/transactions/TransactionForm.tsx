@@ -4,12 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { CreditCard, FileText, Store, Tag } from 'lucide-react'
 import { useCreateTransaction, useUpdateTransaction } from '@/lib/hooks/useTransactions'
 import { useCategories } from '@/lib/hooks/useCategories'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import { useFilterStore } from '@/lib/stores/filter.store'
 import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { CurrencyInput } from '@/components/ui/CurrencyInput'
+import { DatePickerField } from '@/components/ui/DatePickerField'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { PAYMENT_METHODS } from '@/types/app'
 import { todayISO } from '@/utils/format'
@@ -36,9 +38,9 @@ interface TransactionFormProps {
 }
 
 const inputClass =
-  'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-indigo-500 focus:ring-3 focus:ring-indigo-500/10 transition'
+  'w-full rounded-[1.35rem] border border-transparent bg-[#f5f6f8] px-4 py-3.5 text-base font-medium text-[#141716] outline-none transition placeholder:text-[#a3aaa7] focus:bg-white focus:ring-4 focus:ring-[#006b5b]/10 dark:bg-slate-800 dark:text-white'
 
-const labelClass = 'mb-1.5 block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide'
+const labelClass = 'mb-2 block text-[11px] font-bold uppercase tracking-[0.14em] text-[#8b9390] dark:text-slate-400'
 
 export function TransactionForm({ initialValues, editId, receiptId }: TransactionFormProps) {
   const navigate = useNavigate()
@@ -113,126 +115,156 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
 
   return (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    <form onSubmit={handleSubmit(onSubmit as any)} className="flex flex-col gap-5 p-4">
+    <form onSubmit={handleSubmit(onSubmit as any)} className="flex flex-col gap-4 px-4 pb-8 pt-3">
       {/* 지출/수입 토글 */}
-      <div className="flex rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 p-1 gap-1 bg-slate-50 dark:bg-slate-800/50">
+      <div className="rounded-[1.7rem] border border-white/80 bg-white p-2 shadow-[var(--fintra-shadow-soft)] dark:border-slate-700 dark:bg-slate-900/70">
+        <p className={labelClass}>Type</p>
+        <div className="flex overflow-hidden rounded-[1.25rem] bg-[#f5f6f8] p-1">
         {(['지출', '수입'] as const).map((t) => (
           <label
             key={t}
-            className={`flex-1 cursor-pointer py-2.5 text-center text-sm font-semibold rounded-xl transition-all ${
+            className={`flex-1 cursor-pointer py-3 text-center text-sm font-bold rounded-[1rem] transition-all ${
               selectedType === t
                 ? t === '지출'
-                  ? 'bg-rose-500 text-white shadow-sm shadow-rose-500/25'
-                  : 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
-                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300'
+                  ? 'bg-[#c46f63] text-white shadow-[var(--fintra-shadow-soft)]'
+                  : 'bg-[#006b5b] text-white shadow-[var(--fintra-shadow-soft)]'
+                : 'text-[#7d8582] hover:text-[#141716] dark:text-slate-500 dark:hover:text-slate-300'
             }`}
           >
             <input type="radio" value={t} {...register('type')} className="sr-only" />
             {t}
           </label>
         ))}
+        </div>
       </div>
 
       {/* 금액 + 통화 */}
-      <Controller
-        name="amount"
-        control={control}
-        render={({ field }) => (
-          <CurrencyInput
-            label="금액"
-            currency={selectedCurrency}
-            value={field.value ?? ''}
-            onChange={field.onChange}
-            onBlur={field.onBlur}
-            error={errors.amount?.message}
-          />
-        )}
-      />
+      <section className="rounded-[1.8rem] border border-white/80 bg-white p-4 shadow-[var(--fintra-shadow-card)] dark:border-slate-700 dark:bg-slate-900/70">
+        <Controller
+          name="amount"
+          control={control}
+          render={({ field }) => (
+            <CurrencyInput
+              label="Amount"
+              currency={selectedCurrency}
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.amount?.message}
+            />
+          )}
+        />
 
-      {/* 통화 선택 */}
-      <div>
-        <label className={labelClass}>통화</label>
-        <div className="flex gap-2 flex-wrap">
+        {/* 통화 선택 */}
+        <div className="mt-4">
+          <label className={labelClass}>통화</label>
+          <div className="flex gap-2 overflow-x-auto pb-1 fintra-horizontal-scroll">
           {SUPPORTED_CURRENCIES.map((c) => (
             <button
               key={c.code}
               type="button"
               onClick={() => setSelectedCurrency(c.code)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-bold transition active:scale-95 ${
                 selectedCurrency === c.code
-                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'
+                  ? 'border-[#006b5b] bg-[#006b5b] text-white shadow-[0_10px_20px_rgba(0,107,91,0.16)]'
+                  : 'border-transparent bg-[#f5f6f8] text-[#7d8582]'
               }`}
             >
               {c.code}
             </button>
           ))}
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* 날짜 */}
-      <div>
-        <label className={labelClass}>날짜</label>
-        <input
-          type="date"
-          {...register('date')}
-          className={inputClass}
+      <section className="rounded-[1.8rem] border border-white/80 bg-white p-4 shadow-[var(--fintra-shadow-soft)] dark:border-slate-700 dark:bg-slate-900/70">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8f4ef] text-[#006b5b] shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>
+          </span>
+          <label className="text-sm font-semibold text-[#141716] dark:text-white">날짜 조정</label>
+        </div>
+        <Controller
+          name="date"
+          control={control}
+          render={({ field }) => (
+            <DatePickerField
+              value={field.value}
+              onChange={field.onChange}
+              error={errors.date?.message}
+            />
+          )}
         />
-        {errors.date && <p className="mt-1.5 text-xs text-rose-500">{errors.date.message}</p>}
-      </div>
+      </section>
 
       {/* 카테고리 */}
-      <div>
-        <label className={labelClass}>카테고리</label>
-        <div className="grid grid-cols-4 gap-2">
+      <section className="rounded-[1.8rem] border border-white/80 bg-white p-4 shadow-[var(--fintra-shadow-soft)] dark:border-slate-700 dark:bg-slate-900/70">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f7f1e8] text-[#006b5b]">
+            <Tag className="h-4 w-4" />
+          </span>
+          <label className="text-sm font-semibold text-[#141716] dark:text-white">카테고리</label>
+        </div>
+        <div className="grid grid-cols-4 gap-2.5">
           {categories?.map((cat) => (
             <label
               key={cat.id}
-              className={`flex cursor-pointer flex-col items-center gap-1.5 rounded-xl p-2.5 border-2 transition-all ${
+              className={`flex min-h-[82px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-[1.15rem] border transition-all active:scale-95 ${
                 selectedCategoryId === cat.id
-                  ? 'border-transparent shadow-sm'
-                  : 'border-transparent bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-700'
+                  ? 'shadow-[var(--fintra-shadow-soft)]'
+                  : 'border-transparent bg-[#f5f6f8] dark:bg-slate-800/60'
               }`}
-              style={selectedCategoryId === cat.id ? { backgroundColor: `${cat.color}15`, borderColor: cat.color } : {}}
+              style={selectedCategoryId === cat.id ? { backgroundColor: `${cat.color}14`, borderColor: `${cat.color}66` } : {}}
             >
               <input type="radio" value={cat.id} {...register('category_id')} className="sr-only" />
               <span
-                className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white shadow-sm"
-                style={{ backgroundColor: cat.color }}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold shadow-sm"
+                style={{ backgroundColor: `${cat.color}18`, color: cat.color }}
               >
-                {cat.name[0]}
+                {cat.icon || cat.name[0]}
               </span>
-              <span className="text-[10px] text-center text-slate-600 dark:text-slate-400 leading-tight font-medium">
+              <span className="line-clamp-2 text-center text-[10px] font-semibold leading-tight text-[#5f6868] dark:text-slate-400">
                 {cat.name}
               </span>
             </label>
           ))}
         </div>
         {errors.category_id && <p className="mt-1.5 text-xs text-rose-500">{errors.category_id.message}</p>}
-      </div>
+      </section>
 
       {/* 내용 */}
-      <div>
-        <label className={labelClass}>내용</label>
+      <section className="rounded-[1.8rem] border border-white/80 bg-white p-4 shadow-[var(--fintra-shadow-soft)] dark:border-slate-700 dark:bg-slate-900/70">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8f4ef] text-[#006b5b]">
+            <Store className="h-4 w-4" />
+          </span>
+          <label className="text-sm font-semibold text-[#141716] dark:text-white">가맹점 / 내용</label>
+        </div>
         <input
           {...register('description')}
           placeholder="예: 스타벅스 아메리카노"
           className={inputClass}
         />
         {errors.description && <p className="mt-1.5 text-xs text-rose-500">{errors.description.message}</p>}
-      </div>
+      </section>
 
       {/* 결제수단 */}
-      <div>
-        <label className={labelClass}>결제수단</label>
+      <section className="rounded-[1.8rem] border border-white/80 bg-white p-4 shadow-[var(--fintra-shadow-soft)] dark:border-slate-700 dark:bg-slate-900/70">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#eee5d8] text-[#9a6b37]">
+            <CreditCard className="h-4 w-4" />
+          </span>
+          <label className="text-sm font-semibold text-[#141716] dark:text-white">결제수단</label>
+        </div>
         <div className="flex gap-2 flex-wrap">
           {PAYMENT_METHODS.map((m) => (
             <label
               key={m}
-              className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+              className={`cursor-pointer rounded-full border px-3.5 py-2 text-xs font-bold transition active:scale-95 ${
                 watch('payment_method') === m
-                  ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-300'
+                  ? 'border-[#006b5b] bg-[#006b5b] text-white shadow-[0_10px_20px_rgba(0,107,91,0.16)]'
+                  : 'border-transparent bg-[#f5f6f8] text-[#7d8582]'
               }`}
             >
               <input type="radio" value={m} {...register('payment_method')} className="sr-only" />
@@ -240,33 +272,39 @@ export function TransactionForm({ initialValues, editId, receiptId }: Transactio
             </label>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* 메모 */}
-      <div>
-        <label className={labelClass}>
-          메모 <span className="normal-case text-slate-400 font-normal">(선택)</span>
-        </label>
+      <section className="rounded-[1.8rem] border border-white/80 bg-white p-4 shadow-[var(--fintra-shadow-soft)] dark:border-slate-700 dark:bg-slate-900/70">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f7f1e8] text-[#006b5b]">
+            <FileText className="h-4 w-4" />
+          </span>
+          <div>
+            <label className="text-sm font-semibold text-[#141716] dark:text-white">메모</label>
+            <p className="text-[11px] font-medium text-[#8b9390]">선택 사항</p>
+          </div>
+        </div>
         <textarea
           {...register('memo')}
-          rows={2}
+          rows={4}
           placeholder="추가 메모..."
           className={`${inputClass} resize-none`}
         />
-      </div>
+      </section>
 
       {/* 저장 */}
       <button
         type="submit"
         disabled={isSubmitting}
-        className={`flex items-center justify-center gap-2 rounded-2xl py-4 text-base font-semibold text-white transition active:scale-[0.98] disabled:opacity-60 ${
+        className={`sticky bottom-[calc(1rem+env(safe-area-inset-bottom))] z-10 mt-1 flex h-14 items-center justify-center gap-2 rounded-[1.35rem] text-base font-bold text-white transition active:scale-[0.98] disabled:opacity-60 ${
           selectedType === '지출'
-            ? 'bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/20'
-            : 'bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/20'
+            ? 'bg-[#c46f63] shadow-[0_18px_36px_rgba(196,111,99,0.22)]'
+            : 'bg-[#006b5b] shadow-[0_18px_36px_rgba(0,107,91,0.22)]'
         }`}
       >
         {isSubmitting && <LoadingSpinner size="sm" />}
-        {editId ? '수정하기' : '저장하기'}
+        {editId ? '변경사항 저장' : '저장하기'}
       </button>
     </form>
   )

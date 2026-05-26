@@ -8,6 +8,8 @@ import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useT } from '@/lib/hooks/useT'
 import { translations } from '@/lib/i18n'
 import { PageHeader } from '@/components/ui/PageHeader'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
 import { getCurrentMonth } from '@/utils/format'
 import { getNotifySettings, saveNotifySetting, requestPermission, getPermission, subscribeToPush } from '@/lib/hooks/useNotifications'
 import type { Lang } from '@/lib/i18n'
@@ -44,7 +46,7 @@ function SettingRow({
       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${
         danger
           ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-500'
-          : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+          : 'bg-[#f5f6f8] dark:bg-slate-800 text-slate-500 dark:text-slate-400'
       }`}>
         {icon}
       </span>
@@ -74,7 +76,7 @@ function NotifyToggleRow({
 }) {
   return (
     <div className={`flex items-center gap-3 px-5 py-4 ${disabled ? 'opacity-50' : ''}`}>
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#f5f6f8] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
         {icon}
       </span>
       <div className="flex-1 min-w-0 text-left">
@@ -85,7 +87,7 @@ function NotifyToggleRow({
         onClick={() => !disabled && onToggle(!enabled)}
         className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${
           disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-        } ${enabled && !disabled ? 'bg-[#0d8a7a]' : 'bg-slate-200 dark:bg-slate-700'}`}
+        } ${enabled && !disabled ? 'bg-[#0b6f61]' : 'bg-slate-200 dark:bg-slate-700'}`}
         role="switch"
         aria-checked={enabled}
       >
@@ -189,23 +191,27 @@ export default function Settings() {
     <div className="pb-6">
       <PageHeader title={t('settings_title')} back backTo="/dashboard" />
 
-      <div className="space-y-4 px-4 py-4">
+      <div className="fintra-screen fintra-stack">
         {/* 계정 정보 */}
         <div>
           <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_account')}</p>
-          <div className="card overflow-hidden rounded-3xl">
-            <SettingRow
-              icon={<User className="h-4 w-4" />}
-              label={user?.email ?? 'User'}
-              description={t('settings_account_desc')}
-            />
-          </div>
+          <Card variant="settings" padding="lg">
+            <div className="flex items-center gap-4">
+              <div className="flex h-15 w-15 shrink-0 items-center justify-center rounded-[1.45rem] bg-[#dceee9] text-[#0b6f61] shadow-[var(--fintra-shadow-soft)]">
+                <User className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-semibold text-[var(--fintra-charcoal)] dark:text-white">{user?.email?.split('@')[0] ?? 'User'}</p>
+                <p className="mt-1 truncate text-xs text-slate-400">{user?.email ?? t('settings_account_desc')}</p>
+              </div>
+            </div>
+          </Card>
         </div>
 
         {/* 일반 설정 */}
         <div>
           <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_general')}</p>
-          <div className="card divide-y divide-slate-100/80 overflow-hidden rounded-3xl dark:divide-slate-800/70">
+          <Card variant="settings" padding="none" className="divide-y divide-slate-100/80 overflow-hidden dark:divide-slate-800/70">
             {/* 다크모드 */}
             <SettingRow
               icon={isDark ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
@@ -214,24 +220,24 @@ export default function Settings() {
               right={
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleDark() }}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0d8a7a] ${isDark ? 'bg-[#0d8a7a]' : 'bg-slate-200 dark:bg-slate-700'}`}
+                  className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0b6f61] ${isDark ? 'bg-[#0b6f61]' : 'bg-slate-200 dark:bg-slate-700'}`}
                   role="switch"
                   aria-checked={isDark}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ${isDark ? 'translate-x-5' : 'translate-x-0.5'}`}
+                    className={`pointer-events-none inline-block h-6 w-6 rounded-full bg-white shadow-sm ring-0 transition-transform duration-200 ${isDark ? 'translate-x-5' : 'translate-x-0.5'}`}
                     style={{ marginTop: '2px' }}
                   />
                 </button>
               }
             />
-          </div>
+          </Card>
         </div>
 
         {/* 기본 통화 */}
         <div>
           <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_currency_title')}</p>
-          <div className="card rounded-3xl p-4 space-y-3">
+          <Card variant="settings" padding="md" className="space-y-3">
             <div className="flex items-center gap-2">
               <Target className="h-4 w-4 text-slate-400" />
               <div className="min-w-0">
@@ -246,24 +252,24 @@ export default function Settings() {
                   onClick={() => setCurrency(c.code)}
                   className={`h-full min-h-[68px] rounded-2xl border px-3 py-2 text-left transition active:scale-[0.99] ${
                     currency === c.code
-                      ? 'border-[#0d8a7a] bg-[#dbefeb] text-[#0d8a7a] dark:bg-[#0d8a7a]/20 dark:text-[#9fe3d9]'
-                      : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'
+                      ? 'border-[#0b6f61] bg-[#dceee9] text-[#0b6f61] dark:bg-[#0d8a7a]/20 dark:text-[#9fe3d9]'
+                      : 'border-transparent bg-[#f5f6f8] hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'
                   }`}
                 >
-                  <p className={`text-sm font-bold tracking-tight ${currency === c.code ? 'text-[#0d8a7a] dark:text-[#9fe3d9]' : 'text-slate-900 dark:text-white'}`}>
+                  <p className={`text-sm font-bold tracking-tight ${currency === c.code ? 'text-[#0b6f61] dark:text-[#9fe3d9]' : 'text-slate-900 dark:text-white'}`}>
                     {c.code}
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">{lang === 'ko' ? c.label : c.labelEn}</p>
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* 언어 선택 */}
         <div>
           <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_language')}</p>
-          <div className="card rounded-3xl p-4 space-y-3">
+          <Card variant="settings" padding="md" className="space-y-3">
             <div className="flex items-center gap-2">
               <Languages className="h-4 w-4 text-slate-400" />
               <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_language_label')}</p>
@@ -275,24 +281,24 @@ export default function Settings() {
                   onClick={() => setLang(l.code)}
                   className={`flex-1 rounded-2xl border px-4 py-3 text-center transition active:scale-[0.99] ${
                     lang === l.code
-                      ? 'border-[#0d8a7a] bg-[#dbefeb] text-[#0d8a7a] dark:bg-[#0d8a7a]/20 dark:text-[#9fe3d9]'
-                      : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'
+                      ? 'border-[#0b6f61] bg-[#dceee9] text-[#0b6f61] dark:bg-[#0d8a7a]/20 dark:text-[#9fe3d9]'
+                      : 'border-transparent bg-[#f5f6f8] hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600'
                   }`}
                 >
-                  <p className={`text-sm font-bold tracking-tight ${lang === l.code ? 'text-[#0d8a7a] dark:text-[#9fe3d9]' : 'text-slate-900 dark:text-white'}`}>
+                  <p className={`text-sm font-bold tracking-tight ${lang === l.code ? 'text-[#0b6f61] dark:text-[#9fe3d9]' : 'text-slate-900 dark:text-white'}`}>
                     {l.label}
                   </p>
                   <p className="text-xs text-slate-400 mt-0.5">{l.native}</p>
                 </button>
               ))}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* 데이터 가져오기/내보내기 */}
         <div>
           <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('settings_data')}</p>
-          <div className="card divide-y divide-slate-100/80 overflow-hidden rounded-3xl mb-3 dark:divide-slate-800/70">
+          <Card variant="settings" padding="none" className="mb-3 divide-y divide-slate-100/80 overflow-hidden dark:divide-slate-800/70">
             <SettingRow
               icon={<Upload className="h-4 w-4" />}
               label={t('settings_csv_import')}
@@ -300,8 +306,8 @@ export default function Settings() {
               onClick={() => navigate('/csv-import')}
               right={<ChevronRight className="h-4 w-4 text-slate-300 dark:text-slate-600 shrink-0" />}
             />
-          </div>
-          <div className="card rounded-3xl p-4 space-y-3">
+          </Card>
+          <Card variant="settings" padding="md" className="space-y-3">
             <div className="flex items-center gap-2">
               <Download className="h-4 w-4 text-slate-400" />
               <p className="text-sm font-medium text-slate-900 dark:text-white">{t('settings_csv_export')}</p>
@@ -316,7 +322,7 @@ export default function Settings() {
                     setExportFrom(e.target.value)
                     if (e.target.value > exportTo) setExportTo(e.target.value)
                   }}
-                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-base text-slate-900 outline-none transition focus:border-[#0d8a7a] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="flex-1 rounded-2xl border border-transparent bg-[#f5f6f8] px-3 py-3 text-base text-slate-900 outline-none transition focus:bg-white focus:ring-4 focus:ring-[#0b6f61]/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -326,7 +332,7 @@ export default function Settings() {
                   value={exportTo}
                   min={exportFrom}
                   onChange={(e) => setExportTo(e.target.value)}
-                  className="flex-1 rounded-2xl border border-slate-200 bg-white px-3 py-3 text-base text-slate-900 outline-none transition focus:border-[#0d8a7a] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  className="flex-1 rounded-2xl border border-transparent bg-[#f5f6f8] px-3 py-3 text-base text-slate-900 outline-none transition focus:bg-white focus:ring-4 focus:ring-[#0b6f61]/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                 />
               </div>
             </div>
@@ -335,20 +341,21 @@ export default function Settings() {
                 ? tr.settings_export_one_month(exportFrom)
                 : tr.settings_export_range(exportFrom, exportTo)}
             </p>
-            <button
+            <Button
               onClick={handleExportCSV}
-              className="btn btn-primary w-full flex items-center justify-center gap-2 py-3 text-sm"
+              variant="primary"
+              fullWidth
+              icon={<Download className="h-4 w-4" />}
             >
-              <Download className="h-4 w-4" />
               {t('settings_csv_export')}
-            </button>
-          </div>
+            </Button>
+          </Card>
         </div>
 
         {/* 알림 */}
         <div>
           <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{t('notify_title')}</p>
-          <div className="card divide-y divide-slate-100/80 overflow-hidden rounded-3xl dark:divide-slate-800/70">
+          <Card variant="settings" padding="none" className="divide-y divide-slate-100/80 overflow-hidden dark:divide-slate-800/70">
             {/* Permission status */}
             {permission !== 'granted' && (
               <div className="px-4 py-3.5 flex items-center gap-3">
@@ -364,7 +371,7 @@ export default function Settings() {
                 {permission !== 'denied' && (
                   <button
                     onClick={handleAllowNotifications}
-                    className="shrink-0 rounded-full bg-[#0d8a7a] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0a7568]"
+                    className="shrink-0 rounded-full bg-[#0b6f61] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#063f39]"
                   >
                     {t('notify_allow')}
                   </button>
@@ -400,7 +407,7 @@ export default function Settings() {
                     type="time"
                     value={notifySettings.reminderTime}
                     onChange={(e) => updateNotify('reminderTime', e.target.value)}
-                    className="ml-auto rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-sm text-slate-900 dark:text-white outline-none focus:border-[#0d8a7a] transition"
+                    className="ml-auto rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-900 outline-none transition focus:border-[#0b6f61] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   />
                 </div>
               )}
@@ -415,19 +422,19 @@ export default function Settings() {
               disabled={permission !== 'granted'}
               onToggle={(v) => updateNotify('anomalyEnabled', v)}
             />
-          </div>
+          </Card>
         </div>
 
         {/* 로그아웃 */}
         <div className="pb-8">
-          <div className="card overflow-hidden">
+          <Card variant="settings" padding="none" className="overflow-hidden">
             <SettingRow
               icon={<LogOut className="h-4 w-4" />}
               label={t('settings_logout')}
               onClick={handleLogout}
               danger
             />
-          </div>
+          </Card>
         </div>
       </div>
     </div>

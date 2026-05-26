@@ -15,7 +15,6 @@ export function BottomNav() {
   const isHome = location.pathname.startsWith('/dashboard')
   const isBudget = location.pathname.startsWith('/settings/budget')
   const isAnalytics = location.pathname.startsWith('/analytics')
-  const isReceipt = location.pathname.startsWith('/receipt')
 
   return (
     <nav
@@ -23,68 +22,63 @@ export function BottomNav() {
       onTouchStart={(e) => e.stopPropagation()}
       onTouchEnd={(e) => e.stopPropagation()}
     >
-      <div className="mx-auto w-full max-w-[430px] border-t border-slate-200/80 bg-white/95 px-2 pt-2 shadow-[0_-8px_22px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-slate-700/80 dark:bg-slate-900/93 md:max-w-none"
-        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.15rem)' }}
+      <div
+        className="mx-auto w-full max-w-[430px] border-t border-[#ecefec] bg-white px-4 pt-2 shadow-[0_-10px_28px_rgba(20,23,22,0.045)] dark:border-slate-800 dark:bg-slate-900 md:max-w-none"
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.4rem)' }}
       >
-        <div className="relative grid grid-cols-5 items-center gap-0">
+        <div className="relative grid grid-cols-5 items-end gap-1">
           <button
             onClick={() => go('/dashboard')}
-            className={`flex min-h-11 min-w-0 flex-col items-center justify-center rounded-xl px-2 py-1 transition-all duration-200 active:scale-95 ${
-              isHome ? 'text-[#0d8a7a]' : 'text-slate-400 dark:text-slate-500'
+            className={`flex min-h-13 min-w-0 flex-col items-center justify-center px-2 py-1.5 transition-all duration-200 active:scale-95 ${
+              isHome ? 'text-[#006b5b] dark:text-emerald-400' : 'text-[#141716] dark:text-slate-300'
             }`}
             aria-label={t('nav_home')}
           >
             <LayoutDashboard className="h-5 w-5" />
-            <span className="mt-1 text-[11px] font-semibold tracking-tight">{t('nav_home')}</span>
-            <span className={`mt-1 h-1 w-1 rounded-full ${isHome ? 'bg-[#0d8a7a]' : 'bg-slate-300 dark:bg-slate-600'}`} />
+            <span className="mt-1 text-[10px] font-semibold">{t('nav_home')}</span>
           </button>
 
           <div className="relative flex flex-col items-center">
             <button
               onClick={() => go('/transactions')}
-              className={`flex min-h-11 min-w-0 flex-col items-center justify-center rounded-xl px-2 py-1 transition-all duration-200 active:scale-95 ${
-                isTransactionActive ? 'text-[#0d8a7a]' : 'text-slate-400 dark:text-slate-500'
+              className={`flex min-h-13 min-w-0 flex-col items-center justify-center px-2 py-1.5 transition-all duration-200 active:scale-95 ${
+                isTransactionActive ? 'text-[#006b5b] dark:text-emerald-400' : 'text-[#141716] dark:text-slate-300'
               }`}
               aria-label={t('nav_transactions')}
             >
               <List className="h-6 w-6" />
-              <span className="mt-1 text-[11px] font-semibold tracking-tight">{t('nav_transactions')}</span>
-              <span className={`mt-1 h-1 w-1 rounded-full ${isTransactionActive ? 'bg-[#0d8a7a]' : 'bg-slate-300 dark:bg-slate-600'}`} />
+              <span className="mt-1 text-[10px] font-semibold">{t('nav_transactions')}</span>
             </button>
           </div>
 
           <button
             onClick={() => go('/receipt')}
-            className={`mx-auto -translate-y-1 flex h-11 w-11 items-center justify-center rounded-xl text-white shadow-md transition-all duration-200 active:scale-95 ${
-              isReceipt ? 'bg-[#0a7568]' : 'bg-[#0d8a7a]'
-            }`}
-            aria-label={t('nav_receipt')}
+            className="mx-auto -translate-y-2 flex h-13 w-13 items-center justify-center rounded-full bg-[#0b6f61] text-white shadow-[0_14px_26px_rgba(11,111,97,0.28)] transition-all duration-200 active:scale-95"
+            aria-label="영수증 스캔"
           >
             <Camera className="h-5 w-5" />
           </button>
 
           <button
             onClick={() => go('/settings/budget')}
-            className={`flex min-h-11 min-w-0 flex-col items-center justify-center rounded-xl px-2 py-1 transition-all duration-200 active:scale-95 ${
-              isBudget ? 'text-[#0d8a7a]' : 'text-slate-400 dark:text-slate-500'
+            className={`flex min-h-13 min-w-0 flex-col items-center justify-center px-2 py-1.5 transition-all duration-200 active:scale-95 ${
+              isBudget ? 'text-[#006b5b] dark:text-emerald-400' : 'text-[#141716] dark:text-slate-300'
             }`}
             aria-label={t('nav_budget')}
           >
             <Target className="h-5 w-5" />
-            <span className="mt-1 text-[11px] font-semibold tracking-tight">{t('nav_budget')}</span>
-            <span className={`mt-1 h-1 w-1 rounded-full ${isBudget ? 'bg-[#0d8a7a]' : 'bg-slate-300 dark:bg-slate-600'}`} />
+            <span className="mt-1 text-[10px] font-semibold">{t('nav_budget')}</span>
           </button>
 
           <button
             onClick={() => go('/analytics')}
-            className={`flex min-h-11 min-w-0 flex-col items-center justify-center rounded-xl px-2 py-1 transition-all duration-200 active:scale-95 ${
-              isAnalytics ? 'text-[#0d8a7a]' : 'text-slate-400 dark:text-slate-500'
+            className={`flex min-h-13 min-w-0 flex-col items-center justify-center px-2 py-1.5 transition-all duration-200 active:scale-95 ${
+              isAnalytics ? 'text-[#006b5b] dark:text-emerald-400' : 'text-[#141716] dark:text-slate-300'
             }`}
             aria-label={t('nav_analytics')}
           >
             <BarChart2 className="h-5 w-5" />
-            <span className="mt-1 text-[11px] font-semibold tracking-tight">{t('nav_analytics')}</span>
-            <span className={`mt-1 h-1 w-1 rounded-full ${isAnalytics ? 'bg-[#0d8a7a]' : 'bg-slate-300 dark:bg-slate-600'}`} />
+            <span className="mt-1 text-[10px] font-semibold">{t('nav_analytics')}</span>
           </button>
 
         </div>

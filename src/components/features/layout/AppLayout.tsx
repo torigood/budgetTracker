@@ -72,9 +72,9 @@ export function AppLayout() {
   }, [location.pathname])
 
   return (
-    <div className="flex min-h-svh justify-center bg-[#0d0d0d] px-0 md:px-4 md:py-4">
-      <div className="relative flex min-h-svh w-full max-w-[430px] flex-col overflow-hidden bg-[#f4f5f8] text-[var(--color-text-primary)] md:min-h-[calc(100svh-2rem)] md:rounded-[2.5rem] md:border md:border-white/10 md:shadow-[0_30px_90px_rgba(0,0,0,0.45)] dark:bg-[#101114]">
-        <main ref={mainRef} className="flex-1 overflow-y-auto pt-[calc(0.9rem+env(safe-area-inset-top))] pb-[calc(6.5rem+env(safe-area-inset-bottom))]">
+    <div className="flex min-h-svh justify-center bg-[#202426] px-0 md:px-4 md:py-4">
+      <div className="relative flex min-h-svh w-full max-w-[430px] flex-col overflow-hidden bg-[var(--fintra-bg)] text-[var(--color-text-primary)] md:min-h-[calc(100svh-2rem)] md:rounded-[2.7rem] md:border md:border-white/15 md:shadow-[0_34px_100px_rgba(0,0,0,0.34)] dark:bg-[#101114]">
+        <main ref={mainRef} className="flex-1 overflow-y-auto pt-[calc(0.9rem+env(safe-area-inset-top))] pb-[calc(7.8rem+env(safe-area-inset-bottom))]">
           <Outlet />
         </main>
 

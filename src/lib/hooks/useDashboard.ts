@@ -11,6 +11,7 @@ export function useDashboard(month: string) {
       const now = new Date()
       const isCurrentMonth = now.getFullYear() === year && now.getMonth() + 1 === monthNum
       const samePointDay = isCurrentMonth ? now.getDate() : new Date(year, monthNum, 0).getDate()
+      const currentMonthEnd = `${year}-${String(monthNum).padStart(2, '0')}-${String(samePointDay).padStart(2, '0')}`
       const prevMonthDate = new Date(year, monthNum - 2, 1)
       const prevMonthStart = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}-01`
       const prevMonthLastDay = new Date(prevMonthDate.getFullYear(), prevMonthDate.getMonth() + 1, 0).getDate()
@@ -67,6 +68,14 @@ export function useDashboard(month: string) {
         .filter((t) => t.currency === primaryCurrency)
         .reduce((sum, t) => sum + t.amount, 0)
 
+      const currentExpenseRowsSamePoint = transactions
+        .filter((t) => t.type === '지출' && t.date <= currentMonthEnd)
+        .map((t) => ({ amount: t.amount, currency: t.currency ?? 'CAD' }))
+
+      const currentExpenseSamePoint = currentExpenseRowsSamePoint
+        .filter((t) => t.currency === primaryCurrency)
+        .reduce((sum, t) => sum + t.amount, 0)
+
       const categoryMap: Record<string, { name: string; color: string; icon: string; amount: number }> = {}
       transactions
         .filter((t) => t.type === '지출')
@@ -89,6 +98,8 @@ export function useDashboard(month: string) {
         totalExpense,
         totalIncome,
         netBalance,
+        currentExpenseSamePoint,
+        currentExpenseRowsSamePoint,
         prevExpenseSamePoint,
         prevExpenseRows,
         categoryBreakdown,

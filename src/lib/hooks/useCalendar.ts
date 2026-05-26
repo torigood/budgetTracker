@@ -10,6 +10,7 @@ export type CalendarTransaction = {
   amount: number
   currency: string
   payment_method: string
+  created_at?: string
   categories: { id: string; name: string; color: string; icon: string } | null
 }
 
@@ -28,7 +29,7 @@ export function useCalendar(month: string) {
       const { start, end } = getMonthRange(month)
       const { data, error } = await supabase
         .from('transactions')
-        .select('id, date, type, description, amount, currency, payment_method, categories(id, name, color, icon)')
+        .select('id, date, type, description, amount, currency, payment_method, created_at, categories(id, name, color, icon)')
         .gte('date', start)
         .lte('date', end)
         .order('date', { ascending: true })

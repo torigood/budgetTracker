@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, Target, Check, Settings } from 'lucide-react'
+import { ChevronLeft, Target, Check, Settings, WalletCards, PencilLine } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useCategories } from '@/lib/hooks/useCategories'
@@ -11,6 +11,8 @@ import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
 import { convertAmount } from '@/lib/utils/currency'
 import { formatCurrency } from '@/utils/format'
 import { useT } from '@/lib/hooks/useT'
+import { Card } from '@/components/ui/Card'
+import { BudgetProgressBars } from '@/components/ui/Charts'
 import type { CurrencyCode } from '@/lib/stores/ui.store'
 
 export default function SettingsBudget() {
@@ -138,6 +140,7 @@ export default function SettingsBudget() {
     setMonthlyAmount(monthlyBudget?.amount ? String(monthlyBudget.amount) : '')
     if (!monthlyBudget) {
       setMonthlyCurrency(primaryCurrency)
+      setIsMonthlyEditorOpen(true)
       return
     }
     setMonthlyCurrency(monthlyBudget.currency)
@@ -223,52 +226,61 @@ export default function SettingsBudget() {
   return (
     <div className="min-h-full pb-6">
       {/* Header */}
-      <header className="mx-4 flex items-center gap-3 px-1 py-3">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </button>
-        <div className="flex-1">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-400">{monthLabel}</p>
-          <h1 className="text-[1.38rem] leading-[1.12] font-semibold tracking-tight text-slate-900 dark:text-white">{t('budget_title')}</h1>
+      <header className="fintra-page-header">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="fintra-icon-button mt-0.5 h-10 w-10 rounded-2xl shadow-[var(--fintra-shadow-soft)] dark:hover:bg-slate-800"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <p className="fintra-kicker">{monthLabel}</p>
+              <h1 className="fintra-page-title mt-1 dark:text-white">{t('budget_title')}</h1>
+              <p className="mt-2 max-w-[18rem] text-sm font-medium leading-6 text-[var(--fintra-ink-2)]">
+                {lang === 'ko' ? '월 예산과 카테고리 한도를 차분하게 관리하세요.' : 'Set monthly limits and keep each category in rhythm.'}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/settings')}
+            className="fintra-icon-button h-10 w-10 rounded-2xl hover:text-[#0b6f61] dark:hover:bg-slate-800"
+            aria-label={t('nav_settings')}
+          >
+            <Settings className="h-5 w-5" />
+          </button>
         </div>
-        <button
-          onClick={() => navigate('/settings')}
-          className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-400 transition hover:bg-slate-100 hover:text-[#0d8a7a] dark:hover:bg-slate-800"
-          aria-label={t('nav_settings')}
-        >
-          <Settings className="h-5 w-5" />
-        </button>
       </header>
 
-      <div className="space-y-2.5 px-4 py-3">
-        <div className="flex items-center gap-2">
+      <div className="fintra-screen fintra-stack pt-2">
+        <div className="fintra-horizontal-scroll -mx-1 px-1 pb-1">
+          <div className="flex w-max min-w-full items-center gap-2">
           <button
             onClick={() => navigate('/settings/categories?new=1')}
-            className="rounded-full bg-[#dbefeb] px-3 py-1.5 text-[12px] font-semibold text-[#0d8a7a] transition hover:bg-[#cde8e2]"
+            className="shrink-0 rounded-full bg-[#dceee9] px-3.5 py-2 text-[12px] font-bold text-[#0b6f61] transition active:scale-95"
           >
             카테고리 추가
           </button>
           <button
             onClick={() => navigate('/settings/categories')}
-            className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-50"
+            className="shrink-0 rounded-full border border-white/80 bg-white px-3.5 py-2 text-[12px] font-bold text-slate-600 shadow-[var(--fintra-shadow-soft)] transition active:scale-95"
           >
             카테고리 수정
           </button>
+          </div>
         </div>
 
-        <div className="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-3 py-2">
-          <span className="text-[11px] font-semibold text-slate-500">입력 방식</span>
-          <div className="flex gap-1">
+        <Card variant="soft" padding="sm" className="flex items-center justify-between gap-3">
+          <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">입력 방식</span>
+          <div className="grid grid-cols-2 gap-1 rounded-full bg-[#edf1ef] p-1">
             <button
               type="button"
               onClick={() => setBudgetInputMode('percent')}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+              className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
                 budgetInputMode === 'percent'
-                  ? 'bg-[#0d8a7a] text-white'
-                  : 'border border-slate-200 text-slate-500'
+                  ? 'bg-white text-[#0b6f61] shadow-[var(--fintra-shadow-soft)]'
+                  : 'text-slate-500'
               }`}
             >
               퍼센트
@@ -276,16 +288,16 @@ export default function SettingsBudget() {
             <button
               type="button"
               onClick={() => setBudgetInputMode('amount')}
-              className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+              className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
                 budgetInputMode === 'amount'
-                  ? 'bg-[#0d8a7a] text-white'
-                  : 'border border-slate-200 text-slate-500'
+                  ? 'bg-white text-[#0b6f61] shadow-[var(--fintra-shadow-soft)]'
+                  : 'text-slate-500'
               }`}
             >
               금액
             </button>
           </div>
-        </div>
+        </Card>
 
         <button
           type="button"
@@ -296,40 +308,61 @@ export default function SettingsBudget() {
             }
             openMonthlyEditor()
           }}
-          className="w-full rounded-[1.3rem] border border-[#8de0d4]/80 bg-[#c4ece5] px-3 py-3 text-left transition hover:bg-[#b8e7de]"
+          className="relative w-full overflow-hidden rounded-[2.25rem] border border-white/50 bg-[linear-gradient(145deg,#005247_0%,#006b5b_58%,#0a7768_100%)] px-5 py-5 text-left text-white shadow-[0_24px_54px_rgba(11,111,97,0.2)] transition active:scale-[0.992]"
         >
+          <div className="pointer-events-none absolute right-[-2rem] top-[-2rem] h-32 w-32 rounded-full bg-white/10" />
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#0d8a7a]">{lang === 'ko' ? '이번 달 사용' : 'Spent this month'}</p>
-              <p className="mt-1 text-[1.4rem] font-semibold tracking-tight text-slate-950 tabular-nums">{formatCurrency(totalSpentDisplay, displayCurrency)}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/62">{lang === 'ko' ? '총 월 예산' : 'Total monthly budget'}</p>
+              <p className="mt-2 text-[clamp(2rem,7vw,3rem)] font-semibold leading-none tabular-nums">{formatCurrency(totalSpentDisplay, displayCurrency)}</p>
+              <p className="mt-2 text-xs font-semibold text-white/62">
+                {lang === 'ko' ? '이번 달 사용 금액' : 'spent this month'}
+              </p>
             </div>
             <div className="pt-1 text-right">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-slate-500">{lang === 'ko' ? '예산' : 'Budget'}</p>
-              <p className="mt-1 text-[1.04rem] font-semibold tracking-tight text-[#0d8a7a] tabular-nums">
+              <span className="ml-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/12">
+                <WalletCards className="h-4 w-4" />
+              </span>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/55">{lang === 'ko' ? '한도' : 'Limit'}</p>
+              <p className="mt-1 text-[1.04rem] font-semibold tracking-tight text-white tabular-nums">
                 {monthlyBudgetAmountDisplay > 0
                   ? formatCurrency(monthlyBudgetAmountDisplay, displayCurrency)
                   : t('monthly_budget_no_limit')}
               </p>
             </div>
           </div>
-          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/65">
-            <div className="h-full rounded-full bg-[#0d8a7a]" style={{ width: `${usedPct}%` }} />
+          <div className="mt-5 grid grid-cols-2 gap-2.5">
+            <div className="rounded-[1.25rem] bg-white/10 px-3 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/58">{lang === 'ko' ? '사용률' : 'Usage'}</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-white">{usedPct}%</p>
+            </div>
+            <div className="rounded-[1.25rem] bg-white/10 px-3 py-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/58">{lang === 'ko' ? '남은 금액' : 'Remaining'}</p>
+              <p className="mt-1 truncate text-xl font-semibold tabular-nums text-white">
+                {monthlyBudgetAmountDisplay > 0 ? formatCurrency(remaining, displayCurrency) : '-'}
+              </p>
+            </div>
           </div>
-          <div className="mt-1.5 flex items-center justify-between text-[11px]">
-            <p className="font-semibold text-slate-500">{t('monthly_budget_used')(usedPct)}</p>
-            <p className="font-semibold text-[#0d8a7a]">
+          <div className="mt-6 rounded-[1.45rem] bg-white/10 p-3.5">
+            <div className="h-2.5 overflow-hidden rounded-full bg-white/18">
+              <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${usedPct}%` }} />
+            </div>
+            <div className="mt-2 flex items-center justify-between text-[11px]">
+              <p className="font-semibold text-white/68">{t('monthly_budget_used')(usedPct)}</p>
+              <p className="font-semibold text-white">
               {monthlyBudgetAmountDisplay > 0
                 ? t('monthly_budget_remaining')(formatCurrency(remaining, displayCurrency))
                 : t('monthly_budget_no_limit')}
-            </p>
+              </p>
+            </div>
           </div>
         </button>
 
         {isMonthlyEditorOpen && (
-          <div className="card rounded-[1.2rem] border border-slate-200/75 bg-white px-3 py-3 shadow-sm dark:border-slate-800/80">
+          <Card variant="settings" padding="md" className="border-[#dceee9]">
             <div className="mb-2 flex items-center justify-between">
               <div>
-                <h2 className="text-[12px] font-semibold text-slate-800 dark:text-slate-200">{t('monthly_budget_title')}</h2>
+                <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('monthly_budget_title')}</h2>
                 <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">{t('monthly_budget_desc')}</p>
               </div>
               <button
@@ -347,17 +380,17 @@ export default function SettingsBudget() {
                 placeholder="0"
                 value={monthlyAmount}
                 onChange={(e) => setMonthlyAmount(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-base text-slate-900 outline-none transition focus:border-[#0d8a7a] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="w-full rounded-[1.15rem] border border-slate-200 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition focus:border-[#0b6f61] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
-              <div className="flex flex-wrap gap-1.5">
+              <div className="fintra-horizontal-scroll flex gap-1.5 pb-1">
                 {SUPPORTED_CURRENCIES.map((c) => (
                   <button
                     key={c.code}
                     type="button"
                     onClick={() => setMonthlyCurrency(c.code)}
-                    className={`rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
+                    className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-bold transition ${
                       monthlyCurrency === c.code
-                        ? 'border-[#0d8a7a] bg-[#dbefeb] text-[#0d8a7a]'
+                        ? 'border-[#0b6f61] bg-[#dceee9] text-[#0b6f61]'
                         : 'border-slate-200 text-slate-500 dark:border-slate-700'
                     }`}
                   >
@@ -368,19 +401,19 @@ export default function SettingsBudget() {
               <div className="flex gap-2">
                 <button
                   onClick={clearMonthlyBudget}
-                  className="flex-1 rounded-xl border border-slate-200 py-1.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                  className="flex-1 rounded-xl border border-slate-200 py-2.5 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
                 >
                   {t('budget_delete')}
                 </button>
                 <button
                   onClick={saveMonthlyBudget}
-                  className="flex-1 rounded-xl bg-[#0d8a7a] py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#0a7568]"
+                  className="flex-1 rounded-xl bg-[#0b6f61] py-2.5 text-[11px] font-semibold text-white transition hover:bg-[#063f39]"
                 >
                   {t('monthly_budget_set')}
                 </button>
               </div>
             </div>
-          </div>
+          </Card>
         )}
 
         {isLoading ? (
@@ -390,7 +423,7 @@ export default function SettingsBudget() {
             ))}
           </div>
         ) : (
-          <div className="space-y-2.5">
+          <div className="space-y-3">
             {categories?.map((cat) => {
               const goal = goals[cat.id]
               const isEditing = editingId === cat.id
@@ -408,17 +441,19 @@ export default function SettingsBudget() {
               const barColor = cat.color || '#0d8a7a'
 
               return (
-                <div
+                <Card
                   key={cat.id}
                   onClick={() => toggleEdit(cat.id)}
-                  className={`card rounded-[1.45rem] border border-slate-200/90 bg-white px-3.5 py-3.5 shadow-sm dark:border-slate-800 ${
+                  variant="budget"
+                  padding="md"
+                  className={`${
                     !isEditing ? 'cursor-pointer transition hover:bg-slate-50/60 dark:hover:bg-slate-800/40' : ''
                   }`}
                 >
                   {/* Category row */}
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-start gap-3">
                     <span
-                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl text-sm font-bold"
+                      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[1.15rem] text-sm font-bold"
                       style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
                     >
                       {(() => {
@@ -428,13 +463,18 @@ export default function SettingsBudget() {
                     </span>
 
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate text-[0.9rem] font-semibold text-slate-900 dark:text-white">
-                          {cat.name}
-                        </p>
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-[0.98rem] font-semibold text-[var(--fintra-charcoal)] dark:text-white">
+                            {cat.name}
+                          </p>
+                          <p className="mt-1 text-[11px] font-semibold text-slate-400">
+                            {goal ? `${pct}% ${lang === 'ko' ? '사용' : 'used'}` : t('budget_no_limit')}
+                          </p>
+                        </div>
                         {goal && !isEditing && (
-                          <div className="shrink-0 max-w-[52%] pl-2 text-right text-[0.8rem] font-semibold tabular-nums leading-tight">
-                            <span className="block break-all text-slate-500">
+                          <div className="shrink-0 max-w-[54%] pl-2 text-right text-[0.8rem] font-semibold tabular-nums leading-tight">
+                            <span className="block break-all text-[var(--fintra-charcoal)]">
                               {goalAmount > 0 && goalCurrency
                                 ? `${formatCurrency(spent, goalCurrency)} / ${formatCurrency(goalAmount, goalCurrency)}`
                                 : t('monthly_budget_no_limit')}
@@ -444,7 +484,7 @@ export default function SettingsBudget() {
                                 {goal.percent ?? 0}%
                               </span>
                             )}
-                            <span className="mt-0.5 block break-all text-[0.75rem] text-slate-400">
+                            <span className="mt-1 block break-all text-[0.75rem] text-[#0b6f61]">
                               {goalAmount > 0 && goalCurrency
                                 ? `${formatCurrency(left, goalCurrency)} ${lang === 'ko' ? '남음' : 'left'}`
                                 : t('monthly_budget_no_limit')}
@@ -464,15 +504,24 @@ export default function SettingsBudget() {
                       </div>
 
                       {goal && !isEditing && (
-                        <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-[#dfe4ea]">
-                          <div
-                            className="h-full rounded-full transition-all duration-500"
-                            style={{
-                              width: `${pct}%`,
-                              backgroundColor: barColor,
-                              boxShadow: `0 1px 2px ${barColor}44`,
-                            }}
-                          />
+                        <div className="mt-4">
+                          <div className="mb-2 flex items-center justify-between text-[11px] font-bold">
+                            <span className="text-[#8b9390]">{lang === 'ko' ? '진행률' : 'Progress'}</span>
+                            <span style={{ color: pct >= 90 ? '#c46f63' : pct >= 70 ? '#d89455' : '#006b5b' }}>{pct}%</span>
+                          </div>
+                          <div className="h-2.5 overflow-hidden rounded-full bg-[#edf1ef]">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{
+                                width: `${pct}%`,
+                                backgroundColor: pct >= 90 ? '#ec8b83' : pct >= 70 ? '#d89455' : (barColor || '#006b5b'),
+                              }}
+                            />
+                          </div>
+                          <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-slate-400">
+                            <span>{formatCurrency(spent, goalCurrency)}</span>
+                            <span>{formatCurrency(goalAmount, goalCurrency)}</span>
+                          </div>
                         </div>
                       )}
 
@@ -484,8 +533,14 @@ export default function SettingsBudget() {
 
                   {/* Inline edit form */}
                   {isEditing && (
-                      <div className="mt-3 space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                      <div className="mt-4 space-y-3 rounded-[1.35rem] bg-[#f7f6f3] p-3" onClick={(e) => e.stopPropagation()}>
                         <div className="relative">
+                        <div className="mb-2 flex items-center gap-2">
+                          <PencilLine className="h-4 w-4 text-[#006b5b]" />
+                          <p className="text-xs font-bold text-[#5f6868]">
+                            {budgetInputMode === 'percent' ? (lang === 'ko' ? '비율 한도 수정' : 'Edit percentage limit') : (lang === 'ko' ? '금액 한도 수정' : 'Edit amount limit')}
+                          </p>
+                        </div>
                         <input
                           type="number"
                           inputMode="decimal"
@@ -493,7 +548,7 @@ export default function SettingsBudget() {
                           value={editAmount}
                           onChange={(e) => setEditAmount(e.target.value)}
                           autoFocus
-                          className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-base text-slate-900 dark:text-white outline-none focus:border-[#0d8a7a] transition"
+                          className="w-full rounded-[1.15rem] border border-transparent bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none transition focus:ring-4 focus:ring-[#0b6f61]/10 dark:bg-slate-800 dark:text-white"
                         />
                         {budgetInputMode === 'percent' && (
                           <p className="mt-1 text-[10px] text-slate-400">월 예산 기준 비율(%)</p>
@@ -503,13 +558,13 @@ export default function SettingsBudget() {
                       <div className="flex gap-2">
                         <button
                           onClick={() => deleteGoal(cat.id)}
-                          className="flex-1 rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold text-rose-500 transition hover:bg-rose-50 dark:border-rose-900/50 dark:hover:bg-rose-900/20"
+                          className="flex-1 rounded-xl border border-rose-200 bg-white px-3 py-2.5 text-xs font-semibold text-rose-500 transition hover:bg-rose-50 dark:border-rose-900/50 dark:hover:bg-rose-900/20"
                         >
                           {t('budget_delete')}
                         </button>
                         <button
                           onClick={() => saveEdit(cat.id)}
-                          className="flex-1 rounded-xl bg-[#0d8a7a] py-2 text-xs font-semibold text-white transition hover:bg-[#0a7568] flex items-center justify-center gap-1.5"
+                          className="flex-1 rounded-xl bg-[#0b6f61] py-2.5 text-xs font-semibold text-white transition hover:bg-[#063f39] flex items-center justify-center gap-1.5"
                         >
                           <Check className="h-3.5 w-3.5" />
                           {t('budget_save')}
@@ -517,7 +572,7 @@ export default function SettingsBudget() {
                       </div>
                     </div>
                   )}
-                </div>
+                </Card>
               )
             })}
           </div>

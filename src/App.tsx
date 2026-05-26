@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
@@ -6,6 +6,7 @@ import { useUIStore } from '@/lib/stores/ui.store'
 import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute'
 import { AppLayout } from '@/components/features/layout/AppLayout'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
+import { SplashScreen } from '@/components/ui/SplashScreen'
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 
 import Landing from '@/pages/Landing'
@@ -48,9 +49,10 @@ const router = createBrowserRouter([
 ])
 
 export default function App() {
-  const { setSession, setLoading } = useAuthStore()
+  const { loading, setSession, setLoading } = useAuthStore()
   const lang = useUIStore((state) => state.lang)
   const isDark = useUIStore((state) => state.isDark)
+  const [showSplash, setShowSplash] = useState(true)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -71,9 +73,19 @@ export default function App() {
   }, [lang])
 
   useEffect(() => {
+    if (loading) {
+      setShowSplash(true)
+      return undefined
+    }
+
+    const timer = window.setTimeout(() => setShowSplash(false), 900)
+    return () => window.clearTimeout(timer)
+  }, [loading])
+
+  useEffect(() => {
     const iconHref = '/icons/logo_512.png'
     const manifestHref = '/manifest.webmanifest'
-    const themeColor = isDark ? '#0d0d0d' : '#f4f5f8'
+    const themeColor = isDark ? '#0d0d0d' : '#f5f6f8'
 
     const favicon = document.getElementById('app-favicon') as HTMLLinkElement | null
     if (favicon) favicon.href = iconHref
@@ -87,6 +99,8 @@ export default function App() {
     const themeColorMeta = document.getElementById('app-theme-color') as HTMLMetaElement | null
     if (themeColorMeta) themeColorMeta.setAttribute('content', themeColor)
   }, [isDark])
+
+  if (showSplash) return <SplashScreen />
 
   return (
     <>

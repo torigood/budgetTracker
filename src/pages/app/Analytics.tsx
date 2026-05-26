@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Settings } from 'lucide-react'
 import { useAnalytics } from '@/lib/hooks/useDashboard'
 import { useAnnualReport } from '@/lib/hooks/useAnnualReport'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { useT } from '@/lib/hooks/useT'
+import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
+import { convertAmount } from '@/lib/utils/currency'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
+import { Card } from '@/components/ui/Card'
+import { DonutChart, MonthlyBarChart, SpendingTrendLineGraph } from '@/components/ui/Charts'
 import { formatCompactAmount, formatCurrency, getMonthShortLabel } from '@/utils/format'
 import type { AnnualMonth } from '@/lib/hooks/useAnnualReport'
 import type { TranslationFn } from '@/lib/i18n'
@@ -23,7 +26,10 @@ export default function Analytics() {
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const { data: months, isLoading } = useAnalytics(selectedMonth)
   const { data: annualData, isLoading: annualLoading } = useAnnualReport(annualYear)
+  const { data: ratesData } = useExchangeRates(fallbackCurrency)
   const t = useT()
+
+  const TOTAL_KEY = '__total__'
 
   const current = months?.at(-1)
   const previous = months?.at(-2)
@@ -38,22 +44,36 @@ export default function Analytics() {
       setSelectedCurrency(null)
       return
     }
-    if (selectedCurrency && availableCurrencies.includes(selectedCurrency)) return
+    if (selectedCurrency && (availableCurrencies.includes(selectedCurrency) || selectedCurrency === TOTAL_KEY)) return
     const next = availableCurrencies.includes(preferredCurrency)
       ? preferredCurrency
       : availableCurrencies[0]
     setSelectedCurrency(next)
   }, [availableCurrencies, preferredCurrency, selectedCurrency])
 
-  const analyticsCurrency = selectedCurrency ?? preferredCurrency
+  const isTotal = selectedCurrency === TOTAL_KEY
+  const analyticsCurrency = isTotal ? fallbackCurrency : (selectedCurrency ?? preferredCurrency)
+  const systemCurrency = fallbackCurrency
+
+  const convertRow = (amount: number, fromCurrency: string, toCurrency: string): number => {
+    if (fromCurrency === toCurrency) return amount
+    if (!ratesData?.rates) return 0
+    return convertAmount(amount, fromCurrency, toCurrency, ratesData.rates, ratesData.base) ?? 0
+  }
 
   const monthlySeries = (months ?? []).map((m) => {
     const expense = m.rows
-      .filter((r) => (r.currency ?? 'CAD') === analyticsCurrency && r.type === '지출')
-      .reduce((s, r) => s + r.amount, 0)
+      .filter((r) => r.type === '지출')
+      .reduce((s, r) => {
+        const cur = r.currency ?? 'CAD'
+        return s + (isTotal ? convertRow(r.amount, cur, analyticsCurrency) : (cur === analyticsCurrency ? r.amount : 0))
+      }, 0)
     const income = m.rows
-      .filter((r) => (r.currency ?? 'CAD') === analyticsCurrency && r.type === '수입')
-      .reduce((s, r) => s + r.amount, 0)
+      .filter((r) => r.type === '수입')
+      .reduce((s, r) => {
+        const cur = r.currency ?? 'CAD'
+        return s + (isTotal ? convertRow(r.amount, cur, analyticsCurrency) : (cur === analyticsCurrency ? r.amount : 0))
+      }, 0)
     return {
       month: m.month,
       expense,
@@ -63,6 +83,10 @@ export default function Analytics() {
 
   const currentSeries = monthlySeries.at(-1)
   const previousSeries = monthlySeries.at(-2)
+  const sixMonthSeries = monthlySeries.slice(-6)
+  const currentExpense = currentSeries?.expense ?? 0
+  const currentIncome = currentSeries?.income ?? 0
+  const currentNet = currentIncome - currentExpense
 
   const expenseDiff = currentSeries && previousSeries && previousSeries.expense > 0
     ? ((currentSeries.expense - previousSeries.expense) / previousSeries.expense) * 100
@@ -73,24 +97,45 @@ export default function Analytics() {
 
   const categoryMap: Record<string, { name: string; color: string; amount: number }> = {}
   current?.rows
-    .filter((r) => r.type === '지출' && (r.currency ?? 'CAD') === analyticsCurrency)
+    .filter((r) => r.type === '지출' && (isTotal || (r.currency ?? 'CAD') === analyticsCurrency))
     .forEach((r) => {
     const cat = r.categories as { name: string; color: string } | null
     if (!cat || !r.category_id) return
+    const amt = isTotal ? convertRow(r.amount, r.currency ?? 'CAD', analyticsCurrency) : r.amount
     if (!categoryMap[r.category_id]) categoryMap[r.category_id] = { name: cat.name, color: cat.color, amount: 0 }
-    categoryMap[r.category_id].amount += r.amount
+    categoryMap[r.category_id].amount += amt
   })
   const categoryBreakdown = Object.entries(categoryMap)
     .map(([id, v]) => ({ id, ...v }))
     .sort((a, b) => b.amount - a.amount)
 
-  const totalExpense = categoryBreakdown.reduce((s, c) => s + c.amount, 0)
-
   const expenseKey = t('analytics_expense')
   const incomeKey = t('analytics_income')
   const reportsTitle = lang === 'ko' ? '리포트' : 'Reports'
+  const annualConverted = useMemo(() => {
+    const monthMap: Record<string, AnnualMonth> = {}
+    for (let m = 1; m <= 12; m++) {
+      const key = `${annualYear}-${String(m).padStart(2, '0')}`
+      monthMap[key] = { month: key, expense: 0, income: 0 }
+    }
+
+    ;(annualData?.rows ?? []).forEach((row) => {
+      const key = row.date.slice(0, 7)
+      if (!monthMap[key]) return
+      const converted = convertRow(row.amount, row.currency ?? 'CAD', systemCurrency)
+      if (row.type === '지출') monthMap[key].expense += converted
+      else monthMap[key].income += converted
+    })
+
+    const months = Object.values(monthMap)
+    const totalExpense = months.reduce((s, m) => s + m.expense, 0)
+    const totalIncome = months.reduce((s, m) => s + m.income, 0)
+
+    return { months, totalExpense, totalIncome, currency: systemCurrency }
+  }, [annualData?.rows, annualYear, systemCurrency, ratesData?.rates, ratesData?.base])
+
   const summaryCurrency = tab === 'annual'
-    ? (annualData?.primaryCurrency ?? fallbackCurrency)
+    ? annualConverted.currency
     : analyticsCurrency
   const monthLabel = (() => {
     const [y, m] = selectedMonth.split('-').map(Number)
@@ -100,82 +145,87 @@ export default function Analytics() {
 
   return (
     <div className="pb-6" {...(tab === 'monthly' ? swipe : {})}>
-      <header className="px-5 pb-2 pt-3">
+      <header className="fintra-page-header">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-2">
+          <div className="flex min-w-0 flex-1 items-start gap-2">
             <button
               onClick={() => navigate('/dashboard')}
-              className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-400 transition hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="fintra-icon-button mt-0.5 h-10 min-w-10 w-10 shrink-0 rounded-2xl shadow-[var(--fintra-shadow-soft)] dark:hover:bg-slate-800"
               aria-label="홈으로"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{monthLabel}</p>
-              <h1 className="mt-1 text-[2.05rem] leading-[1.05] font-semibold tracking-tight text-slate-950 dark:text-white">
+            <div className="min-w-0">
+              <p className="fintra-kicker truncate">{monthLabel}</p>
+              <h1 className="fintra-page-title mt-1 whitespace-nowrap dark:text-white">
                 {reportsTitle}
               </h1>
             </div>
           </div>
+        </div>
+        <div className="mt-2 flex items-center justify-end gap-2">
+          {tab === 'monthly' && <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />}
           <button
             onClick={() => navigate('/settings')}
-            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-400 transition hover:bg-slate-100 hover:text-[#0d8a7a] dark:hover:bg-slate-800"
+            className="fintra-icon-button h-10 w-10 rounded-2xl hover:text-[#0b6f61] dark:hover:bg-slate-800"
             aria-label={t('nav_settings')}
           >
             <Settings className="h-5 w-5" />
           </button>
         </div>
-        <div className="mt-2 flex justify-end">
-          {tab === 'monthly' && <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />}
-        </div>
       </header>
 
       {/* Tab switcher */}
-      <div className="mx-4 mt-2 mb-1 flex gap-1 rounded-[1.5rem] border border-slate-200/90 bg-white p-1 shadow-sm dark:border-slate-800/70 dark:bg-slate-900/80">
+      <div className="mx-4 mt-2 mb-1 flex gap-1 rounded-[1.6rem] border border-white/85 bg-white p-1 shadow-[var(--fintra-shadow-quiet)] dark:border-slate-800/70 dark:bg-slate-900/80">
         <button
           onClick={() => setTab('monthly')}
-          className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'monthly' ? 'bg-[#0d8a7a] text-white shadow-lg shadow-[#0d8a7a]/20' : 'text-slate-500 dark:text-slate-400'}`}
+          className={`tap-target flex-1 rounded-[1.15rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'monthly' ? 'bg-[#0b6f61] text-white shadow-[0_10px_22px_rgba(11,111,97,0.16)]' : 'text-slate-500 dark:text-slate-400'}`}
         >
           {t('analytics_tab_monthly')}
         </button>
         <button
           onClick={() => setTab('annual')}
-          className={`tap-target flex-1 rounded-[1.1rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'annual' ? 'bg-[#0d8a7a] text-white shadow-lg shadow-[#0d8a7a]/20' : 'text-slate-500 dark:text-slate-400'}`}
+          className={`tap-target flex-1 rounded-[1.15rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'annual' ? 'bg-[#0b6f61] text-white shadow-[0_10px_22px_rgba(11,111,97,0.16)]' : 'text-slate-500 dark:text-slate-400'}`}
         >
           {t('analytics_tab_annual')}
         </button>
       </div>
 
-      <div className="mx-4 mt-2 grid grid-cols-2 gap-2.5">
-        <div className="rounded-2xl bg-rose-50 px-3 py-2.5 dark:bg-rose-900/20">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{expenseKey}</p>
-          <p className="mt-1 text-sm font-bold tabular-nums text-rose-600 dark:text-rose-400">
-            {formatCurrency(tab === 'annual' ? (annualData?.totalExpense ?? 0) : (currentSeries?.expense ?? 0), summaryCurrency)}
-          </p>
-          <ConvertedAmount
-            amount={tab === 'annual' ? (annualData?.totalExpense ?? 0) : (currentSeries?.expense ?? 0)}
-            fromCurrency={summaryCurrency}
-            className="mt-0.5 block"
-          />
-        </div>
-        <div className="rounded-2xl bg-emerald-50 px-3 py-2.5 dark:bg-emerald-900/20">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">{incomeKey}</p>
-          <p className="mt-1 text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
-            {formatCurrency(tab === 'annual' ? (annualData?.totalIncome ?? 0) : (currentSeries?.income ?? 0), summaryCurrency)}
-          </p>
-          <ConvertedAmount
-            amount={tab === 'annual' ? (annualData?.totalIncome ?? 0) : (currentSeries?.income ?? 0)}
-            fromCurrency={summaryCurrency}
-            className="mt-0.5 block"
-          />
-        </div>
+      <div className="mx-4 mt-3 grid grid-cols-3 gap-2.5">
+        {[
+          {
+            label: expenseKey,
+            amount: tab === 'annual' ? (annualData?.totalExpense ?? 0) : currentExpense,
+            color: 'text-[#c46f63]',
+            bg: 'bg-[#f8e8e4]',
+          },
+          {
+            label: incomeKey,
+            amount: tab === 'annual' ? (annualData?.totalIncome ?? 0) : currentIncome,
+            color: 'text-[#0b6f61]',
+            bg: 'bg-[#dceee9]',
+          },
+          {
+            label: lang === 'ko' ? '순 흐름' : 'Net flow',
+            amount: tab === 'annual' ? ((annualData?.totalIncome ?? 0) - (annualData?.totalExpense ?? 0)) : currentNet,
+            color: (tab === 'annual' ? ((annualData?.totalIncome ?? 0) - (annualData?.totalExpense ?? 0)) : currentNet) >= 0 ? 'text-[#0b6f61]' : 'text-[#c46f63]',
+            bg: 'bg-white',
+          },
+        ].map((item) => (
+          <div key={item.label} className={`min-w-0 rounded-[1.45rem] px-3 py-3 shadow-[var(--fintra-shadow-soft)] ${item.bg}`}>
+            <p className="truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">{item.label}</p>
+            <p className={`mt-1 truncate text-[0.9rem] font-bold tabular-nums ${item.color}`}>
+              {formatCurrency(Math.abs(item.amount), summaryCurrency)}
+            </p>
+          </div>
+        ))}
       </div>
 
       {tab === 'annual' ? (
         <AnnualReport
           year={annualYear}
           onYearChange={setAnnualYear}
-          data={annualData}
+          data={annualConverted}
           isLoading={annualLoading}
           lang={lang}
           t={t}
@@ -183,9 +233,9 @@ export default function Analytics() {
           incomeKey={incomeKey}
         />
       ) : (
-        <div className="space-y-4 px-4 py-4">
+        <div className="fintra-screen fintra-stack">
           {availableCurrencies.length > 1 && (
-            <div className="card rounded-2xl p-3">
+            <Card variant="settings" padding="sm">
               <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                 {t('settings_currency_title')}
               </div>
@@ -195,7 +245,7 @@ export default function Analytics() {
                     key={cur}
                     onClick={() => setSelectedCurrency(cur)}
                     className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                      cur === analyticsCurrency
+                      !isTotal && cur === analyticsCurrency
                         ? 'bg-[#0d8a7a] text-white'
                         : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
                     }`}
@@ -203,14 +253,29 @@ export default function Analytics() {
                     {cur}
                   </button>
                 ))}
+                <button
+                  onClick={() => setSelectedCurrency(TOTAL_KEY)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                    isTotal
+                      ? 'bg-[#0d8a7a] text-white'
+                      : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                  }`}
+                >
+                  {lang === 'ko' ? '합계' : 'Total'}
+                </button>
               </div>
-              <p className="mt-2 text-[11px] text-slate-400">{t('analytics_annual_currency_note')}</p>
-            </div>
+              {isTotal && (
+                <p className="mt-2 text-[11px] text-slate-400">
+                  {lang === 'ko' ? `모든 통화를 ${analyticsCurrency}로 환산` : `All currencies converted to ${analyticsCurrency}`}
+                </p>
+              )}
+              {!isTotal && <p className="mt-2 text-[11px] text-slate-400">{t('analytics_annual_currency_note')}</p>}
+            </Card>
           )}
 
           {/* 전월 대비 배너 */}
           {!isLoading && expenseDiff !== null && (
-            <div className={`flex items-center gap-3 rounded-3xl border border-white/70 px-4 py-4 shadow-sm backdrop-blur-xl ${
+            <div className={`flex items-center gap-3 rounded-[2rem] border border-white/70 px-4 py-4 shadow-[var(--fintra-shadow-soft)] ${
               expenseDiff >= 0
                 ? 'bg-rose-50/80 dark:border-slate-800/70 dark:bg-rose-950/30'
                 : 'bg-emerald-50/80 dark:border-slate-800/70 dark:bg-emerald-950/30'
@@ -240,124 +305,118 @@ export default function Analytics() {
             </div>
           )}
 
-          {/* 카테고리 파이 차트 */}
-          {!isLoading && categoryBreakdown.length > 0 && (
-            <div className="card rounded-3xl p-4">
-              <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('analytics_category')}</h2>
-              <div className="flex gap-4 items-center">
-                <div className="shrink-0">
-                  <ResponsiveContainer width={110} height={110}>
-                    <PieChart>
-                      <Pie
-                        data={categoryBreakdown}
-                        dataKey="amount"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={30}
-                        outerRadius={52}
-                        strokeWidth={2}
-                        stroke="transparent"
-                        animationDuration={350}
-                      >
-                        {categoryBreakdown.map((entry, i) => (
-                          <Cell key={i} fill={entry.color} />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex-1 space-y-2.5 min-w-0">
-                  {categoryBreakdown.map((cat, i) => (
-                    <div key={cat.id}>
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          {i < 3 && (
-                            <span
-                              className="shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold"
-                              style={{ backgroundColor: `${cat.color}20`, color: cat.color }}
-                            >
-                              TOP{i + 1}
-                            </span>
-                          )}
-                          <span className="truncate text-xs text-slate-600 dark:text-slate-400">{cat.name}</span>
-                        </div>
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 tabular-nums shrink-0 ml-2">
-                          {formatCurrency(cat.amount, analyticsCurrency)}
-                        </span>
-                      </div>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                        <div
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{
-                            width: `${totalExpense > 0 ? (cat.amount / totalExpense) * 100 : 0}%`,
-                            backgroundColor: cat.color,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
+          <Card variant="analytics" padding="md">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="fintra-kicker">{lang === 'ko' ? '최근 6개월' : 'Last 6 months'}</p>
+                <h2 className="mt-1 text-sm font-semibold text-[var(--fintra-charcoal)] dark:text-slate-300">{lang === 'ko' ? '지출 흐름' : 'Spending trend'}</h2>
               </div>
+              <span className="rounded-full bg-[#dceee9] px-2.5 py-1 text-[10px] font-bold text-[#0b6f61]">
+                {isTotal ? (lang === 'ko' ? `합계 · ${analyticsCurrency}` : `Total · ${analyticsCurrency}`) : analyticsCurrency}
+              </span>
             </div>
-          )}
-
-          {/* 월별 지출 추이 바 차트 */}
-          <div className="card rounded-3xl p-4">
-            <h2 className="mb-4 text-sm font-semibold text-slate-700 dark:text-slate-300">{t('analytics_trend')}</h2>
             {isLoading ? (
               <CardSkeleton />
             ) : (
               <div className="overflow-x-auto">
-                <ResponsiveContainer width="100%" height={200} minWidth={300}>
-                  <BarChart
-                    data={monthlySeries.map((m) => ({
-                      name: getMonthShortLabel(m.month, lang),
-                      [expenseKey]: m.expense,
-                      [incomeKey]: m.income,
-                    }))}
-                    barCategoryGap="30%"
-                    barGap={3}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 11, fill: '#94a3b8' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 11, fill: '#94a3b8' }}
-                      tickFormatter={(v) => formatCompactAmount(v as number, analyticsCurrency)}
-                      axisLine={false}
-                      tickLine={false}
-                      width={48}
-                    />
-                    <Tooltip
-                      formatter={(v) => formatCurrency(v as number, analyticsCurrency)}
-                      contentStyle={{
-                        borderRadius: '16px',
-                        border: '1px solid rgb(226 232 240 / 0.9)',
-                        fontSize: '12px',
-                        boxShadow: '0 20px 45px -20px rgb(15 23 42 / 0.2)',
-                      }}
-                    />
-                    <Bar dataKey={expenseKey} fill="#bf5a5a" radius={[4, 4, 0, 0]} animationDuration={350} />
-                    <Bar dataKey={incomeKey} fill="#2f8f5a" radius={[4, 4, 0, 0]} animationDuration={350} />
-                  </BarChart>
-                </ResponsiveContainer>
+                <SpendingTrendLineGraph
+                  data={sixMonthSeries.map((m) => ({
+                    label: getMonthShortLabel(m.month, lang),
+                    value: m.expense,
+                  }))}
+                  formatValue={(value) => formatCompactAmount(value, analyticsCurrency)}
+                />
+              </div>
+            )}
+          </Card>
+
+          <Card variant="analytics" padding="md">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="fintra-kicker">{lang === 'ko' ? '비교' : 'Comparison'}</p>
+                <h2 className="mt-1 text-sm font-semibold text-[var(--fintra-charcoal)] dark:text-slate-300">{lang === 'ko' ? '수입 vs 지출' : 'Income vs expense'}</h2>
+              </div>
+            </div>
+            {isLoading ? (
+              <CardSkeleton />
+            ) : (
+              <div className="overflow-x-auto">
+                <MonthlyBarChart
+                  data={sixMonthSeries.map((m) => ({
+                    label: getMonthShortLabel(m.month, lang),
+                    expense: m.expense,
+                    income: m.income,
+                  }))}
+                  formatValue={(value) => formatCompactAmount(value, analyticsCurrency)}
+                />
               </div>
             )}
             {!isLoading && (
-              <div className="mt-3 flex items-center gap-4 justify-center">
+              <div className="mt-3 flex items-center justify-center gap-4">
                 <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#bf5a5a]" />{expenseKey}
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#ec8b83]" />{expenseKey}
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                    <span className="h-2.5 w-2.5 rounded-full bg-[#2f8f5a]" />{incomeKey}
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#0b6f61]" />{incomeKey}
                 </span>
               </div>
             )}
-          </div>
+          </Card>
+
+          {!isLoading && categoryBreakdown.length > 0 && (
+            <Card variant="analytics" padding="md">
+              <div className="mb-4">
+                <p className="fintra-kicker">{lang === 'ko' ? '카테고리' : 'Category'}</p>
+                <h2 className="mt-1 text-sm font-semibold text-[var(--fintra-charcoal)] dark:text-slate-300">{t('analytics_category')}</h2>
+              </div>
+              <DonutChart
+                data={categoryBreakdown.map((cat) => ({
+                  id: cat.id,
+                  name: cat.name,
+                  amount: cat.amount,
+                  color: cat.color,
+                }))}
+                totalLabel={expenseKey}
+                formatValue={(value) => formatCurrency(value, analyticsCurrency)}
+              />
+            </Card>
+          )}
+
+          {!isLoading && categoryBreakdown.length > 0 && (
+            <Card variant="analytics" padding="md">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <p className="fintra-kicker">{lang === 'ko' ? '랭킹' : 'Ranking'}</p>
+                  <h2 className="mt-1 text-sm font-semibold text-[var(--fintra-charcoal)] dark:text-slate-300">{lang === 'ko' ? '카테고리 순위' : 'Category ranking'}</h2>
+                </div>
+                <span className="text-xs font-semibold text-[var(--fintra-ink-3)]">TOP {Math.min(categoryBreakdown.length, 5)}</span>
+              </div>
+              <div className="space-y-3">
+                {categoryBreakdown.slice(0, 5).map((cat, index) => {
+                  const max = categoryBreakdown[0]?.amount ?? 1
+                  const pct = max > 0 ? Math.max((cat.amount / max) * 100, 4) : 0
+                  return (
+                    <div key={cat.id}>
+                      <div className="mb-1.5 flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f5f6f8] text-[11px] font-bold text-[var(--fintra-ink-2)]">
+                            {index + 1}
+                          </span>
+                          <span className="truncate text-sm font-semibold text-[var(--fintra-charcoal)]">{cat.name}</span>
+                        </div>
+                        <span className="shrink-0 text-xs font-semibold tabular-nums text-[var(--fintra-ink-2)]">
+                          {formatCurrency(cat.amount, analyticsCurrency)}
+                        </span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-[#edf1ef]">
+                        <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cat.color }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          )}
         </div>
       )}
     </div>
@@ -378,7 +437,7 @@ function AnnualReport({
 }: {
   year: number
   onYearChange: (y: number) => void
-  data: { months: AnnualMonth[]; totalExpense: number; totalIncome: number; primaryCurrency: string } | undefined
+  data: { months: AnnualMonth[]; totalExpense: number; totalIncome: number; currency: string } | undefined
   isLoading: boolean
   lang: string
   t: TranslationFn
@@ -386,7 +445,7 @@ function AnnualReport({
   incomeKey: string
 }) {
   const net = (data?.totalIncome ?? 0) - (data?.totalExpense ?? 0)
-  const currency = data?.primaryCurrency ?? 'CAD'
+  const currency = data?.currency ?? 'CAD'
 
   return (
     <div className="p-4 space-y-4">
@@ -394,7 +453,7 @@ function AnnualReport({
       <div className="flex items-center justify-center gap-4">
         <button
           onClick={() => onYearChange(year - 1)}
-          className="tap-target flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+          className="tap-target flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-500 shadow-[var(--fintra-shadow-soft)] transition hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -402,7 +461,7 @@ function AnnualReport({
         <button
           onClick={() => onYearChange(year + 1)}
           disabled={year >= new Date().getFullYear()}
-          className="tap-target flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700 transition disabled:opacity-30"
+          className="tap-target flex h-10 w-10 items-center justify-center rounded-full bg-white text-slate-500 shadow-[var(--fintra-shadow-soft)] transition hover:bg-slate-100 disabled:opacity-30 dark:bg-slate-800 dark:hover:bg-slate-700"
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -439,7 +498,7 @@ function AnnualReport({
       )}
 
       {/* 12-month bar chart */}
-      <div className="card p-4">
+      <Card variant="analytics" padding="md">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{t('analytics_annual_trend')}</h2>
           <span className="text-[10px] text-slate-400">{t('analytics_annual_currency_note')} · {currency}</span>
@@ -448,56 +507,27 @@ function AnnualReport({
           <CardSkeleton />
         ) : (
           <div className="overflow-x-auto">
-            <ResponsiveContainer width="100%" height={200} minWidth={340}>
-              <BarChart
-                data={data?.months.map((m) => ({
-                  name: getMonthShortLabel(m.month, lang),
-                  [expenseKey]: m.expense,
-                  [incomeKey]: m.income,
-                }))}
-                barCategoryGap="25%"
-                barGap={2}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 10, fill: '#94a3b8' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: '#94a3b8' }}
-                  tickFormatter={(v) => formatCompactAmount(v as number, currency)}
-                  axisLine={false}
-                  tickLine={false}
-                  width={48}
-                />
-                <Tooltip
-                  formatter={(v) => formatCurrency(v as number, currency)}
-                  contentStyle={{
-                    borderRadius: '10px',
-                    border: '1px solid #e2e8f0',
-                    fontSize: '12px',
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.08)',
-                  }}
-                />
-                <Bar dataKey={expenseKey} fill="#bf5a5a" radius={[3, 3, 0, 0]} animationDuration={350} />
-                <Bar dataKey={incomeKey} fill="#2f8f5a" radius={[3, 3, 0, 0]} animationDuration={350} />
-              </BarChart>
-            </ResponsiveContainer>
+            <MonthlyBarChart
+              data={(data?.months ?? []).map((m) => ({
+                label: getMonthShortLabel(m.month, lang),
+                expense: m.expense,
+                income: m.income,
+              }))}
+              formatValue={(value) => formatCompactAmount(value, currency)}
+            />
           </div>
         )}
         {!isLoading && (
           <div className="mt-3 flex items-center gap-4 justify-center">
             <span className="flex items-center gap-1.5 text-xs text-slate-500">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#bf5a5a]" />{expenseKey}
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ec8b83]" />{expenseKey}
             </span>
             <span className="flex items-center gap-1.5 text-xs text-slate-500">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#2f8f5a]" />{incomeKey}
+              <span className="h-2.5 w-2.5 rounded-full bg-[#0b6f61]" />{incomeKey}
             </span>
           </div>
         )}
-      </div>
+      </Card>
     </div>
   )
 }

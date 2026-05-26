@@ -17,7 +17,7 @@ export function PageHeader({ title, subtitle, action, back, backTo, showSettings
   const t = useT()
 
   return (
-    <header className="sticky top-3 z-20 mx-4 mt-3 mb-4 flex items-center justify-between rounded-[1.75rem] border border-white/70 bg-white/80 px-4 py-4 shadow-lg shadow-slate-900/5 backdrop-blur-xl dark:border-slate-800/70 dark:bg-slate-900/80">
+    <header className="sticky top-3 z-20 mx-4 mt-3 mb-4 flex items-center justify-between rounded-[1.75rem] border border-white/80 bg-white/88 px-4 py-4 shadow-[var(--fintra-shadow-quiet)] dark:border-slate-800/70 dark:bg-slate-900/80">
       <div className="flex items-center gap-3">
         {back && (
           <button
@@ -25,15 +25,15 @@ export function PageHeader({ title, subtitle, action, back, backTo, showSettings
               if (backTo) navigate(backTo)
               else navigate(-1)
             }}
-            className="tap-target flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100/80 text-slate-500 transition hover:bg-slate-200/70 active:scale-95 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-700/80"
+            className="tap-target flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f5f6f8] text-slate-500 transition hover:bg-slate-100 active:scale-95 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-700/80"
             aria-label="뒤로가기"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
         )}
         <div>
-          {subtitle && <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">{subtitle}</p>}
-          <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">{title}</h1>
+          {subtitle && <p className="fintra-kicker">{subtitle}</p>}
+          <h1 className="text-xl font-semibold text-[var(--fintra-charcoal)] dark:text-white">{title}</h1>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
@@ -41,7 +41,7 @@ export function PageHeader({ title, subtitle, action, back, backTo, showSettings
         {showSettings && (
           <button
             onClick={() => navigate('/settings')}
-            className="tap-target flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-100/80 text-slate-500 transition hover:bg-slate-200/70 hover:text-[#0d8a7a] active:scale-95 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-700/80"
+            className="tap-target flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f5f6f8] text-slate-500 transition hover:bg-slate-100 hover:text-[#0b6f61] active:scale-95 dark:bg-slate-800/70 dark:text-slate-300 dark:hover:bg-slate-700/80"
             aria-label={t('nav_settings')}
           >
             <Settings className="h-5 w-5" />

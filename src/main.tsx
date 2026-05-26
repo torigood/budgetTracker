@@ -22,7 +22,7 @@ document.documentElement.classList.toggle('dark', isDark)
 
 const iconHref = '/icons/logo_512.png'
 const manifestHref = '/manifest.webmanifest'
-const themeColor = isDark ? '#0d0d0d' : '#f4f5f8'
+const themeColor = isDark ? '#0d0d0d' : '#f5f6f8'
 
 const favicon = document.getElementById('app-favicon') as HTMLLinkElement | null
 if (favicon) favicon.href = iconHref
