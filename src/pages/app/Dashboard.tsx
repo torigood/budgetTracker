@@ -216,29 +216,26 @@ export default function Dashboard() {
 
   return (
     <div className="pb-10" {...swipe}>
-      <header className="fintra-page-header">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="fintra-pill mb-3">
-              <span className="h-2 w-2 rounded-full bg-[#0b6f61]" />
-              <span>Fintra</span>
-            </div>
-            <p className="fintra-kicker">{monthLabel}</p>
-            <h1 className="fintra-page-title mt-1.5 leading-[1.25] tracking-[-0.01em] dark:text-white">
-              {greetingText}
-            </h1>
+      <header className="px-5 pb-3 pt-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="fintra-pill">
+            <span className="h-2 w-2 rounded-full bg-[#0b6f61]" />
+            <span>Fintra</span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
+            <button
+              onClick={() => navigate('/settings')}
+              className="fintra-icon-button h-11 min-h-11 w-11 min-w-11 shrink-0 hover:text-[#0b6f61] dark:border-slate-700/80 dark:bg-slate-800/90 dark:text-slate-300 dark:hover:bg-slate-700/90"
+              aria-label={t('nav_settings')}
+            >
+              <Settings className="h-5 w-5" />
+            </button>
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-end gap-2">
-          <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />
-          <button
-            onClick={() => navigate('/settings')}
-            className="fintra-icon-button h-11 min-h-11 w-11 min-w-11 shrink-0 hover:text-[#0b6f61] dark:border-slate-700/80 dark:bg-slate-800/90 dark:text-slate-300 dark:hover:bg-slate-700/90"
-            aria-label={t('nav_settings')}
-          >
-            <Settings className="h-5 w-5" />
-          </button>
-        </div>
+        <h1 className="fintra-page-title mt-3 leading-[1.25] tracking-[-0.01em] dark:text-white">
+          {greetingText}
+        </h1>
       </header>
 
       <div className="fintra-screen fintra-stack pt-2">
