@@ -195,20 +195,20 @@ export default function Analytics() {
         {[
           {
             label: expenseKey,
-            amount: tab === 'annual' ? (annualData?.totalExpense ?? 0) : currentExpense,
+            amount: tab === 'annual' ? (annualConverted?.totalExpense ?? 0) : currentExpense,
             color: 'text-[#c46f63]',
             bg: 'bg-[#f8e8e4]',
           },
           {
             label: incomeKey,
-            amount: tab === 'annual' ? (annualData?.totalIncome ?? 0) : currentIncome,
+            amount: tab === 'annual' ? (annualConverted?.totalIncome ?? 0) : currentIncome,
             color: 'text-[#0b6f61]',
             bg: 'bg-[#dceee9]',
           },
           {
             label: lang === 'ko' ? '순 흐름' : 'Net flow',
-            amount: tab === 'annual' ? ((annualData?.totalIncome ?? 0) - (annualData?.totalExpense ?? 0)) : currentNet,
-            color: (tab === 'annual' ? ((annualData?.totalIncome ?? 0) - (annualData?.totalExpense ?? 0)) : currentNet) >= 0 ? 'text-[#0b6f61]' : 'text-[#c46f63]',
+            amount: tab === 'annual' ? ((annualConverted?.totalIncome ?? 0) - (annualConverted?.totalExpense ?? 0)) : currentNet,
+            color: (tab === 'annual' ? ((annualConverted?.totalIncome ?? 0) - (annualConverted?.totalExpense ?? 0)) : currentNet) >= 0 ? 'text-[#0b6f61]' : 'text-[#c46f63]',
             bg: 'bg-white',
           },
         ].map((item) => (
