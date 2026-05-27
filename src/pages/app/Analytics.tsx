@@ -43,8 +43,7 @@ export default function Analytics() {
       : availableCurrencies.includes(preferredCurrency)
         ? preferredCurrency
         : availableCurrencies[0]
-  const isSystemCurrencySelection = activeSelectedCurrency === fallbackCurrency
-  const isTotal = activeSelectedCurrency === TOTAL_KEY || isSystemCurrencySelection
+  const isTotal = activeSelectedCurrency === TOTAL_KEY
   const analyticsCurrency = isTotal ? fallbackCurrency : (activeSelectedCurrency ?? preferredCurrency)
   const systemCurrency = fallbackCurrency
   const needsExchangeRates = isTotal && (months ?? []).some((m) => m.rows.some((r) => (r.currency ?? 'CAD') !== analyticsCurrency))
@@ -247,7 +246,7 @@ export default function Analytics() {
                 {availableCurrencies.map((cur) => (
                   <button
                     key={cur}
-                    onClick={() => setSelectedCurrency(cur === fallbackCurrency ? TOTAL_KEY : cur)}
+                    onClick={() => setSelectedCurrency(cur)}
                     className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
                       !isTotal && cur === analyticsCurrency
                         ? 'bg-[#0d8a7a] text-white'
