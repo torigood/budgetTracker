@@ -15,7 +15,7 @@ import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
 import { Card } from '@/components/ui/Card'
 import { BudgetProgressBars } from '@/components/ui/Charts'
 import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
-import { convertAmount } from '@/lib/utils/currency'
+import { convertAmountOrZero } from '@/lib/utils/currency'
 import { formatCurrency } from '@/utils/format'
 
 export default function Dashboard() {
@@ -30,26 +30,33 @@ export default function Dashboard() {
   const t = useT()
   const tr = translations[lang]
 
-  const primaryCurrency = data?.primaryCurrency ?? 'CAD'
-  const totalIncome = data?.totalIncome ?? 0
-  const totalExpense = data?.totalExpense ?? 0
+  const primaryCurrency = defaultCurrency
+  const systemTotals = useMemo(() => {
+    return (data?.transactions ?? []).reduce(
+      (totals, tx) => {
+        const amount = convertAmountOrZero(tx.amount, tx.currency, defaultCurrency, ratesData?.rates, ratesData?.base)
+        if (tx.type === '지출') totals.expense += amount
+        else totals.income += amount
+        return totals
+      },
+      { expense: 0, income: 0 }
+    )
+  }, [data?.transactions, defaultCurrency, ratesData?.base, ratesData?.rates])
+  const totalIncome = systemTotals.income
+  const totalExpense = systemTotals.expense
   const currentExpenseSamePoint = data?.currentExpenseSamePoint ?? 0
   const prevExpenseSamePoint = data?.prevExpenseSamePoint ?? 0
-  const netBalance = data?.netBalance ?? 0
-  const currentExpenseConverted = useMemo(() => {
-    if (!ratesData?.rates || !data?.currentExpenseRowsSamePoint) return null
-    return data.currentExpenseRowsSamePoint.reduce((sum, row) => {
-      const converted = convertAmount(row.amount, row.currency, primaryCurrency, ratesData.rates, ratesData.base)
-      return sum + (converted ?? 0)
+  const netBalance = totalIncome - totalExpense
+  const currentExpenseConverted = ratesData?.rates && data?.currentExpenseRowsSamePoint
+    ? data.currentExpenseRowsSamePoint.reduce((sum, row) => {
+      return sum + convertAmountOrZero(row.amount, row.currency, defaultCurrency, ratesData.rates, ratesData.base)
     }, 0)
-  }, [data?.currentExpenseRowsSamePoint, primaryCurrency, ratesData?.base, ratesData?.rates])
-  const prevExpenseConverted = useMemo(() => {
-    if (!ratesData?.rates || !data?.prevExpenseRows) return null
-    return data.prevExpenseRows.reduce((sum, row) => {
-      const converted = convertAmount(row.amount, row.currency, primaryCurrency, ratesData.rates, ratesData.base)
-      return sum + (converted ?? 0)
+    : null
+  const prevExpenseConverted = ratesData?.rates && data?.prevExpenseRows
+    ? data.prevExpenseRows.reduce((sum, row) => {
+      return sum + convertAmountOrZero(row.amount, row.currency, defaultCurrency, ratesData.rates, ratesData.base)
     }, 0)
-  }, [data?.prevExpenseRows, primaryCurrency, ratesData?.base, ratesData?.rates])
+    : null
 
   const hasPrevRows = (data?.prevExpenseRows?.length ?? 0) > 0
   const prevExpenseForComparison = prevExpenseConverted ?? prevExpenseSamePoint
@@ -59,9 +66,6 @@ export default function Dashboard() {
     ? Math.round(((prevExpenseForComparison - currentExpenseForComparison) / prevExpenseForComparison) * 100)
     : 0
   const isSpendingLess = hasPrevComparison && monthDeltaPct > 0
-  const isSpendingMore = hasPrevComparison && monthDeltaPct < 0
-  const deltaClass = isSpendingLess ? 'text-emerald-300' : isSpendingMore ? 'text-rose-300' : 'text-slate-300'
-  const deltaDisplay = hasPrevComparison ? `${monthDeltaPct > 0 ? '+' : ''}${monthDeltaPct}%` : '-'
   const deltaLabel = useMemo(() => {
     const absPct = Math.abs(monthDeltaPct)
     if (!hasPrevRows) return t('dashboard_vs_last_month_no_data')
@@ -133,12 +137,6 @@ export default function Dashboard() {
     },
   ]
 
-  const monthLabel = (() => {
-    const [y, m] = selectedMonth.split('-').map(Number)
-    const date = new Date(y, m - 1, 1)
-    return date.toLocaleString(lang === 'ko' ? 'en-US' : 'en-US', { month: 'long', year: 'numeric' }).toUpperCase()
-  })()
-
   const userName = (() => {
     const fallback = 'there'
     const raw = user?.user_metadata?.name as string | undefined
@@ -170,21 +168,18 @@ export default function Dashboard() {
   }, [data?.transactions])
 
   const totalSpentPrimary = expenseTransactions.reduce((sum, tx) => {
-    const converted = convertAmount(tx.amount, tx.currency, primaryCurrency, ratesData?.rates, ratesData?.base)
-    if (converted === null && tx.currency === primaryCurrency) return sum + tx.amount
-    return sum + (converted ?? 0)
+    return sum + convertAmountOrZero(tx.amount, tx.currency, primaryCurrency, ratesData?.rates, ratesData?.base)
   }, 0)
 
   const displayCurrency = monthlyBudget ? monthlyBudget.currency : primaryCurrency
 
   const monthlyBudgetAmountDisplay = monthlyBudget
-    ? (convertAmount(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
-        ?? (monthlyBudget.currency === displayCurrency ? monthlyBudget.amount : 0))
+    ? convertAmountOrZero(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
     : 0
 
   const totalSpentDisplay = displayCurrency === primaryCurrency
     ? totalSpentPrimary
-    : (convertAmount(totalSpentPrimary, primaryCurrency, displayCurrency, ratesData?.rates, ratesData?.base) ?? 0)
+    : convertAmountOrZero(totalSpentPrimary, primaryCurrency, displayCurrency, ratesData?.rates, ratesData?.base)
 
   const budgetRemaining = Math.max(monthlyBudgetAmountDisplay - totalSpentDisplay, 0)
   const budgetUsedPct = monthlyBudgetAmountDisplay > 0

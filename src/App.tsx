@@ -10,6 +10,7 @@ import { SplashScreen } from '@/components/ui/SplashScreen'
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 
 import Landing from '@/pages/Landing'
+import Policy from '@/pages/Policy'
 import Login from '@/pages/auth/Login'
 import Dashboard from '@/pages/app/Dashboard'
 import Transactions from '@/pages/app/Transactions'
@@ -28,6 +29,8 @@ import NotFound from '@/pages/NotFound'
 const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
   { path: '/login', element: <Login /> },
+  { path: '/privacy', element: <Policy /> },
+  { path: '/terms', element: <Policy /> },
   {
     element: <ProtectedRoute><AppLayout /></ProtectedRoute>,
     children: [
@@ -73,10 +76,7 @@ export default function App() {
   }, [lang])
 
   useEffect(() => {
-    if (loading) {
-      setShowSplash(true)
-      return undefined
-    }
+    if (loading) return undefined
 
     const timer = window.setTimeout(() => setShowSplash(false), 900)
     return () => window.clearTimeout(timer)
@@ -100,7 +100,7 @@ export default function App() {
     if (themeColorMeta) themeColorMeta.setAttribute('content', themeColor)
   }, [isDark])
 
-  if (showSplash) return <SplashScreen />
+  if (loading || showSplash) return <SplashScreen />
 
   return (
     <>

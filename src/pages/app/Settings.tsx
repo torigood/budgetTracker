@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Moon, Sun, Download, Upload, LogOut, User, Languages, Target, Bell, BellOff } from 'lucide-react'
+import { ChevronRight, Moon, Sun, Download, Upload, LogOut, User, Languages, Target, Bell, BellOff, Fingerprint } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
@@ -110,6 +110,7 @@ export default function Settings() {
   const [exportTo, setExportTo] = useState(getCurrentMonth())
   const [notifySettings, setNotifySettings] = useState<NotifySettings>(getNotifySettings)
   const [permission, setPermission] = useState<ReturnType<typeof getPermission>>(getPermission)
+  const [appLockEnabled, setAppLockEnabled] = useState(() => localStorage.getItem('appLockEnabled') === 'true')
 
   const updateNotify = useCallback(<K extends keyof NotifySettings>(key: K, value: NotifySettings[K]) => {
     const keyMap: Record<keyof NotifySettings, 'budgetEnabled' | 'monthlyBudgetEnabled' | 'reminderEnabled' | 'reminderTime' | 'anomalyEnabled'> = {
@@ -185,6 +186,14 @@ export default function Settings() {
     a.click()
     URL.revokeObjectURL(url)
     toast.success(tr.settings_export_success_n(data.length))
+  }
+
+  function toggleAppLock(enabled: boolean) {
+    setAppLockEnabled(enabled)
+    localStorage.setItem('appLockEnabled', String(enabled))
+    toast.success(enabled
+      ? (lang === 'ko' ? '앱 잠금이 켜졌습니다' : 'App lock enabled')
+      : (lang === 'ko' ? '앱 잠금이 꺼졌습니다' : 'App lock disabled'))
   }
 
   return (
@@ -349,6 +358,20 @@ export default function Settings() {
             >
               {t('settings_csv_export')}
             </Button>
+          </Card>
+        </div>
+
+        {/* 알림 */}
+        <div>
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{lang === 'ko' ? '보안' : 'Security'}</p>
+          <Card variant="settings" padding="none" className="overflow-hidden">
+            <NotifyToggleRow
+              icon={<Fingerprint className="h-4 w-4" />}
+              label={lang === 'ko' ? '생체 인증 앱 잠금' : 'Biometric app lock'}
+              description={lang === 'ko' ? '로그인 후 빠른 재인증 용도로 사용합니다.' : 'Used for quick re-authentication after sign in.'}
+              enabled={appLockEnabled}
+              onToggle={toggleAppLock}
+            />
           </Card>
         </div>
 

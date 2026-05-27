@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Settings } from 'lucide-react'
 import { useAnalytics } from '@/lib/hooks/useDashboard'
@@ -7,59 +7,53 @@ import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
 import { useT } from '@/lib/hooks/useT'
 import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
-import { convertAmount } from '@/lib/utils/currency'
+import { convertAmountOrZero } from '@/lib/utils/currency'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
 import { Card } from '@/components/ui/Card'
 import { DonutChart, MonthlyBarChart, SpendingTrendLineGraph } from '@/components/ui/Charts'
-import { formatCompactAmount, formatCurrency, getMonthShortLabel } from '@/utils/format'
+import { formatCompactAmount, formatCompactCurrency, formatCurrency, getMonthShortLabel } from '@/utils/format'
 import type { AnnualMonth } from '@/lib/hooks/useAnnualReport'
 import type { TranslationFn } from '@/lib/i18n'
+
+const TOTAL_KEY = '__total__'
 
 export default function Analytics() {
   const navigate = useNavigate()
   const { selectedMonth, setSelectedMonth, lang, currency: fallbackCurrency } = useUIStore()
   const [tab, setTab] = useState<'monthly' | 'annual'>('monthly')
   const [annualYear, setAnnualYear] = useState(() => new Date().getFullYear())
-  const [selectedCurrency, setSelectedCurrency] = useState<string | null>(null)
+  const [selectedCurrency, setSelectedCurrency] = useState<string>(TOTAL_KEY)
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
   const { data: months, isLoading } = useAnalytics(selectedMonth)
   const { data: annualData, isLoading: annualLoading } = useAnnualReport(annualYear)
-  const { data: ratesData } = useExchangeRates(fallbackCurrency)
+  const { data: ratesData, isLoading: ratesLoading, isError: ratesError } = useExchangeRates(fallbackCurrency)
   const t = useT()
-
-  const TOTAL_KEY = '__total__'
-
   const current = months?.at(-1)
-  const previous = months?.at(-2)
-
   const availableCurrencies = Array.from(
     new Set((months ?? []).flatMap((m) => m.rows.map((r) => r.currency ?? 'CAD')))
   )
-  const preferredCurrency = current?.primaryCurrency ?? fallbackCurrency
+  const preferredCurrency = fallbackCurrency
 
-  useEffect(() => {
-    if (!availableCurrencies.length) {
-      setSelectedCurrency(null)
-      return
-    }
-    if (selectedCurrency && (availableCurrencies.includes(selectedCurrency) || selectedCurrency === TOTAL_KEY)) return
-    const next = availableCurrencies.includes(preferredCurrency)
-      ? preferredCurrency
-      : availableCurrencies[0]
-    setSelectedCurrency(next)
-  }, [availableCurrencies, preferredCurrency, selectedCurrency])
-
-  const isTotal = selectedCurrency === TOTAL_KEY
-  const analyticsCurrency = isTotal ? fallbackCurrency : (selectedCurrency ?? preferredCurrency)
+  const activeSelectedCurrency = selectedCurrency && (selectedCurrency === TOTAL_KEY || availableCurrencies.includes(selectedCurrency))
+    ? selectedCurrency
+    : availableCurrencies.length > 1
+      ? TOTAL_KEY
+      : availableCurrencies.includes(preferredCurrency)
+        ? preferredCurrency
+        : availableCurrencies[0]
+  const isSystemCurrencySelection = activeSelectedCurrency === fallbackCurrency
+  const isTotal = activeSelectedCurrency === TOTAL_KEY || isSystemCurrencySelection
+  const analyticsCurrency = isTotal ? fallbackCurrency : (activeSelectedCurrency ?? preferredCurrency)
   const systemCurrency = fallbackCurrency
+  const needsExchangeRates = isTotal && (months ?? []).some((m) => m.rows.some((r) => (r.currency ?? 'CAD') !== analyticsCurrency))
+  const isConversionPending = needsExchangeRates && ratesLoading
+  const isConversionBlocked = needsExchangeRates && ratesError
 
-  const convertRow = (amount: number, fromCurrency: string, toCurrency: string): number => {
-    if (fromCurrency === toCurrency) return amount
-    if (!ratesData?.rates) return 0
-    return convertAmount(amount, fromCurrency, toCurrency, ratesData.rates, ratesData.base) ?? 0
-  }
+  const convertRow = useCallback((amount: number, fromCurrency: string, toCurrency: string): number => {
+    return convertAmountOrZero(amount, fromCurrency, toCurrency, ratesData?.rates, ratesData?.base)
+  }, [ratesData?.base, ratesData?.rates])
 
   const monthlySeries = (months ?? []).map((m) => {
     const expense = m.rows
@@ -132,7 +126,7 @@ export default function Analytics() {
     const totalIncome = months.reduce((s, m) => s + m.income, 0)
 
     return { months, totalExpense, totalIncome, currency: systemCurrency }
-  }, [annualData?.rows, annualYear, systemCurrency, ratesData?.rates, ratesData?.base])
+  }, [annualData?.rows, annualYear, convertRow, systemCurrency])
 
   const summaryCurrency = tab === 'annual'
     ? annualConverted.currency
@@ -145,29 +139,29 @@ export default function Analytics() {
 
   return (
     <div className="pb-6" {...(tab === 'monthly' ? swipe : {})}>
-      <header className="fintra-page-header">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-1 items-start gap-2">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="fintra-icon-button mt-0.5 h-10 min-w-10 w-10 shrink-0 rounded-2xl shadow-[var(--fintra-shadow-soft)] dark:hover:bg-slate-800"
-              aria-label="홈으로"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div className="min-w-0">
-              <p className="fintra-kicker truncate">{monthLabel}</p>
-              <h1 className="fintra-page-title mt-1 whitespace-nowrap dark:text-white">
-                {reportsTitle}
-              </h1>
-            </div>
+      <header className="px-5 pb-3 pt-4">
+        <div className="flex min-w-0 items-start gap-2">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="fintra-icon-button mt-0.5 h-10 min-w-10 w-10 shrink-0 rounded-2xl shadow-[var(--fintra-shadow-soft)] dark:hover:bg-slate-800"
+            aria-label="홈으로"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <p className="fintra-kicker truncate">{monthLabel}</p>
+            <h1 className="fintra-page-title mt-1 truncate dark:text-white">
+              {reportsTitle}
+            </h1>
           </div>
         </div>
-        <div className="mt-2 flex items-center justify-end gap-2">
-          {tab === 'monthly' && <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />}
+        <div className="mt-2 grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+          <div className="min-w-0 overflow-x-auto fintra-horizontal-scroll">
+            {tab === 'monthly' && <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />}
+          </div>
           <button
             onClick={() => navigate('/settings')}
-            className="fintra-icon-button h-10 w-10 rounded-2xl hover:text-[#0b6f61] dark:hover:bg-slate-800"
+            className="fintra-icon-button h-10 min-w-10 w-10 shrink-0 rounded-2xl hover:text-[#0b6f61] dark:hover:bg-slate-800"
             aria-label={t('nav_settings')}
           >
             <Settings className="h-5 w-5" />
@@ -178,12 +172,14 @@ export default function Analytics() {
       {/* Tab switcher */}
       <div className="mx-4 mt-2 mb-1 flex gap-1 rounded-[1.6rem] border border-white/85 bg-white p-1 shadow-[var(--fintra-shadow-quiet)] dark:border-slate-800/70 dark:bg-slate-900/80">
         <button
+          type="button"
           onClick={() => setTab('monthly')}
           className={`tap-target flex-1 rounded-[1.15rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'monthly' ? 'bg-[#0b6f61] text-white shadow-[0_10px_22px_rgba(11,111,97,0.16)]' : 'text-slate-500 dark:text-slate-400'}`}
         >
           {t('analytics_tab_monthly')}
         </button>
         <button
+          type="button"
           onClick={() => setTab('annual')}
           className={`tap-target flex-1 rounded-[1.15rem] py-2.5 text-sm font-semibold transition active:scale-95 ${tab === 'annual' ? 'bg-[#0b6f61] text-white shadow-[0_10px_22px_rgba(11,111,97,0.16)]' : 'text-slate-500 dark:text-slate-400'}`}
         >
@@ -214,9 +210,17 @@ export default function Analytics() {
         ].map((item) => (
           <div key={item.label} className={`min-w-0 rounded-[1.45rem] px-3 py-3 shadow-[var(--fintra-shadow-soft)] ${item.bg}`}>
             <p className="truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">{item.label}</p>
-            <p className={`mt-1 truncate text-[0.9rem] font-bold tabular-nums ${item.color}`}>
+            <p
+              className={`mt-1 break-words text-[clamp(0.72rem,3.2vw,0.9rem)] font-bold leading-tight tabular-nums ${item.color}`}
+              title={formatCurrency(Math.abs(item.amount), summaryCurrency)}
+            >
               {formatCurrency(Math.abs(item.amount), summaryCurrency)}
             </p>
+            {formatCurrency(Math.abs(item.amount), summaryCurrency).length > 12 && (
+              <p className={`mt-0.5 text-[0.68rem] font-semibold tabular-nums ${item.color}`}>
+                {formatCompactCurrency(Math.abs(item.amount), summaryCurrency)}
+              </p>
+            )}
           </div>
         ))}
       </div>
@@ -243,7 +247,7 @@ export default function Analytics() {
                 {availableCurrencies.map((cur) => (
                   <button
                     key={cur}
-                    onClick={() => setSelectedCurrency(cur)}
+                    onClick={() => setSelectedCurrency(cur === fallbackCurrency ? TOTAL_KEY : cur)}
                     className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
                       !isTotal && cur === analyticsCurrency
                         ? 'bg-[#0d8a7a] text-white'
@@ -273,8 +277,18 @@ export default function Analytics() {
             </Card>
           )}
 
+          {isConversionBlocked && (
+            <Card variant="settings" padding="sm">
+              <p className="text-xs font-semibold text-rose-500">
+                {lang === 'ko'
+                  ? '환율을 불러오지 못해 합계 차트를 계산할 수 없어요.'
+                  : 'Exchange rates could not be loaded for total charts.'}
+              </p>
+            </Card>
+          )}
+
           {/* 전월 대비 배너 */}
-          {!isLoading && expenseDiff !== null && (
+          {!isLoading && !isConversionPending && !isConversionBlocked && expenseDiff !== null && (
             <div className={`flex items-center gap-3 rounded-[2rem] border border-white/70 px-4 py-4 shadow-[var(--fintra-shadow-soft)] ${
               expenseDiff >= 0
                 ? 'bg-rose-50/80 dark:border-slate-800/70 dark:bg-rose-950/30'
@@ -315,7 +329,7 @@ export default function Analytics() {
                 {isTotal ? (lang === 'ko' ? `합계 · ${analyticsCurrency}` : `Total · ${analyticsCurrency}`) : analyticsCurrency}
               </span>
             </div>
-            {isLoading ? (
+            {isLoading || isConversionPending ? (
               <CardSkeleton />
             ) : (
               <div className="overflow-x-auto">
@@ -337,7 +351,7 @@ export default function Analytics() {
                 <h2 className="mt-1 text-sm font-semibold text-[var(--fintra-charcoal)] dark:text-slate-300">{lang === 'ko' ? '수입 vs 지출' : 'Income vs expense'}</h2>
               </div>
             </div>
-            {isLoading ? (
+            {isLoading || isConversionPending ? (
               <CardSkeleton />
             ) : (
               <div className="overflow-x-auto">
@@ -478,19 +492,19 @@ function AnnualReport({
         <div className="grid grid-cols-3 gap-3">
           <div className="rounded-2xl bg-rose-50 dark:bg-rose-900/20 p-3">
             <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">{t('analytics_annual_total_expense')}</p>
-            <p className="text-sm font-bold tabular-nums text-rose-600 dark:text-rose-400 leading-tight">
+            <p className="break-words text-[clamp(0.74rem,3.3vw,0.875rem)] font-bold tabular-nums text-rose-600 dark:text-rose-400 leading-tight">
               {formatCurrency(data?.totalExpense ?? 0, currency)}
             </p>
           </div>
           <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 p-3">
             <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">{t('analytics_annual_total_income')}</p>
-            <p className="text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400 leading-tight">
+            <p className="break-words text-[clamp(0.74rem,3.3vw,0.875rem)] font-bold tabular-nums text-emerald-600 dark:text-emerald-400 leading-tight">
               {formatCurrency(data?.totalIncome ?? 0, currency)}
             </p>
           </div>
           <div className={`rounded-2xl p-3 ${net >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-rose-50 dark:bg-rose-900/20'}`}>
             <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">{t('analytics_annual_net')}</p>
-            <p className={`text-sm font-bold tabular-nums leading-tight ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            <p className={`break-words text-[clamp(0.74rem,3.3vw,0.875rem)] font-bold tabular-nums leading-tight ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
               {formatCurrency(Math.abs(net), currency)}
             </p>
           </div>

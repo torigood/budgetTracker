@@ -3,7 +3,9 @@ import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 const ALLOWED_ORIGINS = [
   'https://budget-tracker-f3nf.vercel.app',
   'http://localhost:5173',
+  'http://127.0.0.1:5173',
   'http://localhost:3000',
+  'http://127.0.0.1:3000',
 ]
 
 const SUPPORTED_SYMBOLS = ['KRW', 'CAD', 'USD', 'JPY', 'EUR', 'GBP']
@@ -31,7 +33,8 @@ serve(async (req) => {
     }
 
     const { base } = await req.json().catch(() => ({ base: 'CAD' })) as { base?: string }
-    const baseCurrency = (base ?? 'CAD').toUpperCase()
+    const requestedBaseCurrency = (base ?? 'CAD').toUpperCase()
+    const baseCurrency = SUPPORTED_SYMBOLS.includes(requestedBaseCurrency) ? requestedBaseCurrency : 'CAD'
 
     const baseUrl = Deno.env.get('EXCHANGERATES_API_BASE_URL')
       ?? 'https://api.fastforex.io/fetch-all'

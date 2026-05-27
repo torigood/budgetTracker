@@ -1,18 +1,19 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ChevronLeft, Target, Check, Settings, WalletCards, PencilLine } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { ChevronLeft, Target, Check, Settings, WalletCards, PencilLine, Sparkles } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
+import { supabase } from '@/lib/supabase'
 import { useCategories } from '@/lib/hooks/useCategories'
 import { useBudgetGoals } from '@/lib/hooks/useBudgetGoals'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useMonthlyBudget } from '@/lib/hooks/useMonthlyBudget'
 import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
-import { convertAmount } from '@/lib/utils/currency'
+import { convertAmountOrZero, parseAmountInput } from '@/lib/utils/currency'
 import { formatCurrency } from '@/utils/format'
 import { useT } from '@/lib/hooks/useT'
 import { Card } from '@/components/ui/Card'
-import { BudgetProgressBars } from '@/components/ui/Charts'
+import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import type { CurrencyCode } from '@/lib/stores/ui.store'
 
 export default function SettingsBudget() {
@@ -32,7 +33,7 @@ export default function SettingsBudget() {
   const [monthlyCurrency, setMonthlyCurrency] = useState<CurrencyCode>(defaultCurrency)
   const [budgetInputMode, setBudgetInputMode] = useState<'percent' | 'amount'>('percent')
 
-  const primaryCurrency = (dashData?.primaryCurrency ?? defaultCurrency) as CurrencyCode
+  const primaryCurrency = defaultCurrency as CurrencyCode
 
   function openEdit(categoryId: string) {
     const existing = goals[categoryId]
@@ -60,13 +61,8 @@ export default function SettingsBudget() {
     openEdit(categoryId)
   }
 
-  function cancelEdit() {
-    setEditingId(null)
-    setEditAmount('')
-  }
-
   async function saveEdit(categoryId: string) {
-    const amount = parseFloat(editAmount)
+    const amount = parseAmountInput(editAmount)
     if (isNaN(amount) || amount <= 0) {
       toast.error('올바른 금액을 입력해주세요')
       return
@@ -115,7 +111,7 @@ export default function SettingsBudget() {
   }
 
   async function saveMonthlyBudget() {
-    const amount = parseFloat(monthlyAmount)
+    const amount = parseAmountInput(monthlyAmount)
     if (isNaN(amount) || amount <= 0) {
       toast.error('올바른 금액을 입력해주세요')
       return
@@ -147,24 +143,12 @@ export default function SettingsBudget() {
     setIsMonthlyEditorOpen(true)
   }
 
-  useEffect(() => {
-    if (monthlyBudget) {
-      setMonthlyAmount(String(monthlyBudget.amount))
-      setMonthlyCurrency(monthlyBudget.currency)
-      return
-    }
-    setMonthlyAmount('')
-    setMonthlyCurrency(primaryCurrency)
-  }, [monthlyBudget, primaryCurrency, selectedMonth])
   const expenseTransactions = useMemo(() => {
     return (dashData?.transactions ?? []).filter((tx) => tx.type === '지출')
   }, [dashData?.transactions])
 
   const toPrimary = (amount: number, currency: string) => {
-    if (currency === primaryCurrency) return amount
-    const converted = convertAmount(amount, currency, primaryCurrency, ratesData?.rates, ratesData?.base)
-    if (converted === null && currency === primaryCurrency) return amount
-    return converted ?? 0
+    return convertAmountOrZero(amount, currency, primaryCurrency, ratesData?.rates, ratesData?.base)
   }
 
   const totalSpentPrimary = expenseTransactions.reduce((sum, tx) => {
@@ -174,13 +158,12 @@ export default function SettingsBudget() {
   const displayCurrency = monthlyBudget ? monthlyBudget.currency : primaryCurrency
 
   const monthlyBudgetAmountDisplay = monthlyBudget
-    ? (convertAmount(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
-        ?? (monthlyBudget.currency === displayCurrency ? monthlyBudget.amount : 0))
+    ? convertAmountOrZero(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
     : 0
 
   const totalSpentDisplay = displayCurrency === primaryCurrency
     ? totalSpentPrimary
-    : (convertAmount(totalSpentPrimary, primaryCurrency, displayCurrency, ratesData?.rates, ratesData?.base) ?? 0)
+    : convertAmountOrZero(totalSpentPrimary, primaryCurrency, displayCurrency, ratesData?.rates, ratesData?.base)
 
   const remaining = Math.max(monthlyBudgetAmountDisplay - totalSpentDisplay, 0)
   const usedPct = monthlyBudgetAmountDisplay > 0
@@ -196,9 +179,8 @@ export default function SettingsBudget() {
       const goalCurrency = goal.type === 'percent'
         ? (monthlyBudget?.currency ?? primaryCurrency)
         : goal.currency
-      const converted = convertAmount(tx.amount, tx.currency, goalCurrency, ratesData?.rates, ratesData?.base)
-      if (converted === null && tx.currency !== goalCurrency) return
-      const next = (map.get(tx.category_id) ?? 0) + (converted ?? tx.amount)
+      const converted = convertAmountOrZero(tx.amount, tx.currency, goalCurrency, ratesData?.rates, ratesData?.base)
+      const next = (map.get(tx.category_id) ?? 0) + converted
       map.set(tx.category_id, next)
     })
     return map
@@ -218,9 +200,69 @@ export default function SettingsBudget() {
 
   const getConvertedLabel = (amount: number, currency: string) => {
     if (currency === defaultCurrency) return null
-    const converted = convertAmount(amount, currency, defaultCurrency, ratesData?.rates, ratesData?.base)
-    if (converted === null) return null
+    const converted = convertAmountOrZero(amount, currency, defaultCurrency, ratesData?.rates, ratesData?.base)
+    if (converted === 0 && amount !== 0) return null
     return formatCurrency(converted, defaultCurrency)
+  }
+
+  async function applyAutoDistribution() {
+    if (!monthlyBudget || monthlyBudget.amount <= 0) {
+      toast.error(lang === 'ko' ? '월 전체 예산을 먼저 설정해주세요' : 'Set a monthly budget first')
+      return
+    }
+
+    const [year, month] = selectedMonth.split('-').map(Number)
+    const startDate = new Date(year, month - 6, 1)
+    const endDate = new Date(year, month, 0)
+    const start = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`
+    const end = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`
+
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('category_id, amount, currency')
+      .eq('type', '지출')
+      .gte('date', start)
+      .lte('date', end)
+
+    if (error) {
+      toast.error(error.message)
+      return
+    }
+
+    const totals = new Map<string, number>()
+    ;(data ?? []).forEach((tx) => {
+      if (!tx.category_id) return
+      const converted = convertAmountOrZero(tx.amount, tx.currency ?? primaryCurrency, monthlyBudget.currency, ratesData?.rates, ratesData?.base)
+      totals.set(tx.category_id, (totals.get(tx.category_id) ?? 0) + converted)
+    })
+
+    const totalSpent = Array.from(totals.values()).reduce((sum, amount) => sum + amount, 0)
+    if (totalSpent <= 0) {
+      toast.error(lang === 'ko' ? '최근 지출 데이터가 부족해요' : 'Not enough recent spending data')
+      return
+    }
+
+    const categoryIds = new Set(categories?.map((cat) => cat.id) ?? [])
+    const entries = Array.from(totals.entries())
+      .filter(([categoryId]) => categoryIds.has(categoryId))
+      .sort((a, b) => b[1] - a[1])
+
+    let assignedPercent = 0
+    for (let index = 0; index < entries.length; index += 1) {
+      const [categoryId, amount] = entries[index]
+      const percent = index === entries.length - 1
+        ? Math.max(0, Math.round((100 - assignedPercent) * 10) / 10)
+        : Math.max(0.1, Math.round((amount / totalSpent) * 1000) / 10)
+      assignedPercent += percent
+      await setGoal(categoryId, {
+        amount: (monthlyBudget.amount * percent) / 100,
+        currency: monthlyBudget.currency,
+        percent,
+        type: 'percent',
+      })
+    }
+
+    toast.success(lang === 'ko' ? '최근 지출 비중으로 예산을 배분했어요' : 'Budget distributed from recent spending')
   }
 
   return (
@@ -301,6 +343,15 @@ export default function SettingsBudget() {
 
         <button
           type="button"
+          onClick={applyAutoDistribution}
+          className="flex w-full items-center justify-center gap-2 rounded-[1.35rem] border border-[#dceee9] bg-white px-4 py-3 text-sm font-bold text-[#0b6f61] shadow-[var(--fintra-shadow-soft)] transition active:scale-[0.99] dark:border-slate-700 dark:bg-slate-900"
+        >
+          <Sparkles className="h-4 w-4" />
+          {lang === 'ko' ? '최근 6개월 기준 자동 배분' : 'Auto-distribute from 6 months'}
+        </button>
+
+        <button
+          type="button"
           onClick={() => {
             if (isMonthlyEditorOpen) {
               setIsMonthlyEditorOpen(false)
@@ -374,13 +425,12 @@ export default function SettingsBudget() {
               </button>
             </div>
             <div className="space-y-2.5">
-              <input
-                type="number"
-                inputMode="decimal"
+              <CurrencyInput
+                currency={monthlyCurrency}
                 placeholder="0"
                 value={monthlyAmount}
-                onChange={(e) => setMonthlyAmount(e.target.value)}
-                className="w-full rounded-[1.15rem] border border-slate-200 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition focus:border-[#0b6f61] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                onChange={(value) => setMonthlyAmount(value === '' ? '' : String(value))}
+                className="rounded-[1.15rem] py-3 pl-20 text-base shadow-none"
               />
               <div className="fintra-horizontal-scroll flex gap-1.5 pb-1">
                 {SUPPORTED_CURRENCIES.map((c) => (
@@ -541,15 +591,26 @@ export default function SettingsBudget() {
                             {budgetInputMode === 'percent' ? (lang === 'ko' ? '비율 한도 수정' : 'Edit percentage limit') : (lang === 'ko' ? '금액 한도 수정' : 'Edit amount limit')}
                           </p>
                         </div>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          placeholder="0"
-                          value={editAmount}
-                          onChange={(e) => setEditAmount(e.target.value)}
-                          autoFocus
-                          className="w-full rounded-[1.15rem] border border-transparent bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none transition focus:ring-4 focus:ring-[#0b6f61]/10 dark:bg-slate-800 dark:text-white"
-                        />
+                        {budgetInputMode === 'percent' ? (
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0"
+                            value={editAmount}
+                            onChange={(e) => setEditAmount(e.target.value.replace(/[^\d.]/g, ''))}
+                            autoFocus
+                            className="w-full rounded-[1.15rem] border border-transparent bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none transition focus:ring-4 focus:ring-[#0b6f61]/10 dark:bg-slate-800 dark:text-white"
+                          />
+                        ) : (
+                          <CurrencyInput
+                            currency={goalCurrency}
+                            placeholder="0"
+                            value={editAmount}
+                            onChange={(value) => setEditAmount(value === '' ? '' : String(value))}
+                            autoFocus
+                            className="rounded-[1.15rem] py-3 pl-20 text-base shadow-none"
+                          />
+                        )}
                         {budgetInputMode === 'percent' && (
                           <p className="mt-1 text-[10px] text-slate-400">월 예산 기준 비율(%)</p>
                         )}

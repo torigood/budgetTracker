@@ -65,6 +65,19 @@ export default function Login() {
     }
   }
 
+  async function handleApple() {
+    setSubmitting(true)
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'apple',
+      options: { redirectTo: `${window.location.origin}/dashboard` },
+    })
+    if (error) {
+      console.error('Apple OAuth error:', error)
+      toast.error(t('login_error'))
+      setSubmitting(false)
+    }
+  }
+
   function handleBiometric() {
     toast.message(lang === 'ko' ? '기기 인증은 로그인 후 사용할 수 있어요' : 'Biometric unlock is available after sign in')
   }
@@ -470,8 +483,9 @@ export default function Login() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => toast.message(lang === 'ko' ? 'Apple 로그인은 준비 중이에요' : 'Apple sign in is coming soon')}
-                  className="auth-social-button"
+                  onClick={handleApple}
+                  disabled={submitting}
+                  className="auth-social-button disabled:opacity-60"
                 >
                   <span className="text-lg leading-none"></span>
                   Apple
@@ -610,7 +624,10 @@ export default function Login() {
                       <span className="text-[12px] font-medium leading-5 text-[#7d8582] dark:text-slate-400">
                         {lang === 'ko'
                           ? 'Fintra 이용약관과 개인정보 처리방침에 동의합니다.'
-                          : 'I agree to Fintra’s terms and privacy policy.'}
+                          : 'I agree to Fintra’s terms and privacy policy.'}{' '}
+                        <Link to="/terms" className="font-bold text-[#006b5b]">{lang === 'ko' ? '약관' : 'Terms'}</Link>
+                        {' / '}
+                        <Link to="/privacy" className="font-bold text-[#006b5b]">{lang === 'ko' ? '개인정보' : 'Privacy'}</Link>
                       </span>
                     </label>
                   </>
