@@ -446,7 +446,7 @@ export default function Dashboard() {
                       }`}>
                         {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
                       </span>
-                      <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} className="mt-0.5 block" />
+                      <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} sign={tx.type === '지출' ? '-' : '+'} className="mt-0.5 block" />
                     </div>
                   </div>
                 )

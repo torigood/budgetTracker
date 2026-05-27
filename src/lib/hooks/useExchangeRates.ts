@@ -4,9 +4,10 @@ import type { ExchangeRates } from '@/lib/utils/currency'
 import { supabase } from '@/lib/supabase'
 
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6
+const CACHE_VERSION = 'v2'
 
 function getCacheKey(base: string) {
-  return `exchange_rates_v1_${base}`
+  return `exchange_rates_${CACHE_VERSION}_${base}`
 }
 
 function readCache(base: string): { base: string; rates: Record<string, number>; fetchedAt: number } | null {
@@ -15,6 +16,7 @@ function readCache(base: string): { base: string; rates: Record<string, number>;
     if (!raw) return null
     const parsed = JSON.parse(raw) as { base: string; rates: Record<string, number>; fetchedAt: number }
     if (!parsed?.rates || !parsed?.fetchedAt) return null
+    if (parsed.base !== base) return null
     if (Date.now() - parsed.fetchedAt > CACHE_TTL_MS) return null
     return parsed
   } catch {
@@ -43,7 +45,11 @@ async function fetchExchangeRates(base: CurrencyCode) {
     throw new Error('Exchange rates response missing rates')
   }
 
-  return data as { base: string; rates: Record<string, number>; fetchedAt: number }
+  return {
+    base,
+    rates: { ...data.rates, [base]: 1 },
+    fetchedAt: data.fetchedAt ?? Date.now(),
+  } as { base: string; rates: Record<string, number>; fetchedAt: number }
 }
 
 export function useExchangeRates(base: CurrencyCode) {

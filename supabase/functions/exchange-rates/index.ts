@@ -42,11 +42,8 @@ serve(async (req) => {
     const baseCurrency = SUPPORTED_SYMBOLS.includes(requestedBaseCurrency) ? requestedBaseCurrency : 'CAD'
 
     const baseUrl = Deno.env.get('EXCHANGERATES_API_BASE_URL')
-      ?? 'https://api.fastforex.io/fetch-all'
-
-    const url = new URL(baseUrl)
-    url.searchParams.set('api_key', apiKey)
-    url.searchParams.set('from', baseCurrency)
+      ?? 'https://v6.exchangerate-api.com/v6'
+    const url = new URL(`${baseUrl.replace(/\/$/, '')}/${apiKey}/latest/${baseCurrency}`)
 
     const res = await fetch(url.toString())
     const rawText = await res.text()
@@ -57,11 +54,11 @@ serve(async (req) => {
       data = { raw: rawText }
     }
 
-    if (!res.ok || data?.success === false) {
+    if (!res.ok || data?.result === 'error') {
       return new Response(
         JSON.stringify({
-          error: data?.error?.info ?? data?.error?.type ?? 'Exchange rates request failed',
-          base: data?.base ?? baseCurrency,
+          error: data?.['error-type'] ?? 'Exchange rates request failed',
+          base: data?.base_code ?? baseCurrency,
           status: res.status,
           raw: data?.raw,
         }),
@@ -69,15 +66,17 @@ serve(async (req) => {
       )
     }
 
-    const rates = (data?.results as Record<string, number> | undefined)
+    const rates = (data?.conversion_rates as Record<string, number> | undefined)
       ?? (data?.rates as Record<string, number> | undefined)
       ?? {}
 
     return new Response(
       JSON.stringify({
-        base: (data?.base as string | undefined) ?? baseCurrency,
-        rates,
-        fetchedAt: data?.updated ? new Date(String(data.updated)).getTime() : Date.now(),
+        base: baseCurrency,
+        rates: { ...rates, [baseCurrency]: 1 },
+        fetchedAt: typeof data?.time_last_update_unix === 'number'
+          ? data.time_last_update_unix * 1000
+          : Date.now(),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )

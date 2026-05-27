@@ -447,7 +447,7 @@ export default function Calendar() {
                                   <span className={`block text-sm font-bold tabular-nums ${tx.type === '지출' ? 'text-[#c46f63]' : 'text-[#006b5b]'}`}>
                                     {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
                                   </span>
-                                  <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} className="mt-0.5 block" />
+                                  <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} sign={tx.type === '지출' ? '-' : '+'} className="mt-0.5 block" />
                                   <button
                                     onClick={() => navigate(`/transactions/${tx.id}/edit`)}
                                     className="mt-1 inline-flex rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"

@@ -8,9 +8,10 @@ type ConvertedAmountProps = {
   amount: number
   fromCurrency: string
   className?: string
+  sign?: '+' | '-'
 }
 
-export function ConvertedAmount({ amount, fromCurrency, className = '' }: ConvertedAmountProps) {
+export function ConvertedAmount({ amount, fromCurrency, className = '', sign }: ConvertedAmountProps) {
   const { currency: targetCurrency } = useUIStore()
   const { data } = useExchangeRates(targetCurrency)
 
@@ -23,7 +24,7 @@ export function ConvertedAmount({ amount, fromCurrency, className = '' }: Conver
 
   return (
     <span className={`text-[11px] text-slate-400 ${className}`}>
-      (~{formatCurrency(converted, targetCurrency)})
+      (~{sign ?? ''}{formatCurrency(converted, targetCurrency)})
     </span>
   )
 }

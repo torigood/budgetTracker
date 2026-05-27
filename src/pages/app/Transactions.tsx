@@ -79,7 +79,7 @@ export default function Transactions() {
   const { data: categories } = useCategories()
   const deleteMutation = useDeleteTransaction()
   const swipe = useSwipeMonth(filters.month, setMonth)
-  const { data: ratesData } = useExchangeRates(defaultCurrency)
+  const { data: ratesData, isLoading: ratesLoading } = useExchangeRates(defaultCurrency)
 
   const hasActiveFilter = !!(filters.categoryId || filters.type)
   const allTransactions = data?.pages.flat() as TxWithCategory[] | undefined
@@ -298,24 +298,31 @@ export default function Transactions() {
           />
         ) : (
           Object.entries(grouped).map(([dateLabel, txs]) => {
-            const dayExpense = txs.filter(t => t.type === '지출').reduce((s, t) => s + t.amount, 0)
-            const dayExpenseConverted = ratesData?.rates
-              ? txs
-                .filter(t => t.type === '지출')
-                .reduce((sum, t) => {
-                  const converted = convertAmount(t.amount, t.currency, defaultCurrency, ratesData.rates, ratesData.base)
-                  return sum + (converted ?? 0)
-                }, 0)
+            const dayNetConverted = ratesData?.rates
+              ? txs.reduce<number | null>((sum, tx) => {
+                if (sum === null) return null
+                const converted = convertAmount(tx.amount, tx.currency, defaultCurrency, ratesData.rates, ratesData.base)
+                if (converted === null) return null
+                return sum + (tx.type === '수입' ? converted : -converted)
+              }, 0)
               : null
-            const dayExpenseDisplay = dayExpenseConverted ?? dayExpense
+            const dayNetSign = (dayNetConverted ?? 0) >= 0 ? '+' : '-'
+            const dayNetTone = dayNetSign === '+'
+              ? 'bg-[#dceee9] text-[#0b6f61]'
+              : 'bg-[#f8e8e4] text-[#c46f63]'
             return (
               <Card key={dateLabel} variant="transaction" padding="none" className="mx-4 mt-3 overflow-hidden">
                 {/* Date group header */}
                 <div className="flex items-center justify-between px-5 py-3.5">
                   <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{dateLabel}</span>
-                  {dayExpenseDisplay > 0 && (
-                    <span className="rounded-full bg-[#f8e8e4] px-2.5 py-1 text-xs font-semibold text-[#c46f63] tabular-nums">
-                      -{formatCurrency(dayExpenseDisplay, defaultCurrency)}
+                  {dayNetConverted !== null && Math.abs(dayNetConverted) > 0 && (
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums ${dayNetTone}`}>
+                      {dayNetSign}{formatCurrency(Math.abs(dayNetConverted), defaultCurrency)}
+                    </span>
+                  )}
+                  {dayNetConverted === null && ratesLoading && txs.length > 0 && (
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-400">
+                      {lang === 'ko' ? '환산 중' : 'Converting'}
                     </span>
                   )}
                 </div>
@@ -414,7 +421,7 @@ function TransactionRow({
         >
           {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
         </span>
-        <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} className="mt-0.5 block" />
+        <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} sign={tx.type === '지출' ? '-' : '+'} className="mt-0.5 block" />
       </div>
     </div>
   )
@@ -499,7 +506,7 @@ function TransactionDetailModal({
               {tx.type === '지출' ? '-' : '+'}
               {formatCurrency(tx.amount, tx.currency)}
             </p>
-            <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} className="mt-2 block text-[11px]" />
+            <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} sign={tx.type === '지출' ? '-' : '+'} className="mt-2 block text-[11px]" />
             <div className="mx-auto mt-4 inline-flex max-w-full items-center gap-2 rounded-full bg-white px-3.5 py-2 text-sm font-semibold text-[#141716] shadow-[var(--fintra-shadow-soft)] dark:bg-slate-800 dark:text-white">
               <span
                 className="flex h-6 w-6 items-center justify-center rounded-full text-xs"

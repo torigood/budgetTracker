@@ -10,8 +10,8 @@ export function convertAmount(
   rates?: Record<string, number>,
   baseCurrency?: string
 ): number | null {
-  if (!rates || !baseCurrency) return null
   if (fromCurrency === toCurrency) return amount
+  if (!rates || !baseCurrency) return null
 
   if (fromCurrency === baseCurrency) {
     const rate = rates[toCurrency]
