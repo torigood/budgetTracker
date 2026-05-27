@@ -12,9 +12,14 @@ const SUPPORTED_SYMBOLS = ['KRW', 'CAD', 'USD', 'JPY', 'EUR', 'GBP']
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('origin') ?? ''
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  const isAllowedOrigin =
+    ALLOWED_ORIGINS.includes(origin)
+    || /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)
+
+  const allowedOrigin = isAllowedOrigin ? origin : ALLOWED_ORIGINS[0]
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   }
 }
