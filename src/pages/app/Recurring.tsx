@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, Edit2, Trash2, Power, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRecurringItems, useCreateRecurring, useUpdateRecurring, useDeleteRecurring, useRunRecurringNow, type RecurringWithCategory } from '@/lib/hooks/useRecurring'
@@ -11,6 +11,7 @@ import { translations } from '@/lib/i18n'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { CategoryBadge } from '@/components/ui/Badge'
+import { CurrencyInput } from '@/components/ui/CurrencyInput'
 import { formatCurrency } from '@/utils/format'
 import { useT } from '@/lib/hooks/useT'
 import type { RecurringItem } from '@/types/app'
@@ -50,7 +51,7 @@ export default function Recurring() {
   const [todayKey, setTodayKey] = useState(() => new Date().toISOString().slice(0, 10))
   const recurringItems = items as RecurringWithCategory[] | undefined
 
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
+  const { control, register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(schema) as any,
     defaultValues: { payment_method: '자동지출', day_of_month: 1, currency: defaultCurrency },
@@ -69,6 +70,7 @@ export default function Recurring() {
     .reduce((sum, i) => sum + i.amount, 0) ?? 0
 
   const selectedMethod = watch('payment_method') as AutoPaymentMethod
+  const selectedCurrency = watch('currency') ?? defaultCurrency
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -329,9 +331,21 @@ export default function Recurring() {
 
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('recurring_amount')}</label>
-                  <input {...register('amount')} type="number" step="0.01" placeholder="0" className={inputClass} />
-                  {errors.amount && <p className="mt-1 text-xs text-rose-500">{errors.amount.message}</p>}
+                  <Controller
+                    name="amount"
+                    control={control}
+                    render={({ field }) => (
+                      <CurrencyInput
+                        label={t('recurring_amount')}
+                        currency={selectedCurrency}
+                        value={field.value ?? ''}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        error={errors.amount?.message}
+                        className="rounded-xl py-3 pl-20 text-base"
+                      />
+                    )}
+                  />
                 </div>
                 <div className="w-28">
                   <label className="mb-1 block text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('settings_currency_title')}</label>

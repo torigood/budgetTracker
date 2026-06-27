@@ -7,6 +7,7 @@ import { useTransactions, useDeleteTransaction, useUpdateTransaction } from '@/l
 import { useCategories } from '@/lib/hooks/useCategories'
 import { useFilterStore } from '@/lib/stores/filter.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
+import { useCurrentMonthOnEntry } from '@/lib/hooks/useCurrentMonthOnEntry'
 import { TransactionSkeleton } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
@@ -69,6 +70,7 @@ export default function Transactions() {
   const { lang, currency: defaultCurrency } = useUIStore()
   const tr = translations[lang]
   const { filters, setMonth, setCategoryId, setType, setSearch, toggleSortOrder, resetFilters } = useFilterStore()
+  useCurrentMonthOnEntry(setMonth)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
   const [searchAll, setSearchAll] = useState(false)

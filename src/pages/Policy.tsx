@@ -1,9 +1,10 @@
-import { Link, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ChevronLeft, ShieldCheck } from 'lucide-react'
 import { useUIStore } from '@/lib/stores/ui.store'
 
 export default function Policy() {
   const { pathname } = useLocation()
+  const navigate = useNavigate()
   const lang = useUIStore((state) => state.lang)
   const isPrivacy = pathname.includes('privacy')
   const title = isPrivacy
@@ -27,9 +28,9 @@ export default function Policy() {
   return (
     <main className="mx-auto flex min-h-svh w-full max-w-[430px] flex-col bg-[#f6f5f1] px-5 py-5 text-[#141716] dark:bg-[#080a08] dark:text-white">
       <header className="flex items-center justify-between">
-        <Link to="/login" className="auth-icon-button" aria-label={lang === 'ko' ? '뒤로' : 'Back'}>
+        <button type="button" onClick={() => navigate(-1)} className="auth-icon-button" aria-label={lang === 'ko' ? '뒤로' : 'Back'}>
           <ChevronLeft className="h-4 w-4" />
-        </Link>
+        </button>
         <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#dceee9] text-[#0b6f61]">
           <ShieldCheck className="h-4 w-4" />
         </span>
@@ -39,8 +40,13 @@ export default function Policy() {
         <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#8b9390]">Fintra</p>
         <h1 className="mt-2 text-[2rem] font-semibold leading-tight">{title}</h1>
         <p className="mt-3 text-sm font-medium leading-6 text-[#7d8582] dark:text-slate-400">
-          {lang === 'ko' ? '시행일: 2026년 5월 27일' : 'Effective date: May 27, 2026'}
+          {lang === 'ko' ? '초안 작성일: 2026년 6월 28일' : 'Draft date: June 28, 2026'}
         </p>
+        <div className="mt-4 rounded-[1.35rem] border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-6 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+          {lang === 'ko'
+            ? '이 문서는 제품 화면 준비를 위한 임시 초안입니다. 정식 배포 전 개인정보/소비자 약관에 대한 법무 검토가 필요합니다.'
+            : 'This document is draft copy for product readiness. Legal review is required before production release.'}
+        </div>
       </section>
 
       <section className="mt-8 space-y-3">

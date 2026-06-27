@@ -4,6 +4,10 @@ import { ChevronLeft, ChevronRight, Plus, X, Edit2, Settings } from 'lucide-reac
 import { useCalendar, type CalendarTransaction } from '@/lib/hooks/useCalendar'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
+import { useCurrentMonthOnEntry } from '@/lib/hooks/useCurrentMonthOnEntry'
+import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
+import { convertAmountOrZero } from '@/lib/utils/currency'
+import { calculateTransactionTotals } from '@/lib/utils/finance'
 import { MonthPickerModal } from '@/components/ui/MonthPickerModal'
 import { CategoryBadge } from '@/components/ui/Badge'
 import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
@@ -68,9 +72,11 @@ function todayISO(): string {
 
 export default function Calendar() {
   const navigate = useNavigate()
-  const { selectedMonth, setSelectedMonth, lang } = useUIStore()
+  const { selectedMonth, setSelectedMonth, lang, currency: systemCurrency } = useUIStore()
+  useCurrentMonthOnEntry(setSelectedMonth)
   const t = useT()
   const { data: byDate, isLoading } = useCalendar(selectedMonth)
+  const { data: ratesData } = useExchangeRates(systemCurrency)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [showPicker, setShowPicker] = useState(false)
   const swipe = useSwipeMonth(selectedMonth, setSelectedMonth)
@@ -79,17 +85,25 @@ export default function Calendar() {
   const today = todayISO()
   const currentMonth = getCurrentMonth()
   const isCurrentMonth = selectedMonth === currentMonth
+  const toSystemCurrency = (amount: number, currency: string) => (
+    convertAmountOrZero(amount, currency, systemCurrency, ratesData?.rates, ratesData?.base)
+  )
+  const systemByDate: Record<string, { expense: number; income: number }> = {}
+  Object.entries(byDate ?? {}).forEach(([date, day]) => {
+    systemByDate[date] = calculateTransactionTotals(day.transactions, systemCurrency, ratesData?.rates, ratesData?.base)
+  })
   const selectedDaySummary = selectedDate ? byDate?.[selectedDate] : null
-  const monthTotals = Object.values(byDate ?? {}).reduce(
+  const selectedDaySystem = selectedDate ? systemByDate[selectedDate] : null
+  const monthTotals = Object.entries(byDate ?? {}).reduce(
     (acc, day) => ({
-      expense: acc.expense + day.expense,
-      income: acc.income + day.income,
-      count: acc.count + day.transactions.length,
+      expense: acc.expense + (systemByDate[day[0]]?.expense ?? 0),
+      income: acc.income + (systemByDate[day[0]]?.income ?? 0),
+      count: acc.count + day[1].transactions.length,
     }),
     { expense: 0, income: 0, count: 0 }
   )
   const activeDayCount = Object.keys(byDate ?? {}).length
-  const topExpense = Math.max(1, ...Object.values(byDate ?? {}).map((day) => day.expense))
+  const topExpense = Math.max(1, ...Object.values(systemByDate).map((day) => day.expense))
   const selectedCategoryGroups = selectedDaySummary?.transactions.reduce(
     (groups, tx) => {
       const key = tx.categories?.id ?? 'uncategorized'
@@ -102,7 +116,7 @@ export default function Calendar() {
           count: 0,
         }
       }
-      if (tx.type === '지출') groups[key].total += tx.amount
+      if (tx.type === '지출') groups[key].total += toSystemCurrency(tx.amount, tx.currency ?? 'CAD')
       groups[key].count += 1
       return groups
     },
@@ -174,11 +188,11 @@ export default function Calendar() {
         <div className="mt-4 grid grid-cols-3 gap-2.5">
           <div className="rounded-[1.25rem] bg-[#f8e8e4] px-3 py-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#c46f63]">{t('calendar_expense_label')}</p>
-            <p className="mt-1 truncate text-sm font-bold tabular-nums text-[#141716]">{formatCurrency(monthTotals.expense, 'CAD')}</p>
+            <p className="mt-1 break-words text-sm font-bold leading-tight tabular-nums text-[#141716]">{formatCurrency(monthTotals.expense, systemCurrency)}</p>
           </div>
           <div className="rounded-[1.25rem] bg-[#e8f4ef] px-3 py-3">
             <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-[#006b5b]">{t('calendar_income_label')}</p>
-            <p className="mt-1 truncate text-sm font-bold tabular-nums text-[#141716]">{formatCurrency(monthTotals.income, 'CAD')}</p>
+            <p className="mt-1 break-words text-sm font-bold leading-tight tabular-nums text-[#141716]">{formatCurrency(monthTotals.income, systemCurrency)}</p>
           </div>
           <button
             onClick={() => setSelectedMonth(currentMonth)}
@@ -217,10 +231,11 @@ export default function Calendar() {
         <div className="grid grid-cols-7 gap-1.5">
           {days.map(({ date, day, isCurrentMonth }, idx) => {
             const summary = byDate?.[date]
+            const systemSummary = systemByDate[date]
             const isToday = date === today
             const isSelected = date === selectedDate
             const colIdx = idx % 7
-            const expensePct = summary?.expense ? Math.min(100, Math.max(18, (summary.expense / topExpense) * 100)) : 0
+            const expensePct = systemSummary?.expense ? Math.min(100, Math.max(18, (systemSummary.expense / topExpense) * 100)) : 0
 
             return (
               <button
@@ -250,18 +265,18 @@ export default function Calendar() {
                 {summary ? (
                   <div className="mt-auto flex w-full flex-col items-center gap-0.5 px-0.5">
                     <div className="h-1 w-full overflow-hidden rounded-full bg-[#edf1ef]">
-                      {summary.expense > 0 && (
+                      {(systemSummary?.expense ?? 0) > 0 && (
                         <span className="block h-full rounded-full bg-[#c46f63]" style={{ width: `${expensePct}%` }} />
                       )}
                     </div>
-                    {summary.expense > 0 && (
+                    {(systemSummary?.expense ?? 0) > 0 && (
                       <span className="mt-0.5 w-full truncate text-center text-[7.5px] font-bold tabular-nums leading-tight text-[#c46f63]">
-                        -{formatCompactCurrency(summary.expenseByCurrency[0]?.amount ?? summary.expense, summary.expenseByCurrency[0]?.currency ?? 'CAD')}
+                        -{formatCompactCurrency(systemSummary?.expense ?? 0, systemCurrency)}
                       </span>
                     )}
-                    {summary.income > 0 && (
+                    {(systemSummary?.income ?? 0) > 0 && (
                       <span className="w-full truncate text-center text-[7.5px] font-bold tabular-nums leading-tight text-[#006b5b]">
-                        +{formatCompactCurrency(summary.incomeByCurrency[0]?.amount ?? summary.income, summary.incomeByCurrency[0]?.currency ?? 'CAD')}
+                        +{formatCompactCurrency(systemSummary?.income ?? 0, systemCurrency)}
                       </span>
                     )}
                   </div>
@@ -277,7 +292,7 @@ export default function Calendar() {
       {/* Day detail modal */}
       {selectedDate && (
         <div
-          className="fixed inset-0 z-40 flex items-end justify-center px-3 pt-8 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-8"
+          className="fixed inset-0 z-40 flex items-center justify-center px-4 py-[calc(1rem+env(safe-area-inset-bottom))] sm:py-8"
           onClick={() => setSelectedDate(null)}
           onTouchStart={(e) => e.stopPropagation()}
           onTouchEnd={(e) => e.stopPropagation()}
@@ -291,8 +306,8 @@ export default function Calendar() {
             <div className="relative overflow-hidden border-b border-[var(--fintra-line)] px-5 py-5 dark:border-slate-800">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-36 bg-[linear-gradient(180deg,#f2e4d4_0%,rgba(251,251,250,0)_100%)]" />
               <div className="relative">
-              <div className="flex items-start justify-between gap-3">
-              <div>
+              <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
                 <p className="fintra-kicker">{selectedDate === today ? t('calendar_today') : lang === 'ko' ? '선택한 날짜' : 'Selected date'}</p>
                 <h2 className="mt-1 text-[1.35rem] font-semibold text-[#141716] dark:text-white">
                   {formatDateShort(selectedDate)}
@@ -303,22 +318,22 @@ export default function Calendar() {
                       {lang === 'ko' ? '하루 총 지출' : 'Daily spending'}
                     </p>
                     <div className="mt-1 flex flex-wrap items-end gap-x-2 gap-y-1">
-                      {selectedDaySummary.expenseByCurrency.length ? selectedDaySummary.expenseByCurrency.map(({ currency: c, amount }) => (
-                        <span key={c} className="text-[2rem] font-semibold leading-none tracking-[-0.01em] tabular-nums text-[#c46f63]">
-                          {formatCurrency(amount, c)}
+                      {(selectedDaySystem?.expense ?? 0) > 0 ? (
+                        <span className="break-words text-[clamp(1.55rem,8vw,2rem)] font-semibold leading-none tabular-nums text-[#c46f63] [overflow-wrap:anywhere]">
+                          -{formatCurrency(selectedDaySystem?.expense ?? 0, systemCurrency)}
                         </span>
-                      )) : (
-                        <span className="text-[2rem] font-semibold leading-none tracking-[-0.01em] text-[#141716]">
-                          {formatCurrency(0, 'CAD')}
+                      ) : (
+                        <span className="text-[clamp(1.55rem,8vw,2rem)] font-semibold leading-none text-[#141716]">
+                          {formatCurrency(0, systemCurrency)}
                         </span>
                       )}
                     </div>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {selectedDaySummary.incomeByCurrency.map(({ currency: c, amount }) => (
-                        <span key={c} className="rounded-full bg-[#e8f4ef] px-3 py-1.5 text-xs font-bold text-[#006b5b]">
-                          {t('calendar_income_label')} +{formatCurrency(amount, c)}
+                      {(selectedDaySystem?.income ?? 0) > 0 && (
+                        <span className="rounded-full bg-[#e8f4ef] px-3 py-1.5 text-xs font-bold text-[#006b5b]">
+                          {t('calendar_income_label')} +{formatCurrency(selectedDaySystem?.income ?? 0, systemCurrency)}
                         </span>
-                      ))}
+                      )}
                       <span className="rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold text-[#7d8582] shadow-[var(--fintra-shadow-soft)]">
                         {selectedDaySummary.transactions.length} {lang === 'ko' ? '건' : 'items'}
                       </span>
@@ -383,15 +398,15 @@ export default function Calendar() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-3">
                               <p className="truncate text-sm font-semibold text-[#141716] dark:text-white">{cat.name}</p>
-                              <p className="shrink-0 text-sm font-bold tabular-nums text-[#c46f63]">
-                                {cat.total > 0 ? formatCurrency(cat.total, selectedDaySummary.transactions[0]?.currency ?? 'CAD') : '-'}
+                              <p className="shrink-0 text-right text-sm font-bold tabular-nums text-[#c46f63]">
+                                {cat.total > 0 ? formatCurrency(cat.total, systemCurrency) : '-'}
                               </p>
                             </div>
                             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#edf1ef]">
                               <span
                                 className="block h-full rounded-full"
                                 style={{
-                                  width: `${Math.min(100, Math.max(10, (cat.total / Math.max(1, selectedDaySummary.expense)) * 100))}%`,
+                                  width: `${Math.min(100, Math.max(10, (cat.total / Math.max(1, selectedDaySystem?.expense ?? 0)) * 100))}%`,
                                   backgroundColor: cat.color,
                                 }}
                               />
@@ -430,7 +445,7 @@ export default function Calendar() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-3">
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{tx.description}</p>
                                   <div className="mt-1 flex items-center gap-1.5">
                                     <span className="text-[11px] font-medium text-slate-400">{time}</span>
@@ -443,8 +458,8 @@ export default function Calendar() {
                                     </div>
                                   )}
                                 </div>
-                                <div className="shrink-0 text-right">
-                                  <span className={`block text-sm font-bold tabular-nums ${tx.type === '지출' ? 'text-[#c46f63]' : 'text-[#006b5b]'}`}>
+                                <div className="max-w-[44%] shrink-0 text-right">
+                                  <span className={`block break-words text-sm font-bold leading-tight tabular-nums [overflow-wrap:anywhere] ${tx.type === '지출' ? 'text-[#c46f63]' : 'text-[#006b5b]'}`}>
                                     {tx.type === '지출' ? '-' : '+'}{formatCurrency(tx.amount, tx.currency)}
                                   </span>
                                   <ConvertedAmount amount={tx.amount} fromCurrency={tx.currency} sign={tx.type === '지출' ? '-' : '+'} className="mt-0.5 block" />

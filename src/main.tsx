@@ -14,10 +14,9 @@ const queryClient = new QueryClient({
   },
 })
 
-// 다크모드 초기화 — 깜빡임 방지를 위해 렌더 전 즉시 적용
+// 다크모드 초기화 — 앱 기본값은 라이트 모드로 유지
 const savedTheme = localStorage.getItem('theme')
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-const isDark = savedTheme ? savedTheme === 'dark' : prefersDark
+const isDark = savedTheme === 'dark'
 document.documentElement.classList.toggle('dark', isDark)
 
 const iconHref = '/icons/logo_512.png'

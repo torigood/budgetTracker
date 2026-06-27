@@ -38,6 +38,27 @@ export async function fetchBudgetGoalsForMonth(userId: string, month: string): P
   if (currentError) throw currentError
   if (currentRows && currentRows.length > 0) return mapRowsToGoals(currentRows as BudgetLimitRow[])
 
+  const { data: latestRows, error: latestError } = await supabase
+    .from('budget_limits')
+    .select('month')
+    .eq('user_id', userId)
+    .lt('month', month)
+    .order('month', { ascending: false })
+    .limit(1)
+
+  if (latestError) throw latestError
+  const sourceMonth = latestRows?.[0]?.month
+  if (!sourceMonth) return {}
+
+  const { data: previousRows, error: previousError } = await supabase
+    .from('budget_limits')
+    .select('category_id, limit_amount, currency, limit_percent, limit_type, month')
+    .eq('user_id', userId)
+    .eq('month', sourceMonth)
+
+  if (previousError) throw previousError
+  if (previousRows && previousRows.length > 0) return mapRowsToGoals(previousRows as BudgetLimitRow[])
+
   return {}
 }
 

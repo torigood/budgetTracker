@@ -6,6 +6,7 @@ import { useReminderCheck } from '@/lib/hooks/useNotifications'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
+import { useCurrentMonthOnEntry } from '@/lib/hooks/useCurrentMonthOnEntry'
 import { useT } from '@/lib/hooks/useT'
 import { translations } from '@/lib/i18n'
 import { useMonthlyBudget } from '@/lib/hooks/useMonthlyBudget'
@@ -16,11 +17,13 @@ import { Card } from '@/components/ui/Card'
 import { BudgetProgressBars } from '@/components/ui/Charts'
 import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
 import { convertAmountOrZero } from '@/lib/utils/currency'
+import { calculateBudgetProgress, calculateTransactionTotals, convertBudgetLimit } from '@/lib/utils/finance'
 import { formatCurrency } from '@/utils/format'
 
 export default function Dashboard() {
   const navigate = useNavigate()
   const { selectedMonth, setSelectedMonth, lang, currency: defaultCurrency } = useUIStore()
+  useCurrentMonthOnEntry(setSelectedMonth)
   const user = useAuthStore((s) => s.user)
   const { budget: monthlyBudget } = useMonthlyBudget(selectedMonth)
   useReminderCheck()
@@ -31,17 +34,7 @@ export default function Dashboard() {
   const tr = translations[lang]
 
   const primaryCurrency = defaultCurrency
-  const systemTotals = useMemo(() => {
-    return (data?.transactions ?? []).reduce(
-      (totals, tx) => {
-        const amount = convertAmountOrZero(tx.amount, tx.currency, defaultCurrency, ratesData?.rates, ratesData?.base)
-        if (tx.type === '지출') totals.expense += amount
-        else totals.income += amount
-        return totals
-      },
-      { expense: 0, income: 0 }
-    )
-  }, [data?.transactions, defaultCurrency, ratesData?.base, ratesData?.rates])
+  const systemTotals = calculateTransactionTotals(data?.transactions ?? [], defaultCurrency, ratesData?.rates, ratesData?.base)
   const totalIncome = systemTotals.income
   const totalExpense = systemTotals.expense
   const currentExpenseSamePoint = data?.currentExpenseSamePoint ?? 0
@@ -114,18 +107,25 @@ export default function Dashboard() {
   const savingsRate = totalIncome > 0 ? Math.round((netBalance / totalIncome) * 100) : 0
   const savingsDisplay = totalIncome > 0 ? `${savingsRate >= 0 ? '+' : ''}${savingsRate}%` : '-'
   const savingsClass = savingsRate >= 0 ? 'text-emerald-300' : 'text-rose-300'
+  const signedCurrency = (amount: number, currency: string) => {
+    const sign = amount > 0 ? '+' : amount < 0 ? '-' : ''
+    return `${sign}${formatCurrency(Math.abs(amount), currency)}`
+  }
+  const netLabel = netBalance >= 0
+    ? (lang === 'ko' ? '순이익' : 'Net surplus')
+    : (lang === 'ko' ? '순손실' : 'Net deficit')
 
   const summaryItems = [
     {
-      label: t('dashboard_income'),
-      display: formatCurrency(totalIncome, primaryCurrency),
+      label: lang === 'ko' ? '총 수입' : 'Total income',
+      display: signedCurrency(totalIncome, primaryCurrency),
       className: 'text-emerald-300',
       amount: totalIncome,
       currency: primaryCurrency,
     },
     {
-      label: t('dashboard_expense'),
-      display: formatCurrency(totalExpense, primaryCurrency),
+      label: lang === 'ko' ? '총 지출' : 'Total expense',
+      display: signedCurrency(-totalExpense, primaryCurrency),
       className: 'text-rose-300',
       amount: totalExpense,
       currency: primaryCurrency,
@@ -167,24 +167,21 @@ export default function Dashboard() {
     return (data?.transactions ?? []).filter((tx) => tx.type === '지출')
   }, [data?.transactions])
 
-  const totalSpentPrimary = expenseTransactions.reduce((sum, tx) => {
-    return sum + convertAmountOrZero(tx.amount, tx.currency, primaryCurrency, ratesData?.rates, ratesData?.base)
-  }, 0)
+  const totalSpentPrimary = calculateTransactionTotals(expenseTransactions, primaryCurrency, ratesData?.rates, ratesData?.base).expense
 
   const displayCurrency = monthlyBudget ? monthlyBudget.currency : primaryCurrency
 
   const monthlyBudgetAmountDisplay = monthlyBudget
-    ? convertAmountOrZero(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
+    ? convertBudgetLimit(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
     : 0
 
   const totalSpentDisplay = displayCurrency === primaryCurrency
     ? totalSpentPrimary
     : convertAmountOrZero(totalSpentPrimary, primaryCurrency, displayCurrency, ratesData?.rates, ratesData?.base)
 
-  const budgetRemaining = Math.max(monthlyBudgetAmountDisplay - totalSpentDisplay, 0)
-  const budgetUsedPct = monthlyBudgetAmountDisplay > 0
-    ? Math.min(Math.round((totalSpentDisplay / monthlyBudgetAmountDisplay) * 100), 100)
-    : 0
+  const budgetProgress = calculateBudgetProgress(totalSpentDisplay, monthlyBudgetAmountDisplay)
+  const budgetRemaining = budgetProgress.remainingAmount
+  const budgetUsedPct = budgetProgress.usedPct
   const overviewItems = [
     {
       key: 'income',
@@ -254,7 +251,7 @@ export default function Dashboard() {
                   {item.icon}
                 </span>
                 <p className="truncate text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--fintra-ink-3)]">{item.label}</p>
-                <p className="mt-1 truncate text-[0.88rem] font-bold tabular-nums text-[var(--fintra-charcoal)]">{item.value}</p>
+                <p className="mt-1 break-words text-[0.82rem] font-bold leading-tight tabular-nums text-[var(--fintra-charcoal)] [overflow-wrap:anywhere]">{item.value}</p>
               </div>
             ))}
           </div>
@@ -285,8 +282,11 @@ export default function Dashboard() {
                   {primaryCurrency}
                 </span>
               </div>
-              <p className="mt-2.5 text-[clamp(2.35rem,8.7vw,3.55rem)] font-semibold leading-none tabular-nums">
-                {formatCurrency(Math.abs(netBalance), primaryCurrency)}
+              <p className={`mt-2 text-xs font-semibold ${netBalance >= 0 ? 'text-emerald-200' : 'text-rose-200'}`}>
+                {netLabel}
+              </p>
+              <p className="mt-2.5 break-words text-[clamp(1.9rem,8.2vw,3.25rem)] font-semibold leading-tight tabular-nums [overflow-wrap:anywhere]">
+                {signedCurrency(netBalance, primaryCurrency)}
               </p>
               <ConvertedAmount
                 amount={Math.abs(netBalance)}
@@ -297,7 +297,7 @@ export default function Dashboard() {
                 {summaryItems.map((item) => (
                   <div key={item.label} className="min-w-0">
                     <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-white/56">{item.label}</p>
-                    <p className={`mt-1 text-[0.96rem] font-semibold tabular-nums ${item.className}`}>
+                    <p className={`mt-1 break-words text-[0.9rem] font-semibold leading-tight tabular-nums [overflow-wrap:anywhere] ${item.className}`}>
                       {item.display}
                     </p>
                     {item.amount !== undefined && item.currency && (
@@ -371,6 +371,11 @@ export default function Dashboard() {
                     ? t('monthly_budget_remaining')(formatCurrency(budgetRemaining, displayCurrency))
                     : t('monthly_budget_no_limit')}
                 </p>
+                {monthlyBudgetAmountDisplay > 0 && (
+                  <p className="mt-0.5 text-[11px] font-semibold text-slate-400">
+                    {lang === 'ko' ? `${budgetProgress.remainingPct}% 남음` : `${budgetProgress.remainingPct}% left`}
+                  </p>
+                )}
               </div>
             </div>
             <div className="mt-4">

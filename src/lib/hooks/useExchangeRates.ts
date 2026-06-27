@@ -4,7 +4,7 @@ import type { ExchangeRates } from '@/lib/utils/currency'
 import { supabase } from '@/lib/supabase'
 
 const CACHE_TTL_MS = 1000 * 60 * 60 * 6
-const CACHE_VERSION = 'v2'
+const CACHE_VERSION = 'v1'
 
 function getCacheKey(base: string) {
   return `exchange_rates_${CACHE_VERSION}_${base}`

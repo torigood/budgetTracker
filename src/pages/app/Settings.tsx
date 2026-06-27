@@ -1,12 +1,13 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, Moon, Sun, Download, Upload, LogOut, User, Languages, Target, Bell, BellOff, Fingerprint } from 'lucide-react'
+import { ChevronRight, Moon, Sun, Download, Upload, LogOut, User, Languages, Target, Bell, BellOff, Fingerprint, FileText, ShieldCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useT } from '@/lib/hooks/useT'
 import { translations } from '@/lib/i18n'
+import { getPasskeySupportMessage, passkeysEnabled, registerPasskey } from '@/lib/auth/passkeys'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -110,7 +111,7 @@ export default function Settings() {
   const [exportTo, setExportTo] = useState(getCurrentMonth())
   const [notifySettings, setNotifySettings] = useState<NotifySettings>(getNotifySettings)
   const [permission, setPermission] = useState<ReturnType<typeof getPermission>>(getPermission)
-  const [appLockEnabled, setAppLockEnabled] = useState(() => localStorage.getItem('appLockEnabled') === 'true')
+  const [registeringPasskey, setRegisteringPasskey] = useState(false)
 
   const updateNotify = useCallback(<K extends keyof NotifySettings>(key: K, value: NotifySettings[K]) => {
     const keyMap: Record<keyof NotifySettings, 'budgetEnabled' | 'monthlyBudgetEnabled' | 'reminderEnabled' | 'reminderTime' | 'anomalyEnabled'> = {
@@ -188,12 +189,24 @@ export default function Settings() {
     toast.success(tr.settings_export_success_n(data.length))
   }
 
-  function toggleAppLock(enabled: boolean) {
-    setAppLockEnabled(enabled)
-    localStorage.setItem('appLockEnabled', String(enabled))
-    toast.success(enabled
-      ? (lang === 'ko' ? '앱 잠금이 켜졌습니다' : 'App lock enabled')
-      : (lang === 'ko' ? '앱 잠금이 꺼졌습니다' : 'App lock disabled'))
+  async function handleRegisterPasskey() {
+    const supportMessage = getPasskeySupportMessage(lang)
+    if (supportMessage) {
+      toast.message(supportMessage)
+      return
+    }
+
+    setRegisteringPasskey(true)
+    try {
+      const { error } = await registerPasskey()
+      if (error) throw error
+      toast.success(lang === 'ko' ? '이 기기의 인증 수단이 등록됐어요' : 'Device authentication registered')
+    } catch (err) {
+      console.error('Passkey registration error:', err)
+      toast.error(lang === 'ko' ? '기기 인증 등록에 실패했어요' : 'Could not register device authentication')
+    } finally {
+      setRegisteringPasskey(false)
+    }
   }
 
   return (
@@ -364,13 +377,50 @@ export default function Settings() {
         {/* 알림 */}
         <div>
           <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{lang === 'ko' ? '보안' : 'Security'}</p>
-          <Card variant="settings" padding="none" className="overflow-hidden">
+          <Card variant="settings" padding="none" className="divide-y divide-slate-100/80 overflow-hidden dark:divide-slate-800/70">
+            <SettingRow
+              icon={<ShieldCheck className="h-4 w-4" />}
+              label={lang === 'ko' ? '기기 인증 등록' : 'Register device authentication'}
+              description={lang === 'ko'
+                ? 'Passkey/WebAuthn으로 이 기기의 Face ID, Touch ID 또는 화면 잠금을 등록합니다.'
+                : 'Register this device with Passkey/WebAuthn using Face ID, Touch ID, or screen lock.'}
+              onClick={handleRegisterPasskey}
+              right={
+                <span className="text-xs font-semibold text-[#0b6f61]">
+                  {registeringPasskey ? (lang === 'ko' ? '등록 중' : 'Registering') : (lang === 'ko' ? '등록' : 'Register')}
+                </span>
+              }
+            />
             <NotifyToggleRow
               icon={<Fingerprint className="h-4 w-4" />}
-              label={lang === 'ko' ? '생체 인증 앱 잠금' : 'Biometric app lock'}
-              description={lang === 'ko' ? '로그인 후 빠른 재인증 용도로 사용합니다.' : 'Used for quick re-authentication after sign in.'}
-              enabled={appLockEnabled}
-              onToggle={toggleAppLock}
+              label={lang === 'ko' ? '기기 인증 로그인' : 'Device authentication sign-in'}
+              description={lang === 'ko'
+                ? 'Passkey 등록 후 로그인 화면에서 기기 인증을 사용할 수 있습니다. 앱 잠금 게이트는 별도 구현이 필요합니다.'
+                : 'After passkey registration, the login screen can use device authentication. An app-lock gate requires a separate implementation.'}
+              enabled={passkeysEnabled}
+              disabled
+              onToggle={() => undefined}
+            />
+          </Card>
+        </div>
+
+        {/* 법적 고지 */}
+        <div>
+          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">{lang === 'ko' ? '법적 고지' : 'Legal'}</p>
+          <Card variant="settings" padding="none" className="divide-y divide-slate-100/80 overflow-hidden dark:divide-slate-800/70">
+            <SettingRow
+              icon={<FileText className="h-4 w-4" />}
+              label={lang === 'ko' ? '개인정보 처리방침' : 'Privacy Policy'}
+              description={lang === 'ko' ? '임시 초안입니다. 정식 배포 전 법무 검토가 필요합니다.' : 'Draft copy. Legal review is needed before production.'}
+              onClick={() => navigate('/privacy')}
+              right={<ChevronRight className="h-4 w-4 text-slate-300" />}
+            />
+            <SettingRow
+              icon={<FileText className="h-4 w-4" />}
+              label={lang === 'ko' ? '이용약관' : 'Terms of Service'}
+              description={lang === 'ko' ? '임시 초안입니다. 정식 배포 전 법무 검토가 필요합니다.' : 'Draft copy. Legal review is needed before production.'}
+              onClick={() => navigate('/terms')}
+              right={<ChevronRight className="h-4 w-4 text-slate-300" />}
             />
           </Card>
         </div>

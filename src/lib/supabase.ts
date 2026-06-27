@@ -7,6 +7,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables. Check .env.local')
 }
 
+const enablePasskeys = import.meta.env.VITE_ENABLE_PASSKEYS === 'true'
+const supabaseOptions = enablePasskeys
+  ? ({ auth: { experimental: { passkey: true } } } as Parameters<typeof createClient>[2])
+  : undefined
+
 // Use untyped client; explicit casts per query for safety
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const supabase = createClient(supabaseUrl, supabaseAnonKey) as any
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, supabaseOptions) as any

@@ -7,9 +7,11 @@ import { useCategories } from '@/lib/hooks/useCategories'
 import { useBudgetGoals } from '@/lib/hooks/useBudgetGoals'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useMonthlyBudget } from '@/lib/hooks/useMonthlyBudget'
+import { useCurrentMonthOnEntry } from '@/lib/hooks/useCurrentMonthOnEntry'
 import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
 import { convertAmountOrZero, parseAmountInput } from '@/lib/utils/currency'
+import { calculateBudgetProgress, calculateTransactionTotals, convertBudgetLimit } from '@/lib/utils/finance'
 import { formatCurrency } from '@/utils/format'
 import { useT } from '@/lib/hooks/useT'
 import { Card } from '@/components/ui/Card'
@@ -21,6 +23,8 @@ export default function SettingsBudget() {
   const t = useT()
   const { data: categories, isLoading } = useCategories()
   const { currency: defaultCurrency, selectedMonth, lang } = useUIStore()
+  const setSelectedMonth = useUIStore((state) => state.setSelectedMonth)
+  useCurrentMonthOnEntry(setSelectedMonth)
   const { goals, setGoal, setAllCurrencies } = useBudgetGoals(selectedMonth)
   const { data: dashData } = useDashboard(selectedMonth)
   const { budget: monthlyBudget, setBudget: setMonthlyBudget } = useMonthlyBudget(selectedMonth)
@@ -151,24 +155,25 @@ export default function SettingsBudget() {
     return convertAmountOrZero(amount, currency, primaryCurrency, ratesData?.rates, ratesData?.base)
   }
 
-  const totalSpentPrimary = expenseTransactions.reduce((sum, tx) => {
-    return sum + toPrimary(tx.amount, tx.currency)
-  }, 0)
+  const totalExpensePrimary = calculateTransactionTotals(expenseTransactions, primaryCurrency, ratesData?.rates, ratesData?.base).expense
 
   const displayCurrency = monthlyBudget ? monthlyBudget.currency : primaryCurrency
 
   const monthlyBudgetAmountDisplay = monthlyBudget
-    ? convertAmountOrZero(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
+    ? convertBudgetLimit(monthlyBudget.amount, monthlyBudget.currency, displayCurrency, ratesData?.rates, ratesData?.base)
     : 0
 
   const totalSpentDisplay = displayCurrency === primaryCurrency
-    ? totalSpentPrimary
-    : convertAmountOrZero(totalSpentPrimary, primaryCurrency, displayCurrency, ratesData?.rates, ratesData?.base)
+    ? totalExpensePrimary
+    : convertAmountOrZero(totalExpensePrimary, primaryCurrency, displayCurrency, ratesData?.rates, ratesData?.base)
 
-  const remaining = Math.max(monthlyBudgetAmountDisplay - totalSpentDisplay, 0)
-  const usedPct = monthlyBudgetAmountDisplay > 0
-    ? Math.min(Math.round((totalSpentDisplay / monthlyBudgetAmountDisplay) * 100), 100)
-    : 0
+  const monthlyProgress = calculateBudgetProgress(totalSpentDisplay, monthlyBudgetAmountDisplay)
+  const remaining = monthlyProgress.remainingAmount
+  const usedPct = monthlyProgress.usedPct
+  const assignedPercent = Object.values(goals).reduce((sum, goal) => {
+    return sum + (goal.type === 'percent' ? (goal.percent ?? 0) : 0)
+  }, 0)
+  const unassignedPercent = Math.max(100 - assignedPercent, 0)
 
   const spentByCategory = useMemo(() => {
     const map = new Map<string, number>()
@@ -388,15 +393,33 @@ export default function SettingsBudget() {
               <p className="mt-1 text-xl font-semibold tabular-nums text-white">{usedPct}%</p>
             </div>
             <div className="rounded-[1.25rem] bg-white/10 px-3 py-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/58">{lang === 'ko' ? '남은 금액' : 'Remaining'}</p>
-              <p className="mt-1 truncate text-xl font-semibold tabular-nums text-white">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/58">{lang === 'ko' ? '남은 예산' : 'Remaining'}</p>
+              <p className="mt-1 break-words text-xl font-semibold leading-tight tabular-nums text-white [overflow-wrap:anywhere]">
                 {monthlyBudgetAmountDisplay > 0 ? formatCurrency(remaining, displayCurrency) : '-'}
               </p>
+              {monthlyBudgetAmountDisplay > 0 && (
+                <p className="mt-1 text-[11px] font-semibold text-white/64">
+                  {lang === 'ko' ? `${monthlyProgress.remainingPct}% 남음` : `${monthlyProgress.remainingPct}% left`}
+                </p>
+              )}
             </div>
           </div>
+          {budgetInputMode === 'percent' && monthlyBudgetAmountDisplay > 0 && (
+            <div className="mt-2 rounded-[1.25rem] bg-white/10 px-3 py-3">
+              <div className="flex items-center justify-between gap-3 text-[11px] font-semibold">
+                <span className="text-white/60">{lang === 'ko' ? '카테고리 배정' : 'Category assigned'}</span>
+                <span className="text-white">{Math.min(assignedPercent, 100)}% / 100%</span>
+              </div>
+              <p className="mt-1 text-[11px] font-semibold text-white/70">
+                {lang === 'ko'
+                  ? `${unassignedPercent}% (${formatCurrency((monthlyBudgetAmountDisplay * unassignedPercent) / 100, displayCurrency)}) 남음`
+                  : `${unassignedPercent}% (${formatCurrency((monthlyBudgetAmountDisplay * unassignedPercent) / 100, displayCurrency)}) left`}
+              </p>
+            </div>
+          )}
           <div className="mt-6 rounded-[1.45rem] bg-white/10 p-3.5">
             <div className="h-2.5 overflow-hidden rounded-full bg-white/18">
-              <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${usedPct}%` }} />
+              <div className="h-full rounded-full bg-white transition-all duration-500" style={{ width: `${Math.min(usedPct, 100)}%` }} />
             </div>
             <div className="mt-2 flex items-center justify-between text-[11px]">
               <p className="font-semibold text-white/68">{t('monthly_budget_used')(usedPct)}</p>
@@ -486,8 +509,9 @@ export default function SettingsBudget() {
                   ? ((monthlyBudget?.amount ?? 0) * (goal.percent ?? 0)) / 100
                   : goal.amount)
                 : 0
-              const pct = goalAmount > 0 ? Math.min(Math.round((spent / goalAmount) * 100), 100) : 0
-              const left = goalAmount > 0 ? Math.max(goalAmount - spent, 0) : 0
+              const progress = calculateBudgetProgress(spent, goalAmount)
+              const pct = progress.usedPct
+              const left = progress.remainingAmount
               const barColor = cat.color || '#0d8a7a'
 
               return (
@@ -519,7 +543,9 @@ export default function SettingsBudget() {
                             {cat.name}
                           </p>
                           <p className="mt-1 text-[11px] font-semibold text-slate-400">
-                            {goal ? `${pct}% ${lang === 'ko' ? '사용' : 'used'}` : t('budget_no_limit')}
+                            {goal
+                              ? `${pct}% ${lang === 'ko' ? '사용' : 'used'} · ${progress.remainingPct}% ${lang === 'ko' ? '남음' : 'left'}`
+                              : t('budget_no_limit')}
                           </p>
                         </div>
                         {goal && !isEditing && (
@@ -531,7 +557,7 @@ export default function SettingsBudget() {
                             </span>
                             {goal?.type === 'percent' && (
                               <span className="mt-0.5 block break-all text-[0.75rem] text-slate-400">
-                                {goal.percent ?? 0}%
+                                {goal.percent ?? 0}% {lang === 'ko' ? '배정' : 'assigned'}
                               </span>
                             )}
                             <span className="mt-1 block break-all text-[0.75rem] text-[#0b6f61]">
@@ -557,13 +583,15 @@ export default function SettingsBudget() {
                         <div className="mt-4">
                           <div className="mb-2 flex items-center justify-between text-[11px] font-bold">
                             <span className="text-[#8b9390]">{lang === 'ko' ? '진행률' : 'Progress'}</span>
-                            <span style={{ color: pct >= 90 ? '#c46f63' : pct >= 70 ? '#d89455' : '#006b5b' }}>{pct}%</span>
+                            <span style={{ color: pct >= 90 ? '#c46f63' : pct >= 70 ? '#d89455' : '#006b5b' }}>
+                              {pct}% {lang === 'ko' ? '사용' : 'used'} · {progress.remainingPct}% {lang === 'ko' ? '남음' : 'left'}
+                            </span>
                           </div>
                           <div className="h-2.5 overflow-hidden rounded-full bg-[#edf1ef]">
                             <div
                               className="h-full rounded-full transition-all duration-500"
                               style={{
-                                width: `${pct}%`,
+                                width: `${Math.min(pct, 100)}%`,
                                 backgroundColor: pct >= 90 ? '#ec8b83' : pct >= 70 ? '#d89455' : (barColor || '#006b5b'),
                               }}
                             />

@@ -25,6 +25,20 @@ export async function fetchMonthlyBudgetForMonth(userId: string, month: string):
     return { amount: Number(row.amount), currency: row.currency as CurrencyCode }
   }
 
+  const { data: previousRows, error: previousError } = await supabase
+    .from('monthly_budgets')
+    .select('amount, currency, month')
+    .eq('user_id', userId)
+    .lt('month', month)
+    .order('month', { ascending: false })
+    .limit(1)
+
+  if (previousError) throw previousError
+  if (previousRows && previousRows.length > 0) {
+    const row = previousRows[0] as MonthlyBudgetRow
+    return { amount: Number(row.amount), currency: row.currency as CurrencyCode }
+  }
+
   return null
 }
 

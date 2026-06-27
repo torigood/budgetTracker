@@ -5,9 +5,11 @@ import { useAnalytics } from '@/lib/hooks/useDashboard'
 import { useAnnualReport } from '@/lib/hooks/useAnnualReport'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useSwipeMonth } from '@/lib/hooks/useSwipeMonth'
+import { useCurrentMonthOnEntry } from '@/lib/hooks/useCurrentMonthOnEntry'
 import { useT } from '@/lib/hooks/useT'
 import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
 import { convertAmountOrZero } from '@/lib/utils/currency'
+import { calculateTransactionTotals } from '@/lib/utils/finance'
 import { MonthSelector } from '@/components/ui/MonthSelector'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { ConvertedAmount } from '@/components/ui/ConvertedAmount'
@@ -22,6 +24,7 @@ const TOTAL_KEY = '__total__'
 export default function Analytics() {
   const navigate = useNavigate()
   const { selectedMonth, setSelectedMonth, lang, currency: fallbackCurrency } = useUIStore()
+  useCurrentMonthOnEntry(setSelectedMonth)
   const [tab, setTab] = useState<'monthly' | 'annual'>('monthly')
   const [annualYear, setAnnualYear] = useState(() => new Date().getFullYear())
   const [selectedCurrency, setSelectedCurrency] = useState<string>(TOTAL_KEY)
@@ -55,22 +58,14 @@ export default function Analytics() {
   }, [ratesData?.base, ratesData?.rates])
 
   const monthlySeries = (months ?? []).map((m) => {
-    const expense = m.rows
-      .filter((r) => r.type === '지출')
-      .reduce((s, r) => {
-        const cur = r.currency ?? 'CAD'
-        return s + (isTotal ? convertRow(r.amount, cur, analyticsCurrency) : (cur === analyticsCurrency ? r.amount : 0))
-      }, 0)
-    const income = m.rows
-      .filter((r) => r.type === '수입')
-      .reduce((s, r) => {
-        const cur = r.currency ?? 'CAD'
-        return s + (isTotal ? convertRow(r.amount, cur, analyticsCurrency) : (cur === analyticsCurrency ? r.amount : 0))
-      }, 0)
+    const rows = isTotal
+      ? m.rows
+      : m.rows.filter((r) => (r.currency ?? 'CAD') === analyticsCurrency)
+    const totals = calculateTransactionTotals(rows, analyticsCurrency, ratesData?.rates, ratesData?.base)
     return {
       month: m.month,
-      expense,
-      income,
+      expense: totals.expense,
+      income: totals.income,
     }
   })
 
@@ -115,9 +110,9 @@ export default function Analytics() {
     ;(annualData?.rows ?? []).forEach((row) => {
       const key = row.date.slice(0, 7)
       if (!monthMap[key]) return
-      const converted = convertRow(row.amount, row.currency ?? 'CAD', systemCurrency)
-      if (row.type === '지출') monthMap[key].expense += converted
-      else monthMap[key].income += converted
+      const totals = calculateTransactionTotals([row], systemCurrency, ratesData?.rates, ratesData?.base)
+      monthMap[key].expense += totals.expense
+      monthMap[key].income += totals.income
     })
 
     const months = Object.values(monthMap)
@@ -125,7 +120,7 @@ export default function Analytics() {
     const totalIncome = months.reduce((s, m) => s + m.income, 0)
 
     return { months, totalExpense, totalIncome, currency: systemCurrency }
-  }, [annualData?.rows, annualYear, convertRow, systemCurrency])
+  }, [annualData?.rows, annualYear, ratesData?.base, ratesData?.rates, systemCurrency])
 
   const summaryCurrency = tab === 'annual'
     ? annualConverted.currency
@@ -137,8 +132,8 @@ export default function Analytics() {
   })()
 
   return (
-    <div className="pb-6" {...(tab === 'monthly' ? swipe : {})}>
-      <header className="px-5 pb-3 pt-4">
+    <div className="min-w-0 overflow-x-hidden pb-6" {...(tab === 'monthly' ? swipe : {})}>
+      <header className="min-w-0 px-4 pb-3 pt-4">
         <div className="flex min-w-0 items-start gap-2">
           <button
             onClick={() => navigate('/dashboard')}
@@ -154,8 +149,8 @@ export default function Analytics() {
             </h1>
           </div>
         </div>
-        <div className="mt-2 grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <div className="min-w-0 overflow-x-auto fintra-horizontal-scroll">
+        <div className="mt-2 flex w-full min-w-0 items-center gap-2 overflow-hidden">
+          <div className="min-w-0 flex-1 fintra-horizontal-scroll">
             {tab === 'monthly' && <MonthSelector value={selectedMonth} onChange={setSelectedMonth} />}
           </div>
           <button
@@ -186,7 +181,7 @@ export default function Analytics() {
         </button>
       </div>
 
-      <div className="mx-4 mt-3 grid grid-cols-3 gap-2.5">
+      <div className="mx-4 mt-3 grid grid-cols-3 gap-2">
         {[
           {
             label: expenseKey,
@@ -207,17 +202,17 @@ export default function Analytics() {
             bg: 'bg-white',
           },
         ].map((item) => (
-          <div key={item.label} className={`min-w-0 rounded-[1.45rem] px-3 py-3 shadow-[var(--fintra-shadow-soft)] ${item.bg}`}>
-            <p className="truncate text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">{item.label}</p>
+          <div key={item.label} className={`min-w-0 rounded-[1.45rem] px-2.5 py-3 shadow-[var(--fintra-shadow-soft)] ${item.bg}`}>
+            <p className="text-[9.5px] font-semibold uppercase leading-tight tracking-[0.08em] text-slate-500 dark:text-slate-400">{item.label}</p>
             <p
-              className={`mt-1 break-words text-[clamp(0.72rem,3.2vw,0.9rem)] font-bold leading-tight tabular-nums ${item.color}`}
+              className={`mt-1 break-words text-[clamp(0.68rem,3vw,0.86rem)] font-bold leading-tight tabular-nums [overflow-wrap:anywhere] ${item.color}`}
               title={formatCurrency(Math.abs(item.amount), summaryCurrency)}
             >
-              {formatCurrency(Math.abs(item.amount), summaryCurrency)}
+              {item.label === (lang === 'ko' ? '순 흐름' : 'Net flow') && item.amount !== 0 ? `${item.amount > 0 ? '+' : '-'}${formatCurrency(Math.abs(item.amount), summaryCurrency)}` : formatCurrency(Math.abs(item.amount), summaryCurrency)}
             </p>
             {formatCurrency(Math.abs(item.amount), summaryCurrency).length > 12 && (
               <p className={`mt-0.5 text-[0.68rem] font-semibold tabular-nums ${item.color}`}>
-                {formatCompactCurrency(Math.abs(item.amount), summaryCurrency)}
+                {item.label === (lang === 'ko' ? '순 흐름' : 'Net flow') && item.amount !== 0 ? `${item.amount > 0 ? '+' : '-'}${formatCompactCurrency(Math.abs(item.amount), summaryCurrency)}` : formatCompactCurrency(Math.abs(item.amount), summaryCurrency)}
               </p>
             )}
           </div>
@@ -461,7 +456,7 @@ function AnnualReport({
   const currency = data?.currency ?? 'CAD'
 
   return (
-    <div className="p-4 space-y-4">
+    <div className="space-y-4 overflow-x-hidden p-4">
       {/* Year selector */}
       <div className="flex items-center justify-center gap-4">
         <button
@@ -482,29 +477,29 @@ function AnnualReport({
 
       {/* Summary cards */}
       {isLoading ? (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-2">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-20 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-2xl bg-rose-50 dark:bg-rose-900/20 p-3">
-            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">{t('analytics_annual_total_expense')}</p>
-            <p className="break-words text-[clamp(0.74rem,3.3vw,0.875rem)] font-bold tabular-nums text-rose-600 dark:text-rose-400 leading-tight">
+        <div className="grid grid-cols-3 gap-2">
+          <div className="rounded-2xl bg-rose-50 p-2.5 dark:bg-rose-900/20">
+            <p className="mb-1 text-[9.5px] font-medium leading-tight text-slate-500 dark:text-slate-400">{t('analytics_annual_total_expense')}</p>
+            <p className="break-words text-[clamp(0.68rem,3vw,0.84rem)] font-bold tabular-nums leading-tight text-rose-600 [overflow-wrap:anywhere] dark:text-rose-400">
               {formatCurrency(data?.totalExpense ?? 0, currency)}
             </p>
           </div>
-          <div className="rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 p-3">
-            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">{t('analytics_annual_total_income')}</p>
-            <p className="break-words text-[clamp(0.74rem,3.3vw,0.875rem)] font-bold tabular-nums text-emerald-600 dark:text-emerald-400 leading-tight">
+          <div className="rounded-2xl bg-emerald-50 p-2.5 dark:bg-emerald-900/20">
+            <p className="mb-1 text-[9.5px] font-medium leading-tight text-slate-500 dark:text-slate-400">{t('analytics_annual_total_income')}</p>
+            <p className="break-words text-[clamp(0.68rem,3vw,0.84rem)] font-bold tabular-nums leading-tight text-emerald-600 [overflow-wrap:anywhere] dark:text-emerald-400">
               {formatCurrency(data?.totalIncome ?? 0, currency)}
             </p>
           </div>
-          <div className={`rounded-2xl p-3 ${net >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-rose-50 dark:bg-rose-900/20'}`}>
-            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">{t('analytics_annual_net')}</p>
-            <p className={`break-words text-[clamp(0.74rem,3.3vw,0.875rem)] font-bold tabular-nums leading-tight ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-              {formatCurrency(Math.abs(net), currency)}
+          <div className={`rounded-2xl p-2.5 ${net >= 0 ? 'bg-emerald-50 dark:bg-emerald-900/20' : 'bg-rose-50 dark:bg-rose-900/20'}`}>
+            <p className="mb-1 text-[9.5px] font-medium leading-tight text-slate-500 dark:text-slate-400">{t('analytics_annual_net')}</p>
+            <p className={`break-words text-[clamp(0.68rem,3vw,0.84rem)] font-bold tabular-nums leading-tight [overflow-wrap:anywhere] ${net >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+              {net !== 0 ? (net > 0 ? '+' : '-') : ''}{formatCurrency(Math.abs(net), currency)}
             </p>
           </div>
         </div>

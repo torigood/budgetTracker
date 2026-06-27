@@ -1,5 +1,5 @@
 import { forwardRef } from 'react'
-import { formatAmountInput } from '@/lib/utils/currency'
+import { formatAmountInput, sanitizeAmountInput } from '@/lib/utils/currency'
 
 interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value' | 'type'> {
   currency?: string
@@ -11,15 +11,12 @@ interface CurrencyInputProps extends Omit<React.InputHTMLAttributes<HTMLInputEle
 
 export const CurrencyInput = forwardRef<HTMLInputElement, CurrencyInputProps>(
   ({ currency = 'CAD', error, label, className = '', value, onChange, ...props }, ref) => {
-    const displayValue = formatAmountInput(value)
+    const displayValue = formatAmountInput(value, currency)
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
       const input = e.currentTarget
-      const raw = input.value
-        .replace(/,/g, '')
-        .replace(/[^\d.]/g, '')
-        .replace(/(\..*)\./g, '$1')
-      const formatted = formatAmountInput(raw)
+      const raw = sanitizeAmountInput(input.value, currency)
+      const formatted = formatAmountInput(raw, currency)
       const digitsBeforeCaret = input.value.slice(0, input.selectionStart ?? input.value.length).replace(/[^\d.]/g, '').length
 
       onChange?.(raw)

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { useT } from '@/lib/hooks/useT'
+import { getPasskeySupportMessage, signInWithPasskey } from '@/lib/auth/passkeys'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'verify'
@@ -78,8 +79,23 @@ export default function Login() {
     }
   }
 
-  function handleBiometric() {
-    toast.message(lang === 'ko' ? '기기 인증은 로그인 후 사용할 수 있어요' : 'Biometric unlock is available after sign in')
+  async function handleBiometric() {
+    const supportMessage = getPasskeySupportMessage(lang)
+    if (supportMessage) {
+      toast.message(supportMessage)
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const { error } = await signInWithPasskey()
+      if (error) throw error
+    } catch (err) {
+      console.error('Passkey sign-in error:', err)
+      toast.error(lang === 'ko' ? '기기 인증으로 로그인하지 못했어요' : 'Could not sign in with device authentication')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   async function handleEmailAuth(e: React.FormEvent) {

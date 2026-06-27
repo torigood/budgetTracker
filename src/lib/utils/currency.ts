@@ -49,8 +49,26 @@ export function parseAmountInput(value: string | number | null | undefined): num
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-export function formatAmountInput(value: string | number | null | undefined): string {
-  const raw = String(value ?? '').replace(/,/g, '')
+export function getCurrencyDecimalScale(currency?: string): number {
+  return currency === 'KRW' || currency === 'JPY' ? 0 : 2
+}
+
+export function sanitizeAmountInput(value: string | number | null | undefined, currency?: string): string {
+  const decimalScale = getCurrencyDecimalScale(currency)
+  const raw = String(value ?? '').replace(/,/g, '').trim()
+  if (!raw) return ''
+
+  const [integerRaw, ...decimalParts] = raw.split('.')
+  const integer = integerRaw.replace(/\D/g, '')
+  const decimal = decimalParts.join('').replace(/\D/g, '').slice(0, decimalScale)
+
+  if (decimalScale === 0) return integer
+  if (raw.includes('.')) return `${integer}${integer || decimal ? '.' : ''}${decimal}`
+  return integer
+}
+
+export function formatAmountInput(value: string | number | null | undefined, currency?: string): string {
+  const raw = sanitizeAmountInput(value, currency)
   if (!raw) return ''
 
   const [integerRaw, decimalRaw] = raw.split('.')
@@ -58,6 +76,6 @@ export function formatAmountInput(value: string | number | null | undefined): st
   const decimal = decimalRaw?.replace(/\D/g, '')
   const formattedInteger = integer ? Number(integer).toLocaleString('en-US') : ''
 
-  if (raw.includes('.')) return `${formattedInteger}. ${decimal ?? ''}`.replace('. ', '.')
+  if (raw.includes('.')) return `${formattedInteger || '0'}.${decimal ?? ''}`
   return formattedInteger
 }
