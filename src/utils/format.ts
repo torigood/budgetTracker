@@ -105,3 +105,11 @@ export function todayISO(): string {
   const now = new Date()
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 }
+
+/** 카테고리 아이콘 대체용 첫 글자 (이모지 등 서로게이트 쌍 안전) */
+export function firstSymbol(text?: string | null): string {
+  if (!text) return '?'
+  const s = text.trim()
+  if (!s) return '?'
+  return Array.from(s)[0] ?? '?'
+}

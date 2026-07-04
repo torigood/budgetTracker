@@ -153,7 +153,7 @@ function normalizeParsedDate(raw: string | null, preference: 'DMY' | 'MDY', curr
     return toIsoDate(y, m, d)
   }
 
-  const slash = raw.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/)
+  const slash = raw.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{2,4})$/)
   if (!slash) return raw
 
   const a = Number(slash[1])

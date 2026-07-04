@@ -128,6 +128,17 @@ export default function CsvImport() {
     const toImport = rows.filter((r) => r.include)
     if (toImport.length === 0) { toast.error(t('csv_import_no_items')); return }
 
+    // DB의 category_id는 NOT NULL — 카테고리 미지정 행은 넣을 수 없다
+    const missingCategory = toImport.filter((r) => !r.categoryId).length
+    if (missingCategory > 0) {
+      toast.error(
+        lang === 'ko'
+          ? `카테고리가 지정되지 않은 항목이 ${missingCategory}개 있습니다. 카테고리를 선택하거나 해당 항목을 제외해주세요.`
+          : `${missingCategory} item(s) have no category. Assign a category or deselect them.`
+      )
+      return
+    }
+
     setStep('importing')
     try {
       const inserts = toImport.map((r) => ({
@@ -139,7 +150,7 @@ export default function CsvImport() {
         currency,
         payment_method: r.payment,
         memo: r.memo || null,
-        category_id: r.categoryId || null,
+        category_id: r.categoryId as string,
       }))
 
       // insert in chunks of 100

@@ -12,7 +12,7 @@ import { useUIStore, SUPPORTED_CURRENCIES } from '@/lib/stores/ui.store'
 import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
 import { convertAmountOrZero, parseAmountInput } from '@/lib/utils/currency'
 import { calculateBudgetProgress, calculateTransactionTotals, convertBudgetLimit } from '@/lib/utils/finance'
-import { formatCurrency } from '@/utils/format'
+import { firstSymbol, formatCurrency } from '@/utils/format'
 import { useT } from '@/lib/hooks/useT'
 import { Card } from '@/components/ui/Card'
 import { CurrencyInput } from '@/components/ui/CurrencyInput'
@@ -68,23 +68,23 @@ export default function SettingsBudget() {
   async function saveEdit(categoryId: string) {
     const amount = parseAmountInput(editAmount)
     if (isNaN(amount) || amount <= 0) {
-      toast.error('올바른 금액을 입력해주세요')
+      toast.error(lang === 'ko' ? '올바른 금액을 입력해주세요' : 'Please enter a valid amount')
       return
     }
     if (budgetInputMode === 'percent') {
       if (!monthlyBudget || monthlyBudget.amount <= 0) {
-        toast.error('월 전체 예산을 먼저 설정해주세요')
+        toast.error(lang === 'ko' ? '월 전체 예산을 먼저 설정해주세요' : 'Set a monthly budget first')
         return
       }
       if (amount > 100) {
-        toast.error('비율은 100%를 넘을 수 없습니다')
+        toast.error(lang === 'ko' ? '비율은 100%를 넘을 수 없습니다' : 'Percentage cannot exceed 100%')
         return
       }
       const otherTotal = Object.entries(goals)
         .filter(([id]) => id !== categoryId)
         .reduce((sum, [, goal]) => sum + (goal.type === 'percent' ? (goal.percent ?? 0) : 0), 0)
       if (otherTotal + amount > 100) {
-        toast.error('전체 비율이 100%를 넘을 수 없습니다')
+        toast.error(lang === 'ko' ? '전체 비율이 100%를 넘을 수 없습니다' : 'Total percentage cannot exceed 100%')
         return
       }
       const computedAmount = (monthlyBudget.amount * amount) / 100
@@ -117,7 +117,7 @@ export default function SettingsBudget() {
   async function saveMonthlyBudget() {
     const amount = parseAmountInput(monthlyAmount)
     if (isNaN(amount) || amount <= 0) {
-      toast.error('올바른 금액을 입력해주세요')
+      toast.error(lang === 'ko' ? '올바른 금액을 입력해주세요' : 'Please enter a valid amount')
       return
     }
     if (budgetInputMode === 'amount') {
@@ -150,10 +150,6 @@ export default function SettingsBudget() {
   const expenseTransactions = useMemo(() => {
     return (dashData?.transactions ?? []).filter((tx) => tx.type === '지출')
   }, [dashData?.transactions])
-
-  const toPrimary = (amount: number, currency: string) => {
-    return convertAmountOrZero(amount, currency, primaryCurrency, ratesData?.rates, ratesData?.base)
-  }
 
   const totalExpensePrimary = calculateTransactionTotals(expenseTransactions, primaryCurrency, ratesData?.rates, ratesData?.base).expense
 
@@ -195,13 +191,6 @@ export default function SettingsBudget() {
     const date = new Date(y, m - 1, 1)
     return date.toLocaleString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
   })()
-
-  const firstSymbol = (text?: string | null) => {
-    if (!text) return '?'
-    const s = text.trim()
-    if (!s) return '?'
-    return Array.from(s)[0] ?? '?'
-  }
 
   const getConvertedLabel = (amount: number, currency: string) => {
     if (currency === defaultCurrency) return null
@@ -307,13 +296,13 @@ export default function SettingsBudget() {
             onClick={() => navigate('/settings/categories?new=1')}
             className="shrink-0 rounded-full bg-[#dceee9] px-3.5 py-2 text-[12px] font-bold text-[#0b6f61] transition active:scale-95"
           >
-            카테고리 추가
+            {lang === 'ko' ? '카테고리 추가' : 'Add category'}
           </button>
           <button
             onClick={() => navigate('/settings/categories')}
             className="shrink-0 rounded-full border border-white/80 bg-white px-3.5 py-2 text-[12px] font-bold text-slate-600 shadow-[var(--fintra-shadow-soft)] transition active:scale-95"
           >
-            카테고리 수정
+            {lang === 'ko' ? '카테고리 수정' : 'Edit categories'}
           </button>
           </div>
         </div>
@@ -640,7 +629,7 @@ export default function SettingsBudget() {
                           />
                         )}
                         {budgetInputMode === 'percent' && (
-                          <p className="mt-1 text-[10px] text-slate-400">월 예산 기준 비율(%)</p>
+                          <p className="mt-1 text-[10px] text-slate-400">{lang === 'ko' ? '월 예산 기준 비율(%)' : '% of monthly budget'}</p>
                         )}
                       </div>
 

@@ -88,6 +88,12 @@ export default function Transactions() {
   const isEmpty = !isLoading && !allTransactions?.length && !filters.categoryId && !filters.type && !filters.search
   const { data: prevMonthRows } = usePrevMonthSummary(filters.month, isEmpty)
 
+  // 상세 모달이 열리면 하단 네비를 숨김 (Recurring 시트와 동일한 패턴)
+  useEffect(() => {
+    document.body.classList.toggle('sheet-open', !!detailTx)
+    return () => document.body.classList.remove('sheet-open')
+  }, [detailTx])
+
   // Infinite scroll
   useEffect(() => {
     const el = loaderRef.current
@@ -465,7 +471,7 @@ function TransactionDetailModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-8 sm:items-center sm:pb-8" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-end justify-center px-3 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-[calc(2rem+env(safe-area-inset-top))] sm:items-center sm:pb-8" onClick={onClose}>
       <div className="absolute inset-0 bg-[#141716]/35 backdrop-blur-sm" />
 
       <div

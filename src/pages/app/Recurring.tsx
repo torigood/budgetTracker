@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Plus, Edit2, Trash2, Power, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useRecurringItems, useCreateRecurring, useUpdateRecurring, useDeleteRecurring, useRunRecurringNow, type RecurringWithCategory } from '@/lib/hooks/useRecurring'
@@ -30,7 +30,8 @@ function createSchema() {
 }
 
 const schema = createSchema()
-type FormValues = z.infer<typeof schema>
+type FormInput = z.input<typeof schema>
+type FormValues = z.output<typeof schema>
 
 const inputClass = 'w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-base text-slate-900 dark:text-white placeholder-slate-400 outline-none focus:border-[#0d8a7a] focus:ring-2 focus:ring-[#0d8a7a]/10 transition'
 
@@ -51,9 +52,8 @@ export default function Recurring() {
   const [todayKey, setTodayKey] = useState(() => new Date().toISOString().slice(0, 10))
   const recurringItems = items as RecurringWithCategory[] | undefined
 
-  const { control, register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    resolver: zodResolver(schema) as any,
+  const { control, register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<FormInput, unknown, FormValues>({
+    resolver: zodResolver(schema),
     defaultValues: { payment_method: '자동지출', day_of_month: 1, currency: defaultCurrency },
   })
 
@@ -69,8 +69,8 @@ export default function Recurring() {
     .filter((i) => i.is_active && i.day_of_month <= currentDay)
     .reduce((sum, i) => sum + i.amount, 0) ?? 0
 
-  const selectedMethod = watch('payment_method') as AutoPaymentMethod
-  const selectedCurrency = watch('currency') ?? defaultCurrency
+  const selectedMethod = useWatch({ control, name: 'payment_method' }) as AutoPaymentMethod
+  const selectedCurrency = useWatch({ control, name: 'currency' }) ?? defaultCurrency
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -338,7 +338,7 @@ export default function Recurring() {
                       <CurrencyInput
                         label={t('recurring_amount')}
                         currency={selectedCurrency}
-                        value={field.value ?? ''}
+                        value={(field.value as number | string | undefined) ?? ''}
                         onChange={field.onChange}
                         onBlur={field.onBlur}
                         error={errors.amount?.message}

@@ -1,5 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useRef, useState } from 'react'
 import { Camera, ImagePlus, AlertTriangle } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 import { toast } from 'sonner'
@@ -26,7 +25,6 @@ function buildReceiptMemo(parsed: ParsedReceipt) {
 }
 
 export default function Receipt() {
-  const navigate = useNavigate()
   const { user } = useAuthStore()
   const { lang } = useUIStore()
   const t = useT()
@@ -36,9 +34,16 @@ export default function Receipt() {
 
   const [step, setStep] = useState<Step>('upload')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [parsedReceipt, setParsedReceipt] = useState<ParsedReceipt | null>(null)
   const [receiptId, setReceiptId] = useState<string | null>(null)
   const [parseStep, setParseStep] = useState('')
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl)
+    }
+  }, [previewUrl])
 
   function normalizeReceiptErrorMessage(err: unknown) {
     const message = err instanceof Error ? err.message : String(err ?? '')
@@ -50,7 +55,7 @@ export default function Receipt() {
     return message || t('receipt_parse_fail')
   }
 
-  async function handleFile(file: File) {
+  function handleFile(file: File) {
     if (!file.type.startsWith('image/')) {
       toast.error(t('receipt_image_only'))
       return
@@ -59,6 +64,7 @@ export default function Receipt() {
       toast.error(t('receipt_size_limit'))
       return
     }
+    setSelectedFile(file)
     setPreviewUrl(URL.createObjectURL(file))
   }
 
@@ -68,7 +74,7 @@ export default function Receipt() {
 
     try {
       setParseStep(t('receipt_uploading'))
-      const fileInput = cameraRef.current?.files?.[0] ?? galleryRef.current?.files?.[0]
+      const fileInput = selectedFile
       if (!fileInput) throw new Error(t('receipt_file_not_found'))
 
       const ext = fileInput.name.split('.').pop() ?? 'jpg'
@@ -125,10 +131,10 @@ export default function Receipt() {
     }
   }
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
+  const onDrop = (acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
     if (file) handleFile(file)
-  }, [])
+  }
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

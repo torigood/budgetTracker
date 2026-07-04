@@ -77,9 +77,10 @@ const progressTone: Record<NonNullable<BudgetProgressDatum['tone']>, string> = {
 
 const tooltipStyle = {
   borderRadius: '18px',
-  border: '1px solid rgba(32, 36, 38, 0.08)',
+  border: '1px solid var(--fintra-line-strong)',
   boxShadow: '0 18px 44px rgba(35, 43, 43, 0.12)',
-  color: '#202426',
+  backgroundColor: 'var(--fintra-surface)',
+  color: 'var(--fintra-charcoal)',
   fontSize: '12px',
 }
 

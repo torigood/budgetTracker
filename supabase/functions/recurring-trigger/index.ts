@@ -29,14 +29,23 @@ serve(async (req) => {
 
   const now = new Date()
   const today = now.getDate()
-  const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const year = now.getFullYear()
+  const month = now.getMonth() + 1
+  const yearMonth = `${year}-${String(month).padStart(2, '0')}`
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const isLastDayOfMonth = today === daysInMonth
+  const endOfMonth = `${yearMonth}-${String(daysInMonth).padStart(2, '0')}`
 
   // 오늘 날짜에 해당하는 활성 자동 거래 조회(자동지출/자동입금)
-  const { data: items, error } = await supabase
+  // 말일에는 이번 달에 없는 날짜(예: 2월의 29~31일)로 설정된 항목도 함께 실행
+  let itemsQuery = supabase
     .from('recurring_items')
     .select('*')
-    .eq('day_of_month', today)
     .eq('is_active', true)
+  itemsQuery = isLastDayOfMonth
+    ? itemsQuery.gte('day_of_month', today)
+    : itemsQuery.eq('day_of_month', today)
+  const { data: items, error } = await itemsQuery
 
   if (error) {
     console.error('recurring_items 조회 실패:', error)
@@ -55,7 +64,7 @@ serve(async (req) => {
 
     // 중복 방지: 해당 월에 이미 생성된 자동 거래인지 확인
     const startOfMonth = `${yearMonth}-01`
-    const { count } = await supabase
+    const { count, error: countError } = await supabase
       .from('transactions')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', item.user_id)
@@ -63,7 +72,13 @@ serve(async (req) => {
       .eq('category_id', item.category_id)
       .eq('payment_method', paymentMethod)
       .gte('date', startOfMonth)
-      .lte('date', `${yearMonth}-31`)
+      .lte('date', endOfMonth)
+
+    if (countError) {
+      console.error(`중복 확인 실패 (${item.description}):`, countError)
+      skipped++
+      continue
+    }
 
     if ((count ?? 0) > 0) {
       skipped++

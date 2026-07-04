@@ -22,18 +22,26 @@ export function getPasskeySupportMessage(lang: 'ko' | 'en') {
   return null
 }
 
+// Passkey API는 아직 실험 기능이라 supabase-js 타입에 없음 — 런타임 존재 여부로 확인
+type PasskeyAuth = typeof supabase.auth & {
+  signInWithPasskey?: () => Promise<{ error?: unknown }>
+  registerPasskey?: () => Promise<{ error?: unknown }>
+}
+
 export async function signInWithPasskey() {
-  if (typeof supabase.auth.signInWithPasskey !== 'function') {
+  const auth = supabase.auth as PasskeyAuth
+  if (typeof auth.signInWithPasskey !== 'function') {
     throw new Error('Passkey sign-in is not available in this Supabase client version.')
   }
 
-  return supabase.auth.signInWithPasskey()
+  return auth.signInWithPasskey()
 }
 
 export async function registerPasskey() {
-  if (typeof supabase.auth.registerPasskey !== 'function') {
+  const auth = supabase.auth as PasskeyAuth
+  if (typeof auth.registerPasskey !== 'function') {
     throw new Error('Passkey registration is not available in this Supabase client version.')
   }
 
-  return supabase.auth.registerPasskey()
+  return auth.registerPasskey()
 }
