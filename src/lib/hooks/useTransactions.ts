@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { TransactionFilters } from '@/types/app'
 import type { Database } from '@/types/database'
@@ -7,6 +7,24 @@ import { getMonthRange } from '@/utils/format'
 type TransactionInsert = Database['public']['Tables']['transactions']['Insert']
 
 const PAGE_SIZE = 20
+
+// 거래 데이터에서 파생되는 모든 쿼리 키 — 거래가 바뀌면 전부 무효화해야 한다
+const TRANSACTION_DERIVED_KEYS = [
+  'transactions',
+  'transaction',
+  'dashboard',
+  'analytics',
+  'calendar',
+  'widget-stats',
+  'annual',
+  'prev-month-summary',
+] as const
+
+export function invalidateTransactionData(queryClient: QueryClient) {
+  for (const key of TRANSACTION_DERIVED_KEYS) {
+    void queryClient.invalidateQueries({ queryKey: [key] })
+  }
+}
 
 export function useTransactions(filters: TransactionFilters, searchAll = false) {
   return useInfiniteQuery({
@@ -48,10 +66,7 @@ export function useDeleteTransaction() {
       const { error } = await supabase.from('transactions').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-    },
+    onSuccess: () => invalidateTransactionData(queryClient),
   })
 }
 
@@ -67,10 +82,7 @@ export function useCreateTransaction() {
       if (error) throw error
       return result
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-    },
+    onSuccess: () => invalidateTransactionData(queryClient),
   })
 }
 
@@ -87,27 +99,22 @@ export function useUpdateTransaction() {
       if (error) throw error
       return result
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
-    },
+    onSuccess: () => invalidateTransactionData(queryClient),
   })
 }
 
-export function useTransaction(id: string) {
-  return useInfiniteQuery({
+export function useTransaction(id: string | undefined) {
+  return useQuery({
     queryKey: ['transaction', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('transactions')
         .select('*, categories(id, name, color, icon)')
-        .eq('id', id)
+        .eq('id', id!)
         .single()
       if (error) throw error
-      return [data]
+      return data
     },
-    getNextPageParam: () => undefined,
-    initialPageParam: 0,
     enabled: !!id,
   })
 }

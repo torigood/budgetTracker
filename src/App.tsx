@@ -5,6 +5,7 @@ import { useAuthStore } from '@/lib/stores/auth.store'
 import { useUIStore } from '@/lib/stores/ui.store'
 import { ProtectedRoute } from '@/components/features/auth/ProtectedRoute'
 import { AppLayout } from '@/components/features/layout/AppLayout'
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary'
 import { PWAUpdatePrompt } from '@/components/ui/PWAUpdatePrompt'
 import { SplashScreen } from '@/components/ui/SplashScreen'
 import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
@@ -103,10 +104,10 @@ export default function App() {
   if (loading || showSplash) return <SplashScreen />
 
   return (
-    <>
+    <ErrorBoundary>
       <RouterProvider router={router} />
       <PWAUpdatePrompt />
       <VercelAnalytics />
-    </>
+    </ErrorBoundary>
   )
 }

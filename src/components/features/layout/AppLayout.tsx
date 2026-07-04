@@ -1,7 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { invalidateTransactionData } from '@/lib/hooks/useTransactions'
 import { BottomNav } from './BottomNav'
 
 export function AppLayout() {
@@ -10,21 +11,21 @@ export function AppLayout() {
   const location = useLocation()
   const mainRef = useRef<HTMLElement | null>(null)
 
-  function refreshVisibleQueries() {
+  const refreshVisibleQueries = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
     void queryClient.invalidateQueries({ queryKey: ['analytics'] })
     void queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    void queryClient.invalidateQueries({ queryKey: ['calendar'] })
     void queryClient.invalidateQueries({ queryKey: ['widget-stats'] })
     void queryClient.invalidateQueries({ queryKey: ['annual'] })
-  }
+  }, [queryClient])
 
   // Supabase Realtime: 거래 변경 감지 → React Query invalidate
   useEffect(() => {
     const channel = supabase
       .channel('transactions-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'transactions' }, () => {
-        void queryClient.invalidateQueries({ queryKey: ['transactions'] })
-        void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+        invalidateTransactionData(queryClient)
       })
       .subscribe()
 
@@ -50,7 +51,7 @@ export function AppLayout() {
       document.removeEventListener('visibilitychange', onVisibilityChange)
       window.removeEventListener('focus', onFocus)
     }
-  }, [queryClient])
+  }, [refreshVisibleQueries])
 
   // 키보드 단축키 (데스크탑)
   useEffect(() => {

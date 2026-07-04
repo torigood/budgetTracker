@@ -292,7 +292,7 @@ export const translations = {
     csv_import_file_too_large: '파일 크기는 5MB 이하의 CSV 파일만 지원합니다',
     csv_import_no_items: '가져올 항목을 선택해주세요',
     csv_import_failed: '가져오기에 실패했습니다. 다시 시도해주세요.',
-    csv_import_unmapped_warning: '카테고리가 매핑되지 않은 항목이 있습니다. 가져온 후 거래 편집에서 수정할 수 있습니다.',
+    csv_import_unmapped_warning: '카테고리가 매핑되지 않은 항목이 있습니다. 카테고리를 지정해야 가져올 수 있습니다.',
     csv_import_uploading: (n: number) => `${n}개 항목 저장 중...`,
     csv_import_parsed_rows: (n: number) => `${n}개 행 파싱됨`,
     csv_import_selected_rows: (n: number) => `${n}개 선택`,
@@ -644,7 +644,7 @@ export const translations = {
     csv_import_file_too_large: 'Only CSV files up to 5MB are supported',
     csv_import_no_items: 'Please select at least one item to import',
     csv_import_failed: 'Import failed. Please try again.',
-    csv_import_unmapped_warning: 'Some items do not match a category yet. You can fix them later in transaction edit.',
+    csv_import_unmapped_warning: 'Some items do not match a category yet. Assign a category before importing them.',
     csv_import_uploading: (n: number) => `Saving ${n} items...`,
     csv_import_parsed_rows: (n: number) => `${n} rows parsed`,
     csv_import_selected_rows: (n: number) => `${n} selected`,
@@ -704,6 +704,21 @@ export const translations = {
     go_home: 'Go home',
   },
 } as const
+
+// 결제수단은 DB에 한국어 값으로 저장됨 — 표시할 때만 언어에 맞게 변환
+const PAYMENT_METHOD_LABELS_EN: Record<string, string> = {
+  크레딧: 'Credit',
+  데빗: 'Debit',
+  이체: 'Transfer',
+  자동지출: 'Auto expense',
+  자동입금: 'Auto income',
+  현금: 'Cash',
+}
+
+export function paymentMethodLabel(method: string, lang: Lang): string {
+  if (lang === 'ko') return method
+  return PAYMENT_METHOD_LABELS_EN[method] ?? method
+}
 
 export type TranslationKey = keyof typeof translations.ko
 export type TranslationValue<K extends TranslationKey> = (typeof translations)['ko'][K]

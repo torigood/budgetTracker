@@ -9,7 +9,7 @@ export function PWAUpdatePrompt() {
   if (!needRefresh) return null
 
   return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-sm">
+    <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-[80] w-[calc(100%-2rem)] max-w-sm">
       <div className="flex items-center gap-3 rounded-2xl bg-slate-900 dark:bg-white px-4 py-3.5 shadow-2xl shadow-black/25 border border-slate-700 dark:border-slate-200">
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-500 text-white">
           <RefreshCw className="h-4 w-4" />

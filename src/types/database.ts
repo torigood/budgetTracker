@@ -22,6 +22,7 @@ export interface Database {
           currency?: string
           created_at?: string
         }
+        Relationships: []
       }
       categories: {
         Row: {
@@ -51,6 +52,7 @@ export interface Database {
           is_default?: boolean
           sort_order?: number
         }
+        Relationships: []
       }
       transactions: {
         Row: {
@@ -95,6 +97,22 @@ export interface Database {
           receipt_id?: string | null
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'transactions_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'categories'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'transactions_receipt_id_fkey'
+            columns: ['receipt_id']
+            isOneToOne: false
+            referencedRelation: 'receipts'
+            referencedColumns: ['id']
+          },
+        ]
       }
       recurring_items: {
         Row: {
@@ -133,6 +151,15 @@ export interface Database {
           is_active?: boolean
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'recurring_items_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'categories'
+            referencedColumns: ['id']
+          },
+        ]
       }
       receipts: {
         Row: {
@@ -171,6 +198,7 @@ export interface Database {
           confidence_score?: number | null
           created_at?: string
         }
+        Relationships: []
       }
       monthly_summaries: {
         Row: {
@@ -197,6 +225,7 @@ export interface Database {
           data?: Json
           created_at?: string
         }
+        Relationships: []
       }
       budget_limits: {
         Row: {
@@ -232,6 +261,15 @@ export interface Database {
           limit_type?: string
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'budget_limits_category_id_fkey'
+            columns: ['category_id']
+            isOneToOne: false
+            referencedRelation: 'categories'
+            referencedColumns: ['id']
+          },
+        ]
       }
       monthly_budgets: {
         Row: {
@@ -258,10 +296,39 @@ export interface Database {
           currency?: string
           created_at?: string
         }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          id: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          endpoint?: string
+          p256dh?: string
+          auth?: string
+          created_at?: string
+        }
+        Relationships: []
       }
     }
     Views: Record<string, never>
     Functions: Record<string, never>
     Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
   }
 }

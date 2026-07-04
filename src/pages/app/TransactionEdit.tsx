@@ -1,7 +1,8 @@
 import { useNavigate, useParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { useTransaction } from '@/lib/hooks/useTransactions'
+import { useT } from '@/lib/hooks/useT'
+import { useUIStore } from '@/lib/stores/ui.store'
 import { TransactionForm } from '@/components/features/transactions/TransactionForm'
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner'
 import { formatCurrency, formatDateShort } from '@/utils/format'
@@ -9,20 +10,9 @@ import { formatCurrency, formatDateShort } from '@/utils/format'
 export default function TransactionEdit() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-
-  const { data: tx, isLoading } = useQuery({
-    queryKey: ['transaction', id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('id', id!)
-        .single()
-      if (error) throw error
-      return data
-    },
-    enabled: !!id,
-  })
+  const t = useT()
+  const { lang } = useUIStore()
+  const { data: tx, isLoading } = useTransaction(id)
 
   return (
     <div className="pb-6">
@@ -37,9 +27,9 @@ export default function TransactionEdit() {
           </button>
           <div className="min-w-0">
             <p className="fintra-kicker">Edit transaction</p>
-            <h1 className="fintra-page-title mt-1 truncate dark:text-white">거래 수정</h1>
+            <h1 className="fintra-page-title mt-1 truncate dark:text-white">{t('form_edit_title')}</h1>
             <p className="mt-2 text-sm font-medium leading-6 text-[var(--fintra-ink-2)]">
-              금액, 카테고리, 날짜와 메모를 차분하게 조정하세요.
+              {lang === 'ko' ? '금액, 카테고리, 날짜와 메모를 차분하게 조정하세요.' : 'Adjust the amount, category, date, and memo.'}
             </p>
           </div>
         </div>
@@ -63,7 +53,7 @@ export default function TransactionEdit() {
           <TransactionForm initialValues={tx} editId={id} />
         </>
       ) : (
-        <p className="p-8 text-center text-sm text-slate-400">거래를 찾을 수 없습니다</p>
+        <p className="p-8 text-center text-sm text-slate-400">{lang === 'ko' ? '거래를 찾을 수 없습니다' : 'Transaction not found'}</p>
       )}
     </div>
   )

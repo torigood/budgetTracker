@@ -18,7 +18,7 @@ import { BudgetProgressBars } from '@/components/ui/Charts'
 import { useExchangeRates } from '@/lib/hooks/useExchangeRates'
 import { convertAmountOrZero } from '@/lib/utils/currency'
 import { calculateBudgetProgress, calculateTransactionTotals, convertBudgetLimit } from '@/lib/utils/finance'
-import { formatCurrency } from '@/utils/format'
+import { firstSymbol, formatCurrency } from '@/utils/format'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -96,13 +96,6 @@ export default function Dashboard() {
       className: 'bg-[#e4ece6] text-[#688472]',
     },
   ] as const
-
-  const firstSymbol = (text?: string | null) => {
-    if (!text) return '?'
-    const s = text.trim()
-    if (!s) return '?'
-    return Array.from(s)[0] ?? '?'
-  }
 
   const savingsRate = totalIncome > 0 ? Math.round((netBalance / totalIncome) * 100) : 0
   const savingsDisplay = totalIncome > 0 ? `${savingsRate >= 0 ? '+' : ''}${savingsRate}%` : '-'

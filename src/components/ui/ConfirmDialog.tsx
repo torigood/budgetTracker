@@ -23,7 +23,7 @@ export function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center pb-[calc(7.25rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-0"
+      className="fixed inset-0 z-[70] flex items-end justify-center px-4 pb-[calc(7.25rem+env(safe-area-inset-bottom))] sm:items-center sm:pb-0"
       onClick={onCancel}
     >
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />

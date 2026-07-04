@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { invalidateTransactionData } from '@/lib/hooks/useTransactions'
 import { useAuthStore } from '@/lib/stores/auth.store'
 import type { RecurringItem } from '@/types/app'
 import type { Database } from '@/types/database'
@@ -82,15 +83,21 @@ export function useRunRecurringNow() {
       const month = now.getMonth() + 1
       const yearMonth = `${year}-${String(month).padStart(2, '0')}`
       const startOfMonth = `${yearMonth}-01`
-      const endOfMonth = `${yearMonth}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`
+      const daysInMonth = new Date(year, month, 0).getDate()
+      const endOfMonth = `${yearMonth}-${String(daysInMonth).padStart(2, '0')}`
       const todayDate = `${yearMonth}-${String(today).padStart(2, '0')}`
+      const isLastDayOfMonth = today === daysInMonth
 
-      const { data: items, error } = await supabase
+      // 말일에는 이번 달에 없는 날짜(예: 2월의 29~31일)로 설정된 항목도 함께 실행
+      let itemsQuery = supabase
         .from('recurring_items')
         .select('*')
         .eq('user_id', user.id)
-        .eq('day_of_month', today)
         .eq('is_active', true)
+      itemsQuery = isLastDayOfMonth
+        ? itemsQuery.gte('day_of_month', today)
+        : itemsQuery.eq('day_of_month', today)
+      const { data: items, error } = await itemsQuery
 
       if (error) throw error
 
@@ -150,8 +157,7 @@ export function useRunRecurringNow() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['recurring'] })
-      void queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      invalidateTransactionData(queryClient)
     },
   })
 }
